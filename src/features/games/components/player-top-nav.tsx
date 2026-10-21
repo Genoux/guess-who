@@ -33,7 +33,13 @@ export function PlayerTopNav({ nav, current }: PlayerTopNavProps) {
       }
       end={
         <>
-          <IconButton asChild label="How it works" icon={CircleHelpIcon} tone="subtle" size="sm">
+          <IconButton
+            asChild
+            label="How it works"
+            icon={<CircleHelpIcon />}
+            tone="subtle"
+            size="sm"
+          >
             <Link href={ROUTES.playWelcome} />
           </IconButton>
           <CountChip>

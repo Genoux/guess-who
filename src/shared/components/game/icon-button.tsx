@@ -1,9 +1,8 @@
 "use client";
 
 import { cva, type VariantProps } from "class-variance-authority";
-import type { LucideIcon } from "lucide-react";
 import { Slot } from "radix-ui";
-import type { ComponentProps, ReactElement } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { gameCn } from "./game-cn";
 import { GameTooltip } from "./game-tooltip";
 
@@ -30,7 +29,8 @@ export type IconButtonProps = Omit<ComponentProps<"button">, "children" | "aria-
   VariantProps<typeof iconButtonVariants> & {
     /** Accessible name, also shown as the tooltip, e.g. "Close" or "How it works". */
     label: string;
-    icon: LucideIcon;
+    /** A rendered icon, e.g. `<XIcon />`: an element, so Server Components can pass it too. */
+    icon: ReactNode;
     /** Render the single child (an empty Next Link) instead of a button; the icon goes inside it. */
     asChild?: boolean;
     children?: ReactElement;
@@ -39,7 +39,7 @@ export type IconButtonProps = Omit<ComponentProps<"button">, "children" | "aria-
 /** Round icon-only control with its label as a tooltip. */
 export function IconButton({
   label,
-  icon: Icon,
+  icon,
   tone,
   size,
   asChild = false,
@@ -48,7 +48,11 @@ export function IconButton({
   type,
   ...props
 }: IconButtonProps) {
-  const icon = <Icon aria-hidden strokeWidth={1.75} />;
+  const glyph = (
+    <span aria-hidden className="contents [&_svg]:stroke-[1.75]">
+      {icon}
+    </span>
+  );
   const classes = gameCn(iconButtonVariants({ tone, size }), className);
 
   if (asChild && children) {
@@ -56,7 +60,7 @@ export function IconButton({
       <GameTooltip label={label}>
         <Slot.Root aria-label={label} className={classes} {...props}>
           <Slot.Slottable>{children}</Slot.Slottable>
-          {icon}
+          {glyph}
         </Slot.Root>
       </GameTooltip>
     );
@@ -65,7 +69,7 @@ export function IconButton({
   return (
     <GameTooltip label={label}>
       <button aria-label={label} className={classes} type={type ?? "button"} {...props}>
-        {icon}
+        {glyph}
       </button>
     </GameTooltip>
   );

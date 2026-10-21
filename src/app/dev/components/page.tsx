@@ -209,7 +209,7 @@ export default function GameComponentsPage() {
               <CloseButton label="Back to album" />
             </Example>
             <Example code={`IconButton tone="subtle" size="sm"`}>
-              <IconButton label="How it works" icon={CircleHelpIcon} tone="subtle" size="sm" />
+              <IconButton label="How it works" icon={<CircleHelpIcon />} tone="subtle" size="sm" />
             </Example>
           </div>
           <div className="flex flex-wrap items-center gap-x-7 gap-y-8 rounded-stage bg-game-ink p-6">
