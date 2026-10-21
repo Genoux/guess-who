@@ -152,7 +152,8 @@ Never commit, push or open a PR unless explicitly asked.
 
 ### Known gaps
 
-- Admin screens (games, people, settings, Deel) come after the player flow is reviewed.
+- Sentry is wired by the template but has no project yet: `NEXT_PUBLIC_SENTRY_DSN` stays empty until
+  the owner creates one. Errors still get `ERR_xxxx` ids and logs.
 
 ### Learned facts
 
