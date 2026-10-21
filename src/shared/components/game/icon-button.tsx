@@ -15,6 +15,7 @@ const iconButtonVariants = cva(
         dark: "bg-game-ink-soft text-white hover:bg-game-ink-hover",
         "on-color": "bg-game-ink/12 text-game-ink hover:bg-game-ink/20",
         subtle: "text-game-muted hover:bg-game-sidebar hover:text-game-ink",
+        outline: "border border-game-card-edge bg-game-surface text-game-ink hover:bg-game-sidebar",
       },
       size: {
         default: "size-11 [&_svg]:size-4.5",
