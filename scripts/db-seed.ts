@@ -2,17 +2,13 @@
 import { Pool } from "@neondatabase/serverless";
 import { loadEnvConfig } from "@next/env";
 import { drizzle } from "drizzle-orm/neon-serverless";
+import { assertNotProduction } from "../src/db/assert-not-production";
 import * as schema from "../src/db/schema";
 
-const PRODUCTION_ENDPOINT = "ep-wandering-truth";
-
-loadEnvConfig(process.cwd());
+loadEnvConfig(process.cwd(), true);
 
 const url = process.env.DATABASE_URL;
-if (!url) throw new Error("DATABASE_URL is not set");
-if (new URL(url).hostname.includes(PRODUCTION_ENDPOINT)) {
-  throw new Error("Refusing to seed: DATABASE_URL points at the production endpoint");
-}
+assertNotProduction(url);
 
 const teams = [
   { name: "Creative", color: "#46BDF0", tint: "#B5E5F9", sortOrder: 1 },

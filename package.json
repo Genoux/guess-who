@@ -14,7 +14,7 @@
     "format": "biome format --write .",
     "lint:arch": "depcruise src --config .dependency-cruiser.cjs",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "bun scripts/db-migrate.ts",
     "db:check": "drizzle-kit check",
     "db:seed": "bun scripts/db-seed.ts",
     "ib:sync": "ib sync",

@@ -1,10 +1,11 @@
 import { type AppErrorKind, isAppError } from "@inbeat/core/errors";
 import { describe, expect, it } from "vitest";
+import type { Game } from "../types";
 import { assertCanWriteClue } from "./assert-can-write-clue";
 
 const releaseAt = new Date("2026-11-06T13:00:00Z");
 const allowed = {
-  game: { id: "game_1", welcomerPersonId: "welcomer" },
+  game: { id: "game_1", welcomerPersonId: "welcomer", status: "active" as Game["status"] },
   clue: { gameId: "game_1", number: 2, releaseAt },
   viewerPersonId: "welcomer",
   now: new Date("2026-11-06T12:59:59Z"),
@@ -29,6 +30,12 @@ describe("assertCanWriteClue", () => {
     expect(() =>
       assertCanWriteClue({ ...allowed, clue: { ...allowed.clue, gameId: "game_2" } }),
     ).toThrow(failsWith("forbidden"));
+  });
+
+  it.each(["found", "revealed"] as const)("refuses once the game is %s", (status) => {
+    expect(() => assertCanWriteClue({ ...allowed, game: { ...allowed.game, status } })).toThrow(
+      failsWith("conflict"),
+    );
   });
 
   it("forbids the generated team clue", () => {

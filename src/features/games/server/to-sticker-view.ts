@@ -1,5 +1,5 @@
 import "server-only";
-import type { Person } from "../types";
+import type { Person } from "@/db/schema";
 
 export type StickerViewer = {
   personId: string;

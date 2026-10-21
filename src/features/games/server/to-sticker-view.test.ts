@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Person } from "../types";
+import type { Person } from "@/db/schema";
 import { toStickerView } from "./to-sticker-view";
 
 const person: Person = {

@@ -2,6 +2,7 @@ import {
   appUrlEnv,
   clerkClientEnv,
   clerkServerEnv,
+  csv,
   dbEnv,
   sentryClientEnv,
 } from "@inbeat/core/env";
@@ -13,6 +14,8 @@ export const env = createEnv({
     ...appUrlEnv,
     ...dbEnv,
     ...clerkServerEnv,
+    // Who may sign in without an invite (an admin-created person or game).
+    ALLOWED_EMAIL_DOMAINS: csv().optional().default(["inbeat.agency"]),
   },
   client: {
     ...sentryClientEnv,

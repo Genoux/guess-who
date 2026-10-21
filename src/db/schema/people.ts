@@ -38,3 +38,5 @@ export const people = pgTable(
     index("people_team_id_idx").on(t.teamId),
   ],
 );
+
+export type Person = typeof people.$inferSelect;
