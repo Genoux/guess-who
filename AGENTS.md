@@ -154,8 +154,25 @@ Never commit, push or open a PR unless explicitly asked.
 
 - Sentry is wired by the template but has no project yet: `NEXT_PUBLIC_SENTRY_DSN` stays empty until
   the owner creates one. Errors still get `ERR_xxxx` ids and logs.
+- Clerk runs on accountless development keys (written to `.env.local` by `clerk init`) until the
+  owner claims the app and adds Slack, the allowlist and the `metadata` session claim. Until the
+  claim exists every user resolves to `member`.
 
 ### Learned facts
 
 - New hires are not a Clerk role: they are the `player` of a game. Welcomers are the `welcomer`
   of a game. Clerk roles are only `admin` and `member`.
+- `getViewerPerson()` creates or links the viewer's `people` row on first request (Clerk user id,
+  else verified primary email) and links unclaimed games whose `player_email` matches. A row
+  already linked to another Clerk user is never moved; an admin clears `clerk_user_id` first.
+- Emails (`people.email`, `games.player_email`) are stored normalized with `normalizeEmail`.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
