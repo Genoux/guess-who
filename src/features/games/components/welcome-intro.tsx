@@ -7,7 +7,6 @@ import { ClueCard } from "@/shared/components/game/clue-card";
 import { CountChip } from "@/shared/components/game/count-chip";
 import { GameButton } from "@/shared/components/game/game-button";
 import { GAME_EASE } from "@/shared/components/game/game-motion";
-import { GameStage } from "@/shared/components/game/game-stage";
 import { gameToast } from "@/shared/components/game/game-toaster";
 import { Stepper } from "@/shared/components/game/stepper";
 import { Sticker } from "@/shared/components/game/sticker";
@@ -21,35 +20,27 @@ type WelcomeIntroProps = {
   fan: StickerPerson[];
   /** Two team colors for the demo stickers. */
   colors: [string | undefined, string | undefined];
+  /** Dev preview: finishing replays the intro instead of saving and leaving. */
+  preview?: boolean;
 };
 
 const FALLBACK_COLOR = "#FF97AB";
 
-/** A card dealt into place: rises, fades in and settles at its angle, after `delay` seconds. */
-function Dealt({
-  children,
-  delay,
-  rot = 0,
-  x = 0,
-}: {
-  children: ReactNode;
-  delay: number;
-  rot?: number;
-  x?: number;
-}) {
+/** One card dealt into its slot: rises and fades in after `order` beats. */
+function Dealt({ children, order = 0 }: { children: ReactNode; order?: number }) {
   return (
     <motion.div
-      className="absolute"
-      initial={{ opacity: 0, y: 40, x, rotate: rot - 6 }}
-      animate={{ opacity: 1, y: 0, x, rotate: rot }}
-      transition={{ duration: 0.5, delay, ease: GAME_EASE }}
+      className="flex-none"
+      initial={{ opacity: 0, y: 28 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, delay: 0.1 + order * 0.12, ease: GAME_EASE }}
     >
       {children}
     </motion.div>
   );
 }
 
-/** Switches a demo sticker from one mode to another once, so the step shows the real mechanic. */
+/** Plays a demo sticker's change once, so the step shows the real mechanic. */
 function useDemoMode(from: StickerMode, to: StickerMode, afterMs: number) {
   const [mode, setMode] = useState<StickerMode>(from);
   useEffect(() => {
@@ -59,65 +50,72 @@ function useDemoMode(from: StickerMode, to: StickerMode, afterMs: number) {
   return mode;
 }
 
-function DealArt({ fan }: { fan: StickerPerson[] }) {
-  const placements = [
-    { x: -150, rot: -8 },
-    { x: 150, rot: 7 },
-    { x: 0, rot: -1 },
-  ];
+/** Keeps a row of full-size cards inside a phone screen. */
+function Row({ children }: { children: ReactNode }) {
   return (
-    <>
+    <div className="flex origin-center scale-[0.56] items-center justify-center gap-5 sm:scale-100">
+      {children}
+    </div>
+  );
+}
+
+function AlbumArt({ fan }: { fan: StickerPerson[] }) {
+  const angles = [-3, 1, 3];
+  return (
+    <Row>
       {fan.slice(0, 3).map((person, index) => (
-        <Dealt
-          key={`${person.name}-${person.number}`}
-          delay={0.1 + index * 0.14}
-          {...placements[index]}
-        >
-          <Sticker person={person} mode="collected" tilt={false} celebrateChanges={false} />
+        <Dealt key={`${person.name}-${person.number}`} order={index}>
+          <Sticker
+            person={person}
+            mode="collected"
+            rot={angles[index]}
+            tilt={false}
+            celebrateChanges={false}
+          />
         </Dealt>
       ))}
-    </>
+    </Row>
   );
 }
 
 function CollectArt({ person }: { person: StickerPerson }) {
-  const mode = useDemoMode("locked", "collected", 1100);
+  const mode = useDemoMode("locked", "collected", 1200);
   return (
-    <Dealt delay={0.1}>
-      <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-4">
+      <Dealt>
         <Sticker person={person} mode={mode} tilt={false} />
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={mode === "collected" ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
-          transition={{ duration: 0.35, delay: 0.5, ease: GAME_EASE }}
-        >
-          <CountChip variant="yellow" size="sm">
-            +1 sticker
-          </CountChip>
-        </motion.div>
-      </div>
-    </Dealt>
+      </Dealt>
+      <motion.div
+        initial={false}
+        animate={mode === "collected" ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+        transition={{ duration: 0.35, delay: mode === "collected" ? 0.55 : 0, ease: GAME_EASE }}
+      >
+        <CountChip variant="yellow" size="sm">
+          +1 sticker
+        </CountChip>
+      </motion.div>
+    </div>
   );
 }
 
 function CluesArt() {
   return (
-    <>
-      <Dealt delay={0.1} x={-120} rot={-8}>
+    <Row>
+      <Dealt order={0}>
         <ClueCard state="open" label="Day 3" text="Always their team." />
       </Dealt>
-      <Dealt delay={0.24} x={0} rot={0}>
-        <ClueCard state="new" label="Day 6" text="Then hints, from them." />
+      <Dealt order={1}>
+        <ClueCard state="new" label="Day 6" text="Then a hint, from them." />
       </Dealt>
-      <Dealt delay={0.38} x={120} rot={8}>
+      <Dealt order={2}>
         <ClueCard state="down" label="Day 9" />
       </Dealt>
-    </>
+    </Row>
   );
 }
 
 function WinArt({ color }: { color: string }) {
-  const mode = useDemoMode("collected", "found", 1000);
+  const mode = useDemoMode("collected", "found", 1100);
   const welcomer: StickerPerson = {
     name: "Your welcomer",
     number: "?",
@@ -127,19 +125,23 @@ function WinArt({ color }: { color: string }) {
     ask: "Coffee is on me.",
   };
   return (
-    <Dealt delay={0.1} rot={-2}>
+    <Dealt>
       <Sticker person={welcomer} mode={mode} tilt={false} />
     </Dealt>
   );
 }
 
-/** Four short steps on the player's first visit, each showing the real game pieces. */
-export function WelcomeIntro({ firstName, fan, colors }: WelcomeIntroProps) {
+/** Four short steps on the player's first visit, each playing the real game pieces. */
+export function WelcomeIntro({ firstName, fan, colors, preview = false }: WelcomeIntroProps) {
   const [step, setStep] = useState(0);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
   const finish = () => {
+    if (preview) {
+      setStep(0);
+      return;
+    }
     startTransition(async () => {
       const result = await markIntroSeen({});
       if (!result.ok) {
@@ -150,17 +152,17 @@ export function WelcomeIntro({ firstName, fan, colors }: WelcomeIntroProps) {
     });
   };
 
-  const collectPerson = fan[0];
+  const collectPerson = fan[1] ?? fan[0];
   const steps: { art: ReactNode; title: string; lead: string }[] = [
     {
-      art: <DealArt fan={fan} />,
+      art: <AlbumArt fan={fan} />,
       title: `Welcome, ${firstName}.`,
       lead: "Your first two weeks come with a small game.",
     },
     {
       art: collectPerson ? <CollectArt person={collectPerson} /> : null,
       title: "Collect the team.",
-      lead: "Chat with someone, write one thing you learned, get their sticker.",
+      lead: "Chat with someone, write one thing you learned, and their sticker is yours.",
     },
     {
       art: <CluesArt />,
@@ -177,41 +179,49 @@ export function WelcomeIntro({ firstName, fan, colors }: WelcomeIntroProps) {
   const last = step === steps.length - 1;
 
   return (
-    <GameStage middle className="gap-8">
-      <div className="flex w-full max-w-140 flex-col items-center gap-8">
-        <div className="relative flex h-72 w-full items-center justify-center" aria-hidden>
+    <div className="flex min-h-dvh w-full flex-col">
+      <header className="flex items-center justify-between px-6 pt-6 md:px-10 md:pt-8">
+        <span className="font-game-serif text-logo">The Album</span>
+        {last ? null : (
+          <GameButton variant="link" onClick={finish} disabled={pending}>
+            Skip
+          </GameButton>
+        )}
+      </header>
+
+      <main className="flex flex-1 flex-col items-center justify-center gap-10 px-6 py-10 text-center">
+        <div className="flex h-75 w-full items-center justify-center overflow-x-clip" aria-hidden>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={step}
-              className="relative flex h-full w-full items-center justify-center"
-              exit={{ opacity: 0, transition: { duration: 0.18 } }}
+              className="flex items-center justify-center"
+              exit={{ opacity: 0, y: -12, transition: { duration: 0.2, ease: GAME_EASE } }}
             >
               {current?.art}
             </motion.div>
           </AnimatePresence>
         </div>
 
-        <div className="flex min-h-34 w-full flex-col items-center">
+        <div className="flex min-h-32 w-full max-w-130 flex-col items-center">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={step}
               className="flex flex-col items-center gap-3"
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8, transition: { duration: 0.18 } }}
-              transition={{ duration: 0.4, delay: 0.15, ease: GAME_EASE }}
+              exit={{ opacity: 0, transition: { duration: 0.15 } }}
+              transition={{ duration: 0.45, delay: 0.3, ease: GAME_EASE }}
             >
-              <h1 className="max-w-120 text-balance font-game-serif text-hero-md">
-                {current?.title}
-              </h1>
-              <p className="max-w-110 text-balance text-game-muted text-lead">{current?.lead}</p>
+              <h1 className="text-balance font-game-serif text-hero-md">{current?.title}</h1>
+              <p className="text-balance text-game-muted text-lead">{current?.lead}</p>
             </motion.div>
           </AnimatePresence>
         </div>
+      </main>
 
+      <footer className="flex flex-col items-center gap-6 px-6 pb-12 md:pb-16">
         <Stepper count={steps.length} current={step + 1} />
-
-        <div className="flex min-h-13 flex-wrap items-center justify-center gap-3">
+        <div className="flex items-center justify-center gap-3">
           {step > 0 ? (
             <GameButton variant="light" onClick={() => setStep(step - 1)}>
               Back
@@ -219,7 +229,7 @@ export function WelcomeIntro({ firstName, fan, colors }: WelcomeIntroProps) {
           ) : null}
           {last ? (
             <GameButton onClick={finish} disabled={pending}>
-              Open my album
+              {preview ? "Replay" : "Open my album"}
             </GameButton>
           ) : (
             <GameButton onClick={() => setStep(step + 1)}>
@@ -227,13 +237,7 @@ export function WelcomeIntro({ firstName, fan, colors }: WelcomeIntroProps) {
             </GameButton>
           )}
         </div>
-
-        {last ? null : (
-          <GameButton variant="link" onClick={finish} disabled={pending}>
-            Skip
-          </GameButton>
-        )}
-      </div>
-    </GameStage>
+      </footer>
+    </div>
   );
 }

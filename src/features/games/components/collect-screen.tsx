@@ -18,7 +18,7 @@ import { collectStickerSchema, NOTE_MAX } from "../schemas";
 
 /**
  * Meet someone, write what you learned, stick them in. The sticker stays mounted while the
- * server swaps locked for collected, so it flips and throws its stars in place.
+ * server swaps locked for collected, so it flips and throws its confetti in place.
  */
 export function CollectScreen({ target }: { target: CollectTarget }) {
   const [note, setNote] = useState("");

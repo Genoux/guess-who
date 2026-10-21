@@ -6,12 +6,12 @@ import { Pop } from "@/shared/components/game/pop";
 import { Sticker } from "@/shared/components/game/sticker";
 import type { StickerMode } from "@/shared/components/game/sticker-view";
 import { celebrate } from "@/shared/lib/celebrate";
-import { noor } from "./fixtures";
+import { noor } from "../../_lib/fixtures";
 import { PropCode } from "./prop-code";
 
 const STAMP_ORDER: StickerMode[] = ["collected", "maybe", "ruled", "found"];
 
-/** Flip, stamp, pop, tilt and stars, all live. */
+/** Flip, stamp, pop, tilt and confetti, all live. */
 export function EffectsDemo() {
   const [mode, setMode] = useState<StickerMode>("locked");
   const [popKey, setPopKey] = useState(0);

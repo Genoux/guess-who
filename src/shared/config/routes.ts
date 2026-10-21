@@ -13,4 +13,5 @@ export const ROUTES = {
   card: "/card",
   notOnTheList: "/not-on-the-list",
   devComponents: "/dev/components",
+  devWelcome: "/dev/welcome",
 } as const;

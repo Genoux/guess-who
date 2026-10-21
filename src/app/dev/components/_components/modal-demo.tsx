@@ -4,7 +4,7 @@ import { useState } from "react";
 import { GameButton } from "@/shared/components/game/game-button";
 import { GameModal } from "@/shared/components/game/game-modal";
 import { Sticker } from "@/shared/components/game/sticker";
-import { jonah } from "./fixtures";
+import { jonah } from "../../_lib/fixtures";
 
 /** The guess modal: answering "yes" for the wrong person rules them out. */
 export function ModalDemo() {

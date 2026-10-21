@@ -14,14 +14,14 @@ import { Stepper } from "@/shared/components/game/stepper";
 import { Sticker } from "@/shared/components/game/sticker";
 import type { StickerMode } from "@/shared/components/game/sticker-view";
 import { env } from "@/shared/config/env";
+import { isCatalogueEnabled } from "../_lib/catalogue-access";
+import { ana, jonah, noor } from "../_lib/fixtures";
 import { CatalogueSection } from "./_components/catalogue-section";
 import { EffectsDemo } from "./_components/effects-demo";
 import { Example } from "./_components/example";
-import { ana, jonah, noor } from "./_components/fixtures";
 import { ModalDemo } from "./_components/modal-demo";
 import { PropTable } from "./_components/prop-table";
 import { ToastDemo } from "./_components/toast-demo";
-import { isCatalogueEnabled } from "./_lib/catalogue-access";
 
 export const metadata: Metadata = {
   title: "Game components",
@@ -100,7 +100,7 @@ export default function GameComponentsPage() {
                 name: "mode",
                 values: "locked · collected · maybe · ruled · found",
                 notes:
-                  "Locked shows the ask-me-about line on the team tint. Unlocking flips it and throws stars.",
+                  "Locked shows the ask-me-about line on the team tint. Unlocking flips it and throws confetti.",
               },
               {
                 name: "size",
@@ -112,7 +112,7 @@ export default function GameComponentsPage() {
               {
                 name: "celebrateChanges",
                 values: "true · false",
-                notes: "Stars on unlock and on found",
+                notes: "Confetti on unlock and on found",
               },
               {
                 name: "celebratePalette",
@@ -383,7 +383,7 @@ export default function GameComponentsPage() {
               {
                 name: "celebrate",
                 values: "origin, { kind?, palette? }",
-                notes: "canvas-confetti stars, skipped for reduced motion",
+                notes: "canvas-confetti, skipped for reduced motion",
               },
               { name: "Tilt", values: "disabled?", notes: "react-parallax-tilt, 10°, scale 1.03" },
               { name: "Pop", values: "delay?", notes: "motion pop-in for titles and actions" },

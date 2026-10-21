@@ -25,7 +25,7 @@ export type StickerProps = {
   rot?: number;
   /** Hover tilt; off for stickers fanned out behind another one. */
   tilt?: boolean;
-  /** Star burst when the sticker unlocks or turns found. */
+  /** Confetti when the sticker unlocks or turns found. */
   celebrateChanges?: boolean;
   /** Star colors for the background the sticker sits on: light, ink (dark) or orange (found). */
   celebratePalette?: CelebratePalette;
@@ -38,25 +38,22 @@ const stickerVariants = cva("relative flex-none text-left text-game-ink", {
   },
 });
 
-// Faces swap visibility halfway through the 640ms flip. Only the visible face is ever styled:
-// a filter or opacity on a 3D face breaks backface hiding and mirrors its text.
-const faceVariants = cva(
-  "absolute inset-0 flex flex-col bg-game-surface backface-hidden transition-[visibility] duration-0 delay-320 motion-reduce:delay-0",
-  {
-    variants: {
-      size: {
-        sm: "gap-2.5 rounded-sticker p-2",
-        lg: "gap-3 rounded-sticker-lg p-2.5",
-      },
-      shadow: {
-        edge: "shadow-edge",
-        ink: "shadow-ink",
-        maybe: "shadow-ink-maybe",
-        found: "shadow-ink-found",
-      },
+// Both faces stay rendered and the 3D turn hides whichever faces away, so the content turns with the
+// card. Never put a filter or opacity on a face: it breaks backface hiding and mirrors the text.
+const faceVariants = cva("absolute inset-0 flex flex-col bg-game-surface backface-hidden", {
+  variants: {
+    size: {
+      sm: "gap-2.5 rounded-sticker p-2",
+      lg: "gap-3 rounded-sticker-lg p-2.5",
+    },
+    shadow: {
+      edge: "shadow-edge",
+      ink: "shadow-ink",
+      maybe: "shadow-ink-maybe",
+      found: "shadow-ink-found",
     },
   },
-);
+});
 
 const artVariants = cva("relative flex min-h-0 flex-1 overflow-hidden", {
   variants: {
@@ -128,12 +125,7 @@ export function Sticker({
             transition={{ duration: 0.64, ease: FLIP_EASE }}
             style={{ transformPerspective: 1200 }}
           >
-            <div
-              className={gameCn(
-                faceVariants({ size, shadow: "edge" }),
-                view.open ? "invisible" : "visible",
-              )}
-            >
+            <div className={faceVariants({ size, shadow: "edge" })}>
               <div
                 className={gameCn(
                   artVariants({ size }),
@@ -169,11 +161,7 @@ export function Sticker({
             </div>
 
             <div
-              className={gameCn(
-                faceVariants({ size, shadow: BACK_SHADOW[mode] }),
-                "rotate-y-180",
-                view.open ? "visible" : "invisible",
-              )}
+              className={gameCn(faceVariants({ size, shadow: BACK_SHADOW[mode] }), "rotate-y-180")}
             >
               <div
                 className={gameCn(
