@@ -8,6 +8,8 @@
 // --as-welcomer: (re)creates a game where <email> is the secret welcomer of the seeded new hire
 //   Léa Dubois, with no clues written yet.
 // Both upsert 20 seeded teammates with filled cards across the five teams.
+// --player also collects five stickers (two on the maybe list, one wrong guess) so the album looks
+//   mid-game; pass --fresh for an empty album.
 import { parseArgs } from "node:util";
 import { normalizeEmail } from "@inbeat/core/email";
 import { Pool } from "@neondatabase/serverless";
@@ -33,6 +35,7 @@ const { values } = parseArgs({
     "as-welcomer": { type: "string" },
     welcomer: { type: "string", default: "ana.ferreira@example.com" },
     day: { type: "string" },
+    fresh: { type: "boolean", default: false },
   },
 });
 
@@ -167,6 +170,43 @@ function todayInGameZone(): string {
 
 const pool = new Pool({ connectionString: url });
 const db = drizzle(pool, { schema });
+
+// Mid-game progress for a --player game: what the player learned, who they suspect, one miss.
+const PROGRESS = [
+  { name: "Maya Chen", note: "Runs a supper club every second Friday." },
+  { name: "Noor Haddad", note: "Keeps a ranked list of croissants from 14 cities." },
+  {
+    name: "Ana Ferreira",
+    note: "Started cello lessons in January, practises at 6 am.",
+    maybe: true,
+  },
+  { name: "Mateo Ruiz", note: "Has never owned a car. Bikes everywhere.", maybe: true },
+  { name: "Jonah Park", note: "Tracks every meal he has eaten since 2019.", wrongGuess: true },
+];
+
+async function seedProgress(gameId: string, welcomerEmail: string) {
+  const rows = await db
+    .select({ id: schema.people.id, email: schema.people.email })
+    .from(schema.people)
+    .where(
+      inArray(
+        schema.people.email,
+        PROGRESS.map(({ name }) => emailOf(name)),
+      ),
+    );
+  const idOf = new Map(rows.map((row) => [row.email, row.id]));
+  for (const entry of PROGRESS) {
+    const email = emailOf(entry.name);
+    const personId = idOf.get(email);
+    if (!personId) continue;
+    await db.insert(schema.collections).values({ gameId, personId, note: entry.note });
+    if (entry.maybe) await db.insert(schema.shortlists).values({ gameId, personId });
+    // Never rule out the real welcomer: that guess would have ended the game.
+    if (entry.wrongGuess && email !== welcomerEmail) {
+      await db.insert(schema.guesses).values({ gameId, personId, correct: false });
+    }
+  }
+}
 
 try {
   await db.insert(schema.teams).values(teams).onConflictDoNothing();
@@ -323,6 +363,10 @@ try {
       releaseAt: clueReleaseAt(startDate, number),
     })),
   );
+
+  if (player && !values.fresh) {
+    await seedProgress(game.id, normalizeEmail(values.welcomer ?? ""));
+  }
 
   console.info(
     [

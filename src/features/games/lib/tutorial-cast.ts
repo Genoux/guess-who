@@ -40,6 +40,6 @@ export const TUTORIAL_WELCOMER: StickerPerson = {
   team: "Somewhere close",
   color: "#FFC592",
   tint: "#FFE8D3",
-  ask: "Coffee is on me.",
+  ask: "Ask me anything",
   photoUrl: portrait(58),
 };

@@ -47,7 +47,7 @@ export function StickerStampMark({ stamp, size }: { stamp: StickerStamp; size: S
     >
       {stamp === "maybe" ? "Maybe" : null}
       {stamp === "ruled" ? <XIcon aria-hidden strokeWidth={2.5} /> : null}
-      {stamp === "found" ? "Found you" : null}
+      {stamp === "found" ? "Found" : null}
     </motion.span>
   );
 }

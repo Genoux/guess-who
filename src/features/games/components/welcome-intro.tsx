@@ -8,6 +8,7 @@ import { ClueCard } from "@/shared/components/game/clue-card";
 import { CountChip } from "@/shared/components/game/count-chip";
 import { GameAvatar } from "@/shared/components/game/game-avatar";
 import { GameButton } from "@/shared/components/game/game-button";
+import { gameCn } from "@/shared/components/game/game-cn";
 import { GAME_EASE } from "@/shared/components/game/game-motion";
 import { gameToast } from "@/shared/components/game/game-toaster";
 import { Stepper } from "@/shared/components/game/stepper";
@@ -22,6 +23,8 @@ type WelcomeIntroProps = {
   /** Dev preview: finishing replays the intro instead of saving and leaving. */
   preview?: boolean;
 };
+
+const SLOT = "w-40 px-0";
 
 /** One card dealt into its slot: rises and fades in after `order` beats. */
 function Dealt({ children, order = 0 }: { children: ReactNode; order?: number }) {
@@ -159,7 +162,7 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
     {
       art: <CollectArt person={TUTORIAL_ALBUM[2] ?? TUTORIAL_WELCOMER} />,
       title: "Collect the team.",
-      lead: "Chat with someone, write one thing you learned, and their sticker is yours.",
+      lead: "Chat with someone, note one thing you learned, and their card goes into your album.",
     },
     {
       art: <CluesArt />,
@@ -168,8 +171,8 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
     },
     {
       art: <WinArt />,
-      title: "Find them, win your card.",
-      lead: "Then you grab a virtual coffee together, and you join the album.",
+      title: "Find your welcomer.",
+      lead: "Guess before day 14, or we’ll tell you on the day. Then your own card joins the album.",
     },
   ];
   const current = steps[step] ?? steps[0];
@@ -198,8 +201,8 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
           </AnimatePresence>
         </div>
 
-        {/* Reserves the tallest copy so the buttons never jump between steps. */}
-        <div className="mt-10 flex min-h-36 w-full max-w-180 flex-col items-center sm:min-h-21">
+        {/* Fixed height for the tallest copy, so the buttons and dots never move between steps. */}
+        <div className="mt-10 flex h-48 w-full max-w-220 flex-col items-center sm:h-28">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={step}
@@ -216,18 +219,23 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
         </div>
 
         <div className="mt-8 flex flex-col items-center gap-6">
-          <div className="flex items-center justify-center gap-3">
-            {step > 0 ? (
-              <GameButton variant="light" onClick={() => setStep(step - 1)}>
-                Back
-              </GameButton>
-            ) : null}
+          {/* Two fixed slots: Back stays in place (hidden on the first step) and labels never resize. */}
+          <div className="grid grid-cols-2 gap-3">
+            <GameButton
+              variant="light"
+              className={gameCn(SLOT, step === 0 && "invisible")}
+              aria-hidden={step === 0}
+              tabIndex={step === 0 ? -1 : undefined}
+              onClick={() => setStep(Math.max(0, step - 1))}
+            >
+              Back
+            </GameButton>
             {last ? (
-              <GameButton onClick={finish} disabled={pending}>
+              <GameButton className={SLOT} onClick={finish} disabled={pending}>
                 {preview ? "Replay" : "Open my album"}
               </GameButton>
             ) : (
-              <GameButton onClick={() => setStep(step + 1)}>
+              <GameButton className={SLOT} onClick={() => setStep(step + 1)}>
                 {step === 0 ? "How it works" : "Next"}
               </GameButton>
             )}

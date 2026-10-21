@@ -76,7 +76,9 @@ export function FoundScreen({ found, welcomer, foundOnDay, cluesUsed }: FoundScr
             {found ? `It was ${welcomer.firstName}.` : `Time’s up. It was ${welcomer.firstName}.`}
           </h1>
           <p className="text-lead">
-            {found ? foundLead(foundOnDay, cluesUsed) : "You were close. Still worth a coffee."}
+            {found
+              ? foundLead(foundOnDay, cluesUsed)
+              : "You were close. Now you know who to say hi to."}
           </p>
         </Pop>
         <Pop delay={0.85} className="flex flex-wrap items-center justify-center gap-4">

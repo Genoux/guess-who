@@ -224,7 +224,7 @@ export function WelcomerFlow({ desk }: { desk: WelcomerDesk }) {
           <p className="text-game-muted text-lead">
             {desk.status === "active"
               ? `We’ll send them for you, and tell you the moment ${desk.playerFirstName} finds you.`
-              : `Time for that coffee with ${desk.playerFirstName}.`}
+              : `${desk.playerFirstName} knows it was you.`}
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-4">
