@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { gameCn } from "./game-cn";
+import { GameMotionConfig } from "./game-motion-config";
 import { GameToaster } from "./game-toaster";
 import "./game-fonts.css";
 
@@ -16,7 +17,7 @@ const TONES = {
   found: "bg-game-found text-game-ink",
 } as const;
 
-/** Root of every player screen: Fieldtrip fonts, game background and the game toaster. */
+/** Root of every player screen: fonts, background, reduced-motion config and the toaster. */
 export function GameShell({ children, tone = "default", className }: GameShellProps) {
   return (
     <div
@@ -26,7 +27,7 @@ export function GameShell({ children, tone = "default", className }: GameShellPr
         className,
       )}
     >
-      {children}
+      <GameMotionConfig>{children}</GameMotionConfig>
       <GameToaster />
     </div>
   );

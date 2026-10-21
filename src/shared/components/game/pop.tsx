@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
 import type { ReactNode } from "react";
 
 type PopProps = {
@@ -10,13 +10,12 @@ type PopProps = {
   className?: string;
 };
 
-/** Pops content in (scale 0.6 to 1.06 to 1) when it mounts; appears at once for reduced motion. */
+/** Pops content in (scale 0.6 to 1.06 to 1) on mount; reduced motion keeps only the fade. */
 export function Pop({ children, delay = 0, className }: PopProps) {
-  const reduceMotion = useReducedMotion();
   return (
     <motion.div
       className={className}
-      initial={reduceMotion ? false : { opacity: 0, scale: 0.6 }}
+      initial={{ opacity: 0, scale: 0.6 }}
       animate={{ opacity: 1, scale: [0.6, 1.06, 1] }}
       transition={{ duration: 0.42, delay, times: [0, 0.6, 1], ease: "easeOut" }}
     >

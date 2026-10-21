@@ -1,9 +1,10 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { Dialog } from "radix-ui";
 import type { ReactNode } from "react";
 import { gameCn } from "./game-cn";
+import { GAME_EASE } from "./game-motion";
 
 type GameModalProps = {
   open: boolean;
@@ -17,8 +18,6 @@ type GameModalProps = {
   className?: string;
 };
 
-const EASE = [0.2, 0.8, 0.2, 1] as const;
-
 /** Centered game dialog: a sticker on the stage, a big question and the actions. */
 export function GameModal({
   open,
@@ -29,9 +28,6 @@ export function GameModal({
   children,
   className,
 }: GameModalProps) {
-  const reduceMotion = useReducedMotion();
-  const duration = reduceMotion ? 0 : 0.32;
-
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <AnimatePresence>
@@ -43,7 +39,7 @@ export function GameModal({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: reduceMotion ? 0 : 0.2 }}
+                transition={{ duration: 0.2 }}
               />
             </Dialog.Overlay>
             <Dialog.Content
@@ -59,7 +55,7 @@ export function GameModal({
                 initial={{ opacity: 0, x: "-50%", y: "-46%" }}
                 animate={{ opacity: 1, x: "-50%", y: "-50%" }}
                 exit={{ opacity: 0, x: "-50%", y: "-48%" }}
-                transition={{ duration, ease: EASE }}
+                transition={{ duration: 0.32, ease: GAME_EASE }}
               >
                 {stage ? (
                   <div className="flex w-full justify-center rounded-stage bg-game-sidebar px-4 py-8">

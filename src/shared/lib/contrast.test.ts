@@ -22,6 +22,11 @@ describe("contrastRatio", () => {
   it("keeps the muted text readable on the game background", () => {
     expect(contrastRatio("#5C5C55", "#F7F7F3")).toBeGreaterThanOrEqual(4.5);
   });
+
+  it("keeps the game error color readable on the surface and the background", () => {
+    expect(contrastRatio("#B8320C", "#FFFFFF")).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio("#B8320C", "#F7F7F3")).toBeGreaterThanOrEqual(4.5);
+  });
 });
 
 describe("readableOn", () => {

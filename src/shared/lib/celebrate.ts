@@ -1,4 +1,7 @@
+import { createLogger } from "@inbeat/core/logger";
 import type { Options } from "canvas-confetti";
+
+const log = createLogger({ level: "debug", bindings: { module: "celebrate" } });
 
 /** A point in viewport fractions: 0,0 is the top left, 1,1 the bottom right. */
 export type CelebrateOrigin = { x: number; y: number };
@@ -60,12 +63,21 @@ export function originFromElement(element: Element): CelebrateOrigin {
   });
 }
 
-/** Fires a star burst. Browser only; does nothing when the user prefers reduced motion. */
+/**
+ * Fires a star burst. Browser only; does nothing when the user prefers reduced motion. Never
+ * rejects: the stars are decorative, so a failed chunk load (a stale deploy) is only logged.
+ */
 export async function celebrate(
   origin: CelebrateOrigin,
   options?: CelebrateOptions,
 ): Promise<void> {
   if (typeof window === "undefined") return;
-  const { default: confetti } = await import("canvas-confetti");
-  await confetti(buildCelebrateOptions(origin, options));
+  try {
+    const { default: confetti } = await import("canvas-confetti");
+    await confetti(buildCelebrateOptions(origin, options));
+  } catch (error) {
+    log.debug("celebration skipped", {
+      reason: error instanceof Error ? error.name : "unknown",
+    });
+  }
 }

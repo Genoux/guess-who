@@ -14,6 +14,8 @@ type TiltProps = {
 
 /** Hover tilt for stickers and cards: 10 degrees, 1.03 scale, off for reduced motion. */
 export function Tilt({ children, className, style, disabled = false }: TiltProps) {
+  // MotionConfig does not reach this library. Reading the preference here is safe for hydration:
+  // the tilt props only drive pointer handlers, never the rendered markup.
   const reduceMotion = useReducedMotion();
   const enabled = !disabled && !reduceMotion;
 

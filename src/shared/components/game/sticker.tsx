@@ -2,10 +2,11 @@
 
 import { cva } from "class-variance-authority";
 import { PlusIcon } from "lucide-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef } from "react";
-import { celebrate, originFromElement } from "@/shared/lib/celebrate";
+import { type CelebratePalette, celebrate, originFromElement } from "@/shared/lib/celebrate";
 import { gameCn } from "./game-cn";
+import { FLIP_EASE } from "./game-motion";
 import { StickerStampMark } from "./sticker-stamp";
 import {
   getStickerView,
@@ -26,10 +27,10 @@ export type StickerProps = {
   tilt?: boolean;
   /** Star burst when the sticker unlocks or turns found. */
   celebrateChanges?: boolean;
+  /** Star colors for the background the sticker sits on: light, ink (dark) or orange (found). */
+  celebratePalette?: CelebratePalette;
   className?: string;
 };
-
-const FLIP_EASE = [0.3, 0.7, 0.2, 1] as const;
 
 const stickerVariants = cva("relative flex-none text-left text-game-ink", {
   variants: {
@@ -98,10 +99,10 @@ export function Sticker({
   rot = 0,
   tilt = true,
   celebrateChanges = true,
+  celebratePalette = "light",
   className,
 }: StickerProps) {
   const view = getStickerView(person, mode, size);
-  const reduceMotion = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
   const previousMode = useRef(mode);
   const ruled = mode === "ruled";
@@ -110,18 +111,21 @@ export function Sticker({
     const kind = stickerCelebration(previousMode.current, mode);
     previousMode.current = mode;
     if (!kind || !celebrateChanges || !rootRef.current) return;
-    void celebrate(originFromElement(rootRef.current), { kind });
-  }, [mode, celebrateChanges]);
+    void celebrate(originFromElement(rootRef.current), { kind, palette: celebratePalette });
+  }, [mode, celebrateChanges, celebratePalette]);
 
   return (
     <div ref={rootRef} className={gameCn(stickerVariants({ size }), className)}>
       <Tilt className="relative size-full" disabled={!tilt}>
-        <div className="size-full" style={rot ? { transform: `rotate(${rot}deg)` } : undefined}>
+        <div
+          className="relative size-full"
+          style={rot ? { transform: `rotate(${rot}deg)` } : undefined}
+        >
           <motion.div
             className="relative size-full transform-3d"
             initial={false}
             animate={{ rotateY: view.open ? 180 : 0 }}
-            transition={reduceMotion ? { duration: 0 } : { duration: 0.64, ease: FLIP_EASE }}
+            transition={{ duration: 0.64, ease: FLIP_EASE }}
             style={{ transformPerspective: 1200 }}
           >
             <div
@@ -220,18 +224,12 @@ export function Sticker({
               ) : null}
             </div>
           </motion.div>
+          <AnimatePresence>
+            {view.stamp ? (
+              <StickerStampMark key={view.stamp} stamp={view.stamp} size={size} />
+            ) : null}
+          </AnimatePresence>
         </div>
-
-        <AnimatePresence>
-          {view.stamp ? (
-            <StickerStampMark
-              key={view.stamp}
-              stamp={view.stamp}
-              size={size}
-              reduceMotion={reduceMotion ?? false}
-            />
-          ) : null}
-        </AnimatePresence>
       </Tilt>
     </div>
   );

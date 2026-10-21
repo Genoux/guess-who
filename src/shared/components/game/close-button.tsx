@@ -1,8 +1,11 @@
+"use client";
+
 import { cva, type VariantProps } from "class-variance-authority";
 import { XIcon } from "lucide-react";
 import { Slot } from "radix-ui";
 import type { ComponentProps, ReactElement } from "react";
 import { gameCn } from "./game-cn";
+import { GameTooltip } from "./game-tooltip";
 
 const closeButtonVariants = cva(
   "inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2",
@@ -27,7 +30,7 @@ type CloseButtonProps = Omit<ComponentProps<"button">, "children" | "aria-label"
     children?: ReactElement;
   };
 
-/** Round 44px close control used at the top of full-screen game moments. */
+/** Round 44px close control for full-screen game moments, with its label as a tooltip. */
 export function CloseButton({
   label,
   tone = "light",
@@ -42,16 +45,20 @@ export function CloseButton({
 
   if (asChild && children) {
     return (
-      <Slot.Root aria-label={label} className={classes} {...props}>
-        <Slot.Slottable>{children}</Slot.Slottable>
-        {icon}
-      </Slot.Root>
+      <GameTooltip label={label}>
+        <Slot.Root aria-label={label} className={classes} {...props}>
+          <Slot.Slottable>{children}</Slot.Slottable>
+          {icon}
+        </Slot.Root>
+      </GameTooltip>
     );
   }
 
   return (
-    <button aria-label={label} className={classes} type={type ?? "button"} {...props}>
-      {icon}
-    </button>
+    <GameTooltip label={label}>
+      <button aria-label={label} className={classes} type={type ?? "button"} {...props}>
+        {icon}
+      </button>
+    </GameTooltip>
   );
 }

@@ -3,9 +3,8 @@
 import { cva } from "class-variance-authority";
 import { XIcon } from "lucide-react";
 import { motion } from "motion/react";
+import { STAMP_EASE } from "./game-motion";
 import type { StickerSize, StickerStamp } from "./sticker-view";
-
-const STAMP_EASE = [0.2, 0.9, 0.3, 1.4] as const;
 
 const stampVariants = cva("pointer-events-none absolute z-3 flex items-center justify-center", {
   variants: {
@@ -30,24 +29,19 @@ const stampVariants = cva("pointer-events-none absolute z-3 flex items-center ju
 
 const STAMP_ROTATION: Record<StickerStamp, number> = { maybe: 12, ruled: 0, found: -8 };
 
-/** The maybe, not-them and found marks stamped on a sticker; Sticker places and animates it. */
-export function StickerStampMark({
-  stamp,
-  size,
-  reduceMotion,
-}: {
-  stamp: StickerStamp;
-  size: StickerSize;
-  reduceMotion: boolean;
-}) {
+/**
+ * The maybe, not-them and found marks stamped on a sticker. Reduced motion comes from the
+ * MotionConfig in GameShell, so `initial` is the same on the server and the client.
+ */
+export function StickerStampMark({ stamp, size }: { stamp: StickerStamp; size: StickerSize }) {
   const centred = stamp !== "maybe";
   return (
     <motion.span
       className={stampVariants({ stamp, size })}
       style={{ x: centred ? "-50%" : 0, rotate: STAMP_ROTATION[stamp] }}
-      initial={reduceMotion ? false : { opacity: 0, scale: 1.7 }}
+      initial={{ opacity: 0, scale: 1.7 }}
       animate={{ opacity: 1, scale: 1 }}
-      exit={reduceMotion ? undefined : { opacity: 0, scale: 0.9, transition: { duration: 0.12 } }}
+      exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.12 } }}
       transition={{ duration: 0.26, ease: STAMP_EASE }}
       {...(stamp === "ruled" ? { role: "img", "aria-label": "Not them" } : {})}
     >

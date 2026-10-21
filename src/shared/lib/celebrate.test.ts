@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildCelebrateOptions, originFromRect } from "./celebrate";
 
 describe("buildCelebrateOptions", () => {
@@ -49,5 +49,27 @@ describe("originFromRect", () => {
       x: 0.5,
       y: 0.5,
     });
+  });
+});
+
+describe("celebrate", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.doUnmock("canvas-confetti");
+    vi.resetModules();
+  });
+
+  it("swallows a failing confetti call", async () => {
+    vi.stubGlobal("window", {});
+    vi.doMock("canvas-confetti", () => ({
+      default: () => Promise.reject(new Error("ChunkLoadError")),
+    }));
+    const { celebrate } = await import("./celebrate");
+    await expect(celebrate({ x: 0.5, y: 0.5 })).resolves.toBeUndefined();
+  });
+
+  it("does nothing outside the browser", async () => {
+    const { celebrate } = await import("./celebrate");
+    await expect(celebrate({ x: 0.5, y: 0.5 })).resolves.toBeUndefined();
   });
 });
