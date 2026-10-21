@@ -5,6 +5,7 @@ import {
   csv,
   dbEnv,
   sentryClientEnv,
+  upstashEnv,
 } from "@inbeat/core/env";
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
@@ -14,6 +15,7 @@ export const env = createEnv({
     ...appUrlEnv,
     ...dbEnv,
     ...clerkServerEnv,
+    ...upstashEnv,
     // Who may sign in without an invite (an admin-created person or game).
     ALLOWED_EMAIL_DOMAINS: csv().optional().default(["inbeat.agency"]),
   },
