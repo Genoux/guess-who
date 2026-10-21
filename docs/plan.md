@@ -64,7 +64,7 @@ Teammate + welcomer). Engineering rules: the inBeat toolkit standard in `AGENTS.
 | 4 | New hire: welcome, album, collect, mission, clue reveal, guess, found, own card | 2 agents |
 | 5 | Welcomer: picked, clue stepper, status | 1 agent |
 | 6 | Scheduler + notifications outbox to n8n | 1 agent |
-| 7 | Admin: games, people, album view, settings, Deel | after review of 1-6 |
+| 7 | Admin (designed): games, game detail, people + invites, full album, settings (Deel API token + contract webhook, n8n webhook + secret, game timing, teams, sign-in domains) | 1-2 agents, after 1 |
 | 8 | Hardening: Playwright on previews, CSP enforce, launch | lead + 1 agent |
 
 Every phase lands as pull requests from `feat/*` branches: conventional PR titles, CI green,
