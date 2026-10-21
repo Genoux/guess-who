@@ -17,6 +17,7 @@
     "db:migrate": "bun scripts/db-migrate.ts",
     "db:check": "drizzle-kit check",
     "db:seed": "bun scripts/db-seed.ts",
+    "db:seed:demo": "bun scripts/db-seed-demo.ts",
     "ib:sync": "ib sync",
     "ib:check": "ib check"
   },
