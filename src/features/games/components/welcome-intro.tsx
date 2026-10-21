@@ -8,7 +8,6 @@ import { ClueCard } from "@/shared/components/game/clue-card";
 import { CountChip } from "@/shared/components/game/count-chip";
 import { GameAvatar } from "@/shared/components/game/game-avatar";
 import { GameButton } from "@/shared/components/game/game-button";
-import { gameCn } from "@/shared/components/game/game-cn";
 import { GAME_EASE } from "@/shared/components/game/game-motion";
 import { gameToast } from "@/shared/components/game/game-toaster";
 import { Stepper } from "@/shared/components/game/stepper";
@@ -202,7 +201,7 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
         </div>
 
         {/* Fixed height for the tallest copy, so the buttons and dots never move between steps. */}
-        <div className="mt-10 flex h-48 w-full max-w-220 flex-col items-center sm:h-28">
+        <div className="mt-10 flex h-48 w-full max-w-220 flex-col items-center sm:h-24">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={step}
@@ -219,13 +218,12 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
         </div>
 
         <div className="mt-8 flex flex-col items-center gap-6">
-          {/* Two fixed slots: Back stays in place (hidden on the first step) and labels never resize. */}
+          {/* Two fixed slots: Back is there from the start (disabled on step one) and labels never resize. */}
           <div className="grid grid-cols-2 gap-3">
             <GameButton
               variant="light"
-              className={gameCn(SLOT, step === 0 && "invisible")}
-              aria-hidden={step === 0}
-              tabIndex={step === 0 ? -1 : undefined}
+              className={SLOT}
+              disabled={step === 0}
               onClick={() => setStep(Math.max(0, step - 1))}
             >
               Back

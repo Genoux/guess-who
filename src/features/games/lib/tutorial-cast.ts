@@ -37,7 +37,7 @@ export const TUTORIAL_ALBUM: StickerPerson[] = [
 export const TUTORIAL_WELCOMER: StickerPerson = {
   name: "Your welcomer",
   number: "?",
-  team: "Somewhere close",
+  team: "Mystery",
   color: "#FFC592",
   tint: "#FFE8D3",
   ask: "Ask me anything",
