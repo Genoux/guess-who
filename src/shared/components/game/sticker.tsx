@@ -3,7 +3,7 @@
 import { cva } from "class-variance-authority";
 import { PlusIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { type CelebratePalette, celebrate, originFromElement } from "@/shared/lib/celebrate";
 import { gameCn } from "./game-cn";
 import { FLIP_EASE } from "./game-motion";
@@ -105,6 +105,9 @@ export function Sticker({
   const rootRef = useRef<HTMLDivElement>(null);
   const previousMode = useRef(mode);
   const ruled = mode === "ruled";
+  // A picture that fails to load (expired, blocked) falls back to the initials.
+  const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
+  const photoUrl = person.photoUrl && person.photoUrl !== failedPhoto ? person.photoUrl : null;
 
   useEffect(() => {
     const kind = stickerCelebration(previousMode.current, mode);
@@ -179,11 +182,12 @@ export function Sticker({
                 )}
                 style={ruled ? undefined : { backgroundColor: person.color }}
               >
-                {person.photoUrl ? (
-                  // biome-ignore lint/performance/noImgElement: photos are signed storage URLs sized at upload, not optimised per request
+                {photoUrl ? (
+                  // biome-ignore lint/performance/noImgElement: profile pictures come from Clerk or storage at their own size, not optimised per request
                   <img
-                    src={person.photoUrl}
+                    src={photoUrl}
                     alt={person.name}
+                    onError={() => setFailedPhoto(photoUrl)}
                     className={gameCn(
                       "absolute inset-0 size-full object-cover",
                       ruled && "opacity-30 grayscale",

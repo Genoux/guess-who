@@ -15,6 +15,13 @@
       "when": 1792605608414,
       "tag": "0001_game_progress",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792618924117,
+      "tag": "0002_people_image_url",
+      "breakpoints": true
     }
   ]
 }

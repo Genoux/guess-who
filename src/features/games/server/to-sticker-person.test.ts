@@ -32,16 +32,28 @@ describe("toStickerPerson", () => {
         locked: false,
         fact: "Ranks croissants",
         location: "Lisbon",
+        imageUrl: "https://img.clerk.com/noor",
         photoKey: "people/noor.jpg",
       },
       team,
     );
-    expect(person).toMatchObject({ fact: "Ranks croissants", city: "Lisbon", photoUrl: null });
+    expect(person).toMatchObject({
+      fact: "Ranks croissants",
+      city: "Lisbon",
+      photoUrl: "https://img.clerk.com/noor",
+    });
   });
 
   it("never passes the storage key through", () => {
     const person = toStickerPerson(
-      { ...publicFields, locked: false, fact: null, location: null, photoKey: "people/noor.jpg" },
+      {
+        ...publicFields,
+        locked: false,
+        fact: null,
+        location: null,
+        imageUrl: null,
+        photoKey: "people/noor.jpg",
+      },
       team,
     );
     expect(JSON.stringify(person)).not.toContain("people/noor.jpg");

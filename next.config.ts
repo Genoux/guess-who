@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
       source: "/(.*)",
       headers: securityHeaders({
         clerkFrontendApi: clerkFrontendApi(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY),
+        // Profile pictures from Clerk (Slack photos); randomuser.me serves the demo and intro stand-ins.
+        sources: { img: ["https://img.clerk.com", "https://randomuser.me"] },
         dev: process.env.NODE_ENV !== "production",
       }),
     },

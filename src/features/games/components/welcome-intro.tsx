@@ -15,18 +15,13 @@ import { Sticker } from "@/shared/components/game/sticker";
 import type { StickerMode, StickerPerson } from "@/shared/components/game/sticker-view";
 import { ROUTES } from "@/shared/config/routes";
 import { markIntroSeen } from "../actions/mark-intro-seen";
+import { TUTORIAL_ALBUM, TUTORIAL_WELCOMER } from "../lib/tutorial-cast";
 
 type WelcomeIntroProps = {
   firstName: string;
-  /** Up to three album stickers for the opening deal, public fields only. */
-  fan: StickerPerson[];
-  /** Two team colors for the demo stickers. */
-  colors: [string | undefined, string | undefined];
   /** Dev preview: finishing replays the intro instead of saving and leaving. */
   preview?: boolean;
 };
-
-const FALLBACK_COLOR = "#FF97AB";
 
 /** One card dealt into its slot: rises and fades in after `order` beats. */
 function Dealt({ children, order = 0 }: { children: ReactNode; order?: number }) {
@@ -66,11 +61,11 @@ function Single({ children }: { children: ReactNode }) {
   return <div className="origin-center scale-[0.82] sm:scale-100">{children}</div>;
 }
 
-function AlbumArt({ fan }: { fan: StickerPerson[] }) {
+function AlbumArt() {
   const angles = [-3, 1, 3];
   return (
     <Row>
-      {fan.slice(0, 3).map((person, index) => (
+      {TUTORIAL_ALBUM.map((person, index) => (
         <Dealt key={`${person.name}-${person.number}`} order={index}>
           <Sticker
             person={person}
@@ -123,27 +118,19 @@ function CluesArt() {
   );
 }
 
-function WinArt({ color }: { color: string }) {
+function WinArt() {
   const mode = useDemoMode("collected", "found", 1100);
-  const welcomer: StickerPerson = {
-    name: "Your welcomer",
-    number: "?",
-    team: "Somewhere close",
-    color,
-    tint: color,
-    ask: "Coffee is on me.",
-  };
   return (
     <Single>
       <Dealt>
-        <Sticker person={welcomer} mode={mode} tilt={false} />
+        <Sticker person={TUTORIAL_WELCOMER} mode={mode} tilt={false} />
       </Dealt>
     </Single>
   );
 }
 
 /** Four short steps on the player's first visit, each playing the real game pieces. */
-export function WelcomeIntro({ firstName, fan, colors, preview = false }: WelcomeIntroProps) {
+export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) {
   const [step, setStep] = useState(0);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
@@ -163,15 +150,14 @@ export function WelcomeIntro({ firstName, fan, colors, preview = false }: Welcom
     });
   };
 
-  const collectPerson = fan[1] ?? fan[0];
   const steps: { art: ReactNode; title: string; lead: string }[] = [
     {
-      art: <AlbumArt fan={fan} />,
+      art: <AlbumArt />,
       title: `Welcome, ${firstName}.`,
       lead: "Your first two weeks come with a small game.",
     },
     {
-      art: collectPerson ? <CollectArt person={collectPerson} /> : null,
+      art: <CollectArt person={TUTORIAL_ALBUM[2] ?? TUTORIAL_WELCOMER} />,
       title: "Collect the team.",
       lead: "Chat with someone, write one thing you learned, and their sticker is yours.",
     },
@@ -181,7 +167,7 @@ export function WelcomeIntro({ firstName, fan, colors, preview = false }: Welcom
       lead: "A clue lands on days 3, 6, 9 and 12. Guess whenever you like.",
     },
     {
-      art: <WinArt color={colors[1] ?? colors[0] ?? FALLBACK_COLOR} />,
+      art: <WinArt />,
       title: "Find them, win your card.",
       lead: "Then you grab a virtual coffee together, and you join the album.",
     },
@@ -193,7 +179,7 @@ export function WelcomeIntro({ firstName, fan, colors, preview = false }: Welcom
     <div className="flex min-h-dvh w-full flex-col">
       <header className="flex items-center justify-between px-6 pt-6 md:px-10 md:pt-8">
         <span className="font-game-serif text-logo">The Album</span>
-        {preview ? <GameAvatar name={firstName} color={FALLBACK_COLOR} /> : <AccountButton />}
+        {preview ? <GameAvatar name={firstName} color="#FF97AB" /> : <AccountButton />}
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center px-6 py-8 text-center">
@@ -229,20 +215,13 @@ export function WelcomeIntro({ firstName, fan, colors, preview = false }: Welcom
         </div>
       </main>
 
-      <footer className="mx-auto grid w-full max-w-140 grid-cols-[1fr_auto_1fr] items-center gap-4 px-6 pb-10 md:pb-14">
-        <div className="justify-self-start">
-          {step === 0 ? (
-            <GameButton variant="link" onClick={finish} disabled={pending}>
-              Skip
-            </GameButton>
-          ) : (
+      <footer className="flex flex-col items-center gap-6 px-6 pb-10 md:pb-14">
+        <div className="flex items-center justify-center gap-3">
+          {step > 0 ? (
             <GameButton variant="light" onClick={() => setStep(step - 1)}>
               Back
             </GameButton>
-          )}
-        </div>
-        <Stepper count={steps.length} current={step + 1} />
-        <div className="justify-self-end">
+          ) : null}
           {last ? (
             <GameButton onClick={finish} disabled={pending}>
               {preview ? "Replay" : "Open my album"}
@@ -253,6 +232,7 @@ export function WelcomeIntro({ firstName, fan, colors, preview = false }: Welcom
             </GameButton>
           )}
         </div>
+        <Stepper count={steps.length} current={step + 1} />
       </footer>
     </div>
   );

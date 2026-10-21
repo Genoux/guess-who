@@ -30,6 +30,7 @@ const person = (id: string, overrides: Partial<Person> = {}): Person => ({
   location: `${id} city`,
   fact: `${id} secret fact`,
   ask: `${id} ask`,
+  imageUrl: `https://img.clerk.com/${id}`,
   photoKey: `people/${id}.jpg`,
   stickerNumber: id.length,
   hidden: false,

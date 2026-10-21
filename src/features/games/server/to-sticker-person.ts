@@ -22,6 +22,6 @@ export function toStickerPerson(view: StickerView, team: TeamLook | undefined): 
     ask: view.ask ?? "",
   };
   if (view.locked) return sticker;
-  // shortcut: photos need the signed R2 URL from phase 3; until then the sticker shows initials.
-  return { ...sticker, city: view.location, fact: view.fact, photoUrl: null };
+  // shortcut: the Clerk (Slack) picture until phase 3 adds uploads; an uploaded photo will win.
+  return { ...sticker, city: view.location, fact: view.fact, photoUrl: view.imageUrl };
 }

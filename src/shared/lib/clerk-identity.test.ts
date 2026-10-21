@@ -8,8 +8,16 @@ vi.mock("@clerk/nextjs/server", () => ({
 
 import { getVerifiedIdentity } from "./clerk-identity";
 
-const user = (status: string | null, fullName: string | null = "Maya Chen") => ({
+const user = (
+  status: string | null,
+  fullName: string | null = "Maya Chen",
+  image: { hasImage: boolean; imageUrl: string } = {
+    hasImage: false,
+    imageUrl: "https://img.clerk.com/default",
+  },
+) => ({
   fullName,
+  ...image,
   primaryEmailAddress: {
     emailAddress: "  Maya.Chen@InBeat.agency ",
     verification: status ? { status } : null,
@@ -24,8 +32,18 @@ describe("getVerifiedIdentity", () => {
     await expect(getVerifiedIdentity("user_1")).resolves.toEqual({
       email: "maya.chen@inbeat.agency",
       name: "Maya Chen",
+      imageUrl: null,
     });
     expect(getUser).toHaveBeenCalledWith("user_1");
+  });
+
+  it("keeps a real picture (Slack's) and drops Clerk's generated placeholder", async () => {
+    getUser.mockResolvedValue(
+      user("verified", "Maya Chen", { hasImage: true, imageUrl: "https://img.clerk.com/maya" }),
+    );
+    await expect(getVerifiedIdentity("user_1")).resolves.toMatchObject({
+      imageUrl: "https://img.clerk.com/maya",
+    });
   });
 
   it("falls back to the email local part when the user has no name", async () => {

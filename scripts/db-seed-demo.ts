@@ -12,7 +12,7 @@ import { parseArgs } from "node:util";
 import { normalizeEmail } from "@inbeat/core/email";
 import { Pool } from "@neondatabase/serverless";
 import { loadEnvConfig } from "@next/env";
-import { eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { assertNotProduction } from "../src/db/assert-not-production";
 import * as schema from "../src/db/schema";
@@ -126,6 +126,24 @@ const emailOf = (name: string) =>
   `${name.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, ".")}@example.com`;
 
 const DEMO_PLAYER = { name: "Léa Dubois", email: "lea.dubois@example.com" };
+
+// Stand-in profile pictures for demo people only; real people get their Clerk (Slack) picture.
+const WOMEN = new Set([
+  "Ana",
+  "Noor",
+  "Maya",
+  "Inès",
+  "Sofia",
+  "Ava",
+  "Hana",
+  "Zoe",
+  "Elena",
+  "Chloe",
+  "Julia",
+  "Léa",
+]);
+const portraitOf = (name: string, seed: number) =>
+  `https://randomuser.me/api/portraits/${WOMEN.has(name.split(" ")[0] ?? "") ? "women" : "men"}/${(seed * 7) % 90}.jpg`;
 const CLUES = {
   2: "Has never owned a car, and never plans to.",
   3: "Learning an instrument most people quit as kids.",
@@ -151,9 +169,10 @@ try {
   await db
     .insert(schema.people)
     .values(
-      teammates.map(([name, team, location, fact, ask]) => ({
+      teammates.map(([name, team, location, fact, ask], index) => ({
         name,
         email: emailOf(name),
+        imageUrl: portraitOf(name, index + 1),
         teamId: teamIds.get(team),
         location,
         fact,
@@ -165,6 +184,7 @@ try {
       target: schema.people.email,
       set: {
         name: sql`excluded.name`,
+        imageUrl: sql`excluded.image_url`,
         teamId: sql`excluded.team_id`,
         location: sql`excluded.location`,
         fact: sql`excluded.fact`,
@@ -213,8 +233,15 @@ try {
       });
     await db
       .insert(schema.people)
-      .values({ email: DEMO_PLAYER.email, name: DEMO_PLAYER.name })
-      .onConflictDoNothing({ target: schema.people.email });
+      .values({
+        email: DEMO_PLAYER.email,
+        name: DEMO_PLAYER.name,
+        imageUrl: portraitOf(DEMO_PLAYER.name, 40),
+      })
+      .onConflictDoUpdate({
+        target: schema.people.email,
+        set: { imageUrl: sql`coalesce(${schema.people.imageUrl}, excluded.image_url)` },
+      });
     const [welcomer] = await db
       .select({ id: schema.people.id })
       .from(schema.people)
@@ -244,6 +271,14 @@ try {
     if (demoGames.length > 0) {
       await db.delete(schema.games).where(inArray(schema.games.id, demoGames));
     }
+  }
+
+  // A signed-in tester without a Slack picture gets a stand-in so their own sticker looks real.
+  for (const email of [player, asWelcomer].filter((value): value is string => Boolean(value))) {
+    await db
+      .update(schema.people)
+      .set({ imageUrl: portraitOf("", 32) })
+      .where(and(eq(schema.people.email, email), isNull(schema.people.imageUrl)));
   }
 
   const [playerRow] = await db

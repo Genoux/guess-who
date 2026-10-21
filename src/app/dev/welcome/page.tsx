@@ -4,7 +4,6 @@ import { WelcomeIntro } from "@/features/games/components/welcome-intro";
 import { GameShell } from "@/shared/components/game/game-shell";
 import { env } from "@/shared/config/env";
 import { isCatalogueEnabled } from "../_lib/catalogue-access";
-import { ana, jonah, noor } from "../_lib/fixtures";
 
 export const metadata: Metadata = {
   title: "Welcome intro (dev)",
@@ -19,12 +18,7 @@ export default function WelcomePreviewPage() {
 
   return (
     <GameShell>
-      <WelcomeIntro
-        firstName="John"
-        fan={[noor, ana, jonah]}
-        colors={[noor.color, ana.color]}
-        preview
-      />
+      <WelcomeIntro firstName="John" preview />
     </GameShell>
   );
 }

@@ -13,7 +13,7 @@ export default async function WelcomePage() {
 
   return (
     <GameShell>
-      <WelcomeIntro firstName={welcome.firstName} fan={welcome.fan} colors={welcome.colors} />
+      <WelcomeIntro firstName={welcome.firstName} />
     </GameShell>
   );
 }
