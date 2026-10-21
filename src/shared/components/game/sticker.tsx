@@ -38,6 +38,8 @@ const stickerVariants = cva("relative flex-none text-left text-game-ink", {
   },
 });
 
+const CELEBRATE_DELAY_MS = { unlock: 560, found: 180 } as const;
+
 // Both faces stay rendered and the 3D turn hides whichever faces away, so the content turns with the
 // card. Never put a filter or opacity on a face: it breaks backface hiding and mirrors the text.
 const faceVariants = cva("absolute inset-0 flex flex-col bg-game-surface backface-hidden", {
@@ -107,8 +109,14 @@ export function Sticker({
   useEffect(() => {
     const kind = stickerCelebration(previousMode.current, mode);
     previousMode.current = mode;
-    if (!kind || !celebrateChanges || !rootRef.current) return;
-    void celebrate(originFromElement(rootRef.current), { kind, palette: celebratePalette });
+    if (!kind || !celebrateChanges) return;
+    // Burst once the card has landed: after the flip for an unlock, as the stamp hits for found.
+    const timer = setTimeout(() => {
+      if (rootRef.current) {
+        void celebrate(originFromElement(rootRef.current), { kind, palette: celebratePalette });
+      }
+    }, CELEBRATE_DELAY_MS[kind]);
+    return () => clearTimeout(timer);
   }, [mode, celebrateChanges, celebratePalette]);
 
   return (

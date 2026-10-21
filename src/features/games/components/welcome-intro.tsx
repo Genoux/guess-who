@@ -50,13 +50,18 @@ function useDemoMode(from: StickerMode, to: StickerMode, afterMs: number) {
   return mode;
 }
 
-/** Keeps a row of full-size cards inside a phone screen. */
+/** Three full-size cards side by side, scaled to fit a phone. */
 function Row({ children }: { children: ReactNode }) {
   return (
-    <div className="flex origin-center scale-[0.56] items-center justify-center gap-5 sm:scale-100">
+    <div className="flex origin-center scale-[0.52] items-center justify-center gap-5 sm:scale-100">
       {children}
     </div>
   );
+}
+
+/** One card on its own, a little smaller on a phone. */
+function Single({ children }: { children: ReactNode }) {
+  return <div className="origin-center scale-[0.82] sm:scale-100">{children}</div>;
 }
 
 function AlbumArt({ fan }: { fan: StickerPerson[] }) {
@@ -81,20 +86,22 @@ function AlbumArt({ fan }: { fan: StickerPerson[] }) {
 function CollectArt({ person }: { person: StickerPerson }) {
   const mode = useDemoMode("locked", "collected", 1200);
   return (
-    <div className="flex flex-col items-center gap-4">
-      <Dealt>
-        <Sticker person={person} mode={mode} tilt={false} />
-      </Dealt>
-      <motion.div
-        initial={false}
-        animate={mode === "collected" ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
-        transition={{ duration: 0.35, delay: mode === "collected" ? 0.55 : 0, ease: GAME_EASE }}
-      >
-        <CountChip variant="yellow" size="sm">
-          +1 sticker
-        </CountChip>
-      </motion.div>
-    </div>
+    <Single>
+      <div className="flex flex-col items-center gap-4">
+        <Dealt>
+          <Sticker person={person} mode={mode} tilt={false} />
+        </Dealt>
+        <motion.div
+          initial={false}
+          animate={mode === "collected" ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+          transition={{ duration: 0.35, delay: mode === "collected" ? 0.55 : 0, ease: GAME_EASE }}
+        >
+          <CountChip variant="yellow" size="sm">
+            +1 sticker
+          </CountChip>
+        </motion.div>
+      </div>
+    </Single>
   );
 }
 
@@ -125,9 +132,11 @@ function WinArt({ color }: { color: string }) {
     ask: "Coffee is on me.",
   };
   return (
-    <Dealt>
-      <Sticker person={welcomer} mode={mode} tilt={false} />
-    </Dealt>
+    <Single>
+      <Dealt>
+        <Sticker person={welcomer} mode={mode} tilt={false} />
+      </Dealt>
+    </Single>
   );
 }
 
@@ -189,8 +198,11 @@ export function WelcomeIntro({ firstName, fan, colors, preview = false }: Welcom
         )}
       </header>
 
-      <main className="flex flex-1 flex-col items-center justify-center gap-10 px-6 py-10 text-center">
-        <div className="flex h-75 w-full items-center justify-center overflow-x-clip" aria-hidden>
+      <main className="flex flex-1 flex-col items-center justify-center px-6 pt-6 pb-14 text-center md:pb-20">
+        <div
+          className="flex h-60 w-full items-center justify-center overflow-x-clip sm:h-75"
+          aria-hidden
+        >
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={step}
@@ -202,7 +214,7 @@ export function WelcomeIntro({ firstName, fan, colors, preview = false }: Welcom
           </AnimatePresence>
         </div>
 
-        <div className="flex min-h-32 w-full max-w-130 flex-col items-center">
+        <div className="mt-10 flex min-h-32 w-full max-w-130 flex-col items-center">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={step}
@@ -217,27 +229,27 @@ export function WelcomeIntro({ firstName, fan, colors, preview = false }: Welcom
             </motion.div>
           </AnimatePresence>
         </div>
-      </main>
 
-      <footer className="flex flex-col items-center gap-6 px-6 pb-12 md:pb-16">
-        <Stepper count={steps.length} current={step + 1} />
-        <div className="flex items-center justify-center gap-3">
-          {step > 0 ? (
-            <GameButton variant="light" onClick={() => setStep(step - 1)}>
-              Back
-            </GameButton>
-          ) : null}
-          {last ? (
-            <GameButton onClick={finish} disabled={pending}>
-              {preview ? "Replay" : "Open my album"}
-            </GameButton>
-          ) : (
-            <GameButton onClick={() => setStep(step + 1)}>
-              {step === 0 ? "How it works" : "Next"}
-            </GameButton>
-          )}
+        <div className="mt-8 flex flex-col items-center gap-6">
+          <Stepper count={steps.length} current={step + 1} />
+          <div className="flex items-center justify-center gap-3">
+            {step > 0 ? (
+              <GameButton variant="light" onClick={() => setStep(step - 1)}>
+                Back
+              </GameButton>
+            ) : null}
+            {last ? (
+              <GameButton onClick={finish} disabled={pending}>
+                {preview ? "Replay" : "Open my album"}
+              </GameButton>
+            ) : (
+              <GameButton onClick={() => setStep(step + 1)}>
+                {step === 0 ? "How it works" : "Next"}
+              </GameButton>
+            )}
+          </div>
         </div>
-      </footer>
+      </main>
     </div>
   );
 }
