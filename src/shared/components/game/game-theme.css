@@ -1,0 +1,113 @@
+/*
+ * Fieldtrip game theme for player screens (see "Deliberate deviations" in AGENTS.md).
+ * Imported once from src/app/globals.css: Tailwind v4 only turns @theme tokens into utilities
+ * inside the same compile as `@import "tailwindcss"`. Everything is namespaced (game-*, sticker,
+ * clue, ...) so the @inbeat/ui tokens used by admin screens stay untouched. The font files are
+ * declared in game-fonts.css, which GameShell imports.
+ */
+@theme {
+  /* Colors */
+  --color-game-bg: #f7f7f3;
+  --color-game-surface: #ffffff;
+  --color-game-sidebar: #f3f3ef;
+  --color-game-hover: #edede8;
+  --color-game-border: #e4e4df;
+  --color-game-border-strong: #aaaaa4;
+  --color-game-ink: #191910;
+  --color-game-ink-hover: #33332a;
+  --color-game-ink-soft: #2e2e26;
+  --color-game-ink-dots: #4a4a40;
+  --color-game-muted: #5c5c55;
+  --color-game-shortlist: #f9d317;
+  --color-game-shortlist-hover: #f2c800;
+  --color-game-shortlist-soft: #fdeda2;
+  --color-game-found: #ea4112;
+
+  /* Fonts: licensed faces with system fallbacks (files are not committed) */
+  --font-game-serif: "Diplomat ST", Georgia, serif;
+  --font-game-sans: "SwissNow", "Helvetica Neue", Arial, sans-serif;
+  --font-game-mono: "Diplomat Mono ST", ui-monospace, monospace;
+
+  /* Type scale (size / line height / tracking) */
+  --text-hero: 56px;
+  --text-hero--line-height: 60px;
+  --text-hero--letter-spacing: -0.025em;
+  --text-hero-md: 40px;
+  --text-hero-md--line-height: 44px;
+  --text-hero-md--letter-spacing: -0.025em;
+  --text-display: 40px;
+  --text-display--line-height: 44px;
+  --text-display--letter-spacing: -0.02em;
+  --text-title: 32px;
+  --text-title--line-height: 36px;
+  --text-title--letter-spacing: -0.02em;
+  --text-logo: 28px;
+  --text-logo--line-height: 32px;
+  --text-logo--letter-spacing: -0.02em;
+  --text-heading: 20px;
+  --text-heading--line-height: 24px;
+  --text-heading--letter-spacing: -0.01em;
+  --text-lead: 18px;
+  --text-lead--line-height: 26px;
+  --text-button-sm: 15px;
+  --text-button-sm--line-height: 20px;
+  --text-small: 13px;
+  --text-small--line-height: 18px;
+  --text-caption: 11px;
+  --text-caption--line-height: 14px;
+  --text-caption--letter-spacing: 0.06em;
+  --text-meta: 10px;
+  --text-meta--line-height: 14px;
+  --text-meta--letter-spacing: 0.06em;
+  --text-clue: 22px;
+  --text-clue--line-height: 26px;
+  --text-clue--letter-spacing: -0.01em;
+  --text-clue-lg: 34px;
+  --text-clue-lg--line-height: 40px;
+  --text-clue-lg--letter-spacing: -0.01em;
+  --text-mark: 56px;
+  --text-mark--line-height: 1;
+  --text-mark-lg: 96px;
+  --text-mark-lg--line-height: 1;
+  --text-quote: 17px;
+  --text-quote--line-height: 20px;
+  --text-quote--letter-spacing: -0.01em;
+  --text-name: 19px;
+  --text-name--line-height: 22px;
+  --text-name--letter-spacing: -0.01em;
+  --text-name-lg: 28px;
+  --text-name-lg--line-height: 32px;
+  --text-name-lg--letter-spacing: -0.01em;
+  --text-stamp: 24px;
+  --text-stamp--line-height: 28px;
+  --text-stamp-lg: 32px;
+  --text-stamp-lg--line-height: 36px;
+  --text-avatar: 17px;
+  --text-avatar--line-height: 1;
+  --font-weight-book: 450;
+  --tracking-caption: 0.06em;
+
+  /* Radii */
+  --radius-game-sm: 6px;
+  --radius-game-md: 8px;
+  --radius-game-lg: 12px;
+  --radius-field: 14px;
+  --radius-sticker: 16px;
+  --radius-sticker-art: 10px;
+  --radius-sticker-lg: 22px;
+  --radius-sticker-art-lg: 16px;
+  --radius-clue: 18px;
+  --radius-clue-lg: 22px;
+  --radius-stage: 20px;
+  --radius-book: 24px;
+  --radius-modal: 28px;
+
+  /* Shadows: the 4px sticker ink shadow and the hairline edge */
+  --shadow-ink: 4px 4px 0 var(--color-game-ink);
+  --shadow-ink-found: 4px 4px 0 var(--color-game-found);
+  --shadow-ink-maybe: 4px 4px 0 var(--color-game-ink), 0 0 0 3px var(--color-game-shortlist);
+  --shadow-edge: inset 0 0 0 1px var(--color-game-border);
+
+  /* Easing */
+  --ease-game: cubic-bezier(0.2, 0.8, 0.2, 1);
+}

@@ -1,0 +1,52 @@
+/*
+ * Fieldtrip faces for the game screens. The files are licensed and the repo is public, so they
+ * are never committed: copy them into public/fonts/ (git-ignored) for local work. Without them
+ * the stacks in game-theme.css fall back to Georgia, Helvetica Neue / Arial and ui-monospace.
+ */
+@font-face {
+  font-family: "Diplomat ST";
+  src: url("/fonts/DiplomatST_Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Diplomat Mono ST";
+  src: url("/fonts/DiplomatMonoST_Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SwissNow";
+  src: url("/fonts/SwissNow-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SwissNow";
+  src: url("/fonts/SwissNow-Book.woff2") format("woff2");
+  font-weight: 450;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SwissNow";
+  src: url("/fonts/SwissNow-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SwissNow";
+  src: url("/fonts/SwissNow-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}

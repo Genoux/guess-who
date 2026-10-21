@@ -1,0 +1,26 @@
+"use client";
+
+import { motion, useReducedMotion } from "motion/react";
+import type { ReactNode } from "react";
+
+type PopProps = {
+  children: ReactNode;
+  /** Seconds to wait, to stagger a title after a sticker. */
+  delay?: number;
+  className?: string;
+};
+
+/** Pops content in (scale 0.6 to 1.06 to 1) when it mounts; appears at once for reduced motion. */
+export function Pop({ children, delay = 0, className }: PopProps) {
+  const reduceMotion = useReducedMotion();
+  return (
+    <motion.div
+      className={className}
+      initial={reduceMotion ? false : { opacity: 0, scale: 0.6 }}
+      animate={{ opacity: 1, scale: [0.6, 1.06, 1] }}
+      transition={{ duration: 0.42, delay, times: [0, 0.6, 1], ease: "easeOut" }}
+    >
+      {children}
+    </motion.div>
+  );
+}
