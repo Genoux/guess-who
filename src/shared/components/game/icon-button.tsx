@@ -15,11 +15,13 @@ const iconButtonVariants = cva(
         dark: "bg-game-ink-soft text-white hover:bg-game-ink-hover",
         "on-color": "bg-game-ink/12 text-game-ink hover:bg-game-ink/20",
         subtle: "text-game-muted hover:bg-game-sidebar hover:text-game-ink",
-        outline: "border border-game-card-edge bg-game-surface text-game-ink hover:bg-game-sidebar",
+        outline:
+          "border border-game-card-edge text-game-muted hover:border-game-border-strong hover:text-game-ink",
       },
       size: {
         default: "size-11 [&_svg]:size-4.5",
         sm: "size-10 [&_svg]:size-5",
+        xs: "size-7 [&_svg]:size-3.5",
       },
     },
     defaultVariants: { tone: "light", size: "default" },

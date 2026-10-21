@@ -207,12 +207,12 @@ export default function GameComponentsPage() {
             <Example code={`CloseButton tone="light"`}>
               <CloseButton label="Back to album" />
             </Example>
-            <Example code={`IconButton tone="outline" size="sm"`}>
+            <Example code={`IconButton tone="outline" size="xs"`}>
               <IconButton
                 label="How it works"
-                icon={<span className="font-medium text-base">?</span>}
+                icon={<span className="font-medium text-small">?</span>}
                 tone="outline"
-                size="sm"
+                size="xs"
               />
             </Example>
           </div>

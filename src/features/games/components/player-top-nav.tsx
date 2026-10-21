@@ -35,9 +35,9 @@ export function PlayerTopNav({ nav, current }: PlayerTopNavProps) {
           <IconButton
             asChild
             label="How it works"
-            icon={<span className="font-medium text-base">?</span>}
+            icon={<span className="font-medium text-small">?</span>}
             tone="outline"
-            size="sm"
+            size="xs"
           >
             <Link href={ROUTES.playWelcome} />
           </IconButton>
