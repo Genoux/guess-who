@@ -218,16 +218,17 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
         </div>
 
         <div className="mt-8 flex flex-col items-center gap-6">
-          {/* Two fixed slots: Back is there from the start (disabled on step one) and labels never resize. */}
+          {/* Two fixed slots that never move: Skip for now, then Back, on the left; the next step on the right. */}
           <div className="grid grid-cols-2 gap-3">
-            <GameButton
-              variant="light"
-              className={SLOT}
-              disabled={step === 0}
-              onClick={() => setStep(Math.max(0, step - 1))}
-            >
-              Back
-            </GameButton>
+            {step === 0 ? (
+              <GameButton variant="light" className={SLOT} onClick={finish} disabled={pending}>
+                Skip for now
+              </GameButton>
+            ) : (
+              <GameButton variant="light" className={SLOT} onClick={() => setStep(step - 1)}>
+                Back
+              </GameButton>
+            )}
             {last ? (
               <GameButton className={SLOT} onClick={finish} disabled={pending}>
                 {preview ? "Replay" : "Open my album"}

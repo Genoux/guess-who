@@ -40,22 +40,27 @@ const stickerVariants = cva("relative flex-none text-left text-game-ink", {
 
 const CELEBRATE_DELAY_MS = { unlock: 560, found: 180 } as const;
 
-// Both faces stay rendered and the 3D turn hides whichever faces away, so the content turns with the
-// card. Never put a filter or opacity on a face: it breaks backface hiding and mirrors the text.
-const faceVariants = cva("absolute inset-0 flex flex-col bg-game-surface backface-hidden", {
-  variants: {
-    size: {
-      sm: "gap-2.5 rounded-sticker p-2",
-      lg: "gap-3 rounded-sticker-lg p-2.5",
-    },
-    shadow: {
-      edge: "shadow-edge",
-      ink: "shadow-ink",
-      maybe: "shadow-ink-maybe",
-      found: "shadow-ink-found",
+// While it turns, both faces render in 3D and the turn hides whichever faces away, so the content
+// turns with the card. At rest the card is flat (only the visible face): a resting 3D layer gets
+// rotated as a bitmap and its edges go jagged. Never put a filter or opacity on a face: it breaks
+// backface hiding and mirrors the text.
+const faceVariants = cva(
+  "absolute inset-0 flex flex-col border border-game-card-edge bg-game-surface backface-hidden",
+  {
+    variants: {
+      size: {
+        sm: "gap-2.5 rounded-sticker p-2",
+        lg: "gap-3 rounded-sticker-lg p-2.5",
+      },
+      shadow: {
+        edge: "",
+        ink: "shadow-ink",
+        maybe: "shadow-ink-maybe",
+        found: "shadow-ink-found",
+      },
     },
   },
-});
+);
 
 const artVariants = cva("relative flex min-h-0 flex-1 overflow-hidden", {
   variants: {
@@ -105,6 +110,7 @@ export function Sticker({
   const rootRef = useRef<HTMLDivElement>(null);
   const previousMode = useRef(mode);
   const ruled = mode === "ruled";
+  const [flipping, setFlipping] = useState(false);
   // A picture that fails to load (expired, blocked) falls back to the initials.
   const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
   const photoUrl = person.photoUrl && person.photoUrl !== failedPhoto ? person.photoUrl : null;
@@ -130,13 +136,21 @@ export function Sticker({
           style={rot ? { transform: `rotate(${rot}deg)` } : undefined}
         >
           <motion.div
-            className="relative size-full transform-3d"
+            className={gameCn("relative size-full", flipping && "transform-3d")}
             initial={false}
             animate={{ rotateY: view.open ? 180 : 0 }}
             transition={{ duration: 0.64, ease: FLIP_EASE }}
             style={{ transformPerspective: 1200 }}
+            transformTemplate={flipping ? undefined : () => "none"}
+            onAnimationStart={() => setFlipping(true)}
+            onAnimationComplete={() => setFlipping(false)}
           >
-            <div className={faceVariants({ size, shadow: "edge" })}>
+            <div
+              className={gameCn(
+                faceVariants({ size, shadow: "edge" }),
+                !flipping && view.open && "hidden",
+              )}
+            >
               <div
                 className={gameCn(
                   artVariants({ size }),
@@ -172,7 +186,10 @@ export function Sticker({
             </div>
 
             <div
-              className={gameCn(faceVariants({ size, shadow: BACK_SHADOW[mode] }), "rotate-y-180")}
+              className={gameCn(
+                faceVariants({ size, shadow: BACK_SHADOW[mode] }),
+                flipping ? "rotate-y-180" : !view.open && "hidden",
+              )}
             >
               <div
                 className={gameCn(

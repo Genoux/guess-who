@@ -13,6 +13,8 @@
   --color-game-hover: #edede8;
   --color-game-border: #e4e4df;
   --color-game-border-strong: #aaaaa4;
+  /* The sticker's own edge: visible against the light page so the card reads as a card. */
+  --color-game-card-edge: #d4d4cc;
   --color-game-ink: #191910;
   --color-game-ink-hover: #33332a;
   --color-game-ink-soft: #2e2e26;
