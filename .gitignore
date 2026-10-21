@@ -12,3 +12,5 @@ coverage
 .vercel
 .DS_Store
 npm-debug.log*
+.clerk/
+.claude/

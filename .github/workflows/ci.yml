@@ -14,6 +14,7 @@ jobs:
   verify:
     if: github.event_name == 'pull_request'
     uses: Genoux/ib-toolkit/.github/workflows/verify.yml@main
+    with: { db-check: true }
 
   release:
     if: github.event_name == 'repository_dispatch' && github.event.client_payload.environment == 'production'
