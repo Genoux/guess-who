@@ -1,0 +1,6 @@
+{
+  "extends": ["@inbeat/config/biome"],
+  "files": {
+    "includes": ["**", "!!**/.next", "!**/next-env.d.ts"]
+  }
+}

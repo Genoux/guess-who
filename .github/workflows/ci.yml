@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  pull_request:
+  repository_dispatch:
+    types: [vercel.deployment.ready]
+
+permissions:
+  contents: read
+  pull-requests: read
+  statuses: write
+
+jobs:
+  verify:
+    if: github.event_name == 'pull_request'
+    uses: Genoux/ib-toolkit/.github/workflows/verify.yml@main
+
+  release:
+    if: github.event_name == 'repository_dispatch' && github.event.client_payload.environment == 'production'
+    uses: Genoux/ib-toolkit/.github/workflows/release-gate.yml@main
