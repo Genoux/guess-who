@@ -1,0 +1,19 @@
+name: PR title
+
+# Squash merges use the PR title as the commit, and release-please reads it to pick the next
+# version, so the title must be a conventional commit.
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  conventional:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: amannn/action-semantic-pull-request@v6
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
