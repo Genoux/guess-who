@@ -130,17 +130,17 @@ export default function GameComponentsPage() {
         >
           <div className="flex flex-wrap items-start gap-x-6 gap-y-8">
             <Example code={`state="down"`}>
-              <ClueCard state="down" label="Day 9" />
+              <ClueCard state="down" label="Clue 3" footer="In 3 days" />
             </Example>
             <Example code={`state="new"`}>
               <ClueCard
                 state="new"
-                label="Clue 2 · Day 6"
+                label="Clue 2"
                 text="Has never owned a car, and never plans to."
               />
             </Example>
             <Example code={`state="open"`}>
-              <ClueCard state="open" label="Clue 1 · Day 3" text="Works in Creative." />
+              <ClueCard state="open" label="Clue 1" text="Works in Creative." />
             </Example>
           </div>
           <div className="flex flex-wrap items-start gap-x-6 gap-y-8">
@@ -154,7 +154,7 @@ export default function GameComponentsPage() {
               />
             </Example>
             <Example code={`size="lg" state="down"`}>
-              <ClueCard state="down" size="lg" label="Day 12" />
+              <ClueCard state="down" size="lg" label="Clue 4" />
             </Example>
           </div>
           <PropTable
@@ -165,7 +165,11 @@ export default function GameComponentsPage() {
                 values: "sm · lg",
                 notes: "200 × 260 on the mission, 320 × 420 alone",
               },
-              { name: "label", values: "string", notes: "“Clue 2 · Day 6”, or “Day 9” face down" },
+              {
+                name: "label",
+                values: "string",
+                notes: "“Clue 2”; never a day. Timing goes in footer as a countdown",
+              },
               { name: "text", values: "string", notes: "The clue; never sent before its day" },
               { name: "footer", values: "node", notes: "Pinned to the bottom of a face-up card" },
               { name: "rot", values: "degrees", notes: "Hand-placed angle" },

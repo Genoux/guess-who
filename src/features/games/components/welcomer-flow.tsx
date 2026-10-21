@@ -55,6 +55,14 @@ function statusLine(desk: WelcomerDesk) {
 }
 
 /** Picked, then one clue at a time, then the status of the game. */
+/** When the player gets this clue, as a countdown rather than a date. */
+function deliveryNote(name: string, released: boolean, inDays: number): string {
+  if (released) return `${name} already has this one.`;
+  if (inDays <= 0) return `${name} gets it today.`;
+  if (inDays === 1) return `${name} gets it tomorrow.`;
+  return `${name} gets it in ${inDays} days.`;
+}
+
 export function WelcomerFlow({ desk }: { desk: WelcomerDesk }) {
   const [step, setStep] = useState<Step>(() => firstStep(desk));
   const [index, setIndex] = useState(() =>
@@ -160,11 +168,7 @@ export function WelcomerFlow({ desk }: { desk: WelcomerDesk }) {
           <Pop key={clue.number}>
             <ClueWriterCard
               number={clue.number}
-              caption={
-                clue.released
-                  ? `Clue ${clue.number} · ${desk.playerFirstName} got it on day ${clue.day}`
-                  : `Clue ${clue.number} · ${desk.playerFirstName} gets it on day ${clue.day}`
-              }
+              caption={`Clue ${clue.number}`}
               value={drafts[index] ?? ""}
               placeholder={hint.placeholder}
               locked={clue.released}
@@ -174,11 +178,10 @@ export function WelcomerFlow({ desk }: { desk: WelcomerDesk }) {
               }
             />
           </Pop>
-          {index === 0 ? (
-            <p className="text-game-muted text-small">
-              Clue 1 is your team. We send that one for you.
-            </p>
-          ) : null}
+          <p className="text-game-muted text-small">
+            {deliveryNote(desk.playerFirstName, clue.released, clue.day - desk.day)}
+            {index === 0 ? " Clue 1 is your team; we send that one for you." : null}
+          </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <GameButton
               variant="link"
@@ -206,7 +209,7 @@ export function WelcomerFlow({ desk }: { desk: WelcomerDesk }) {
               <Pop delay={i * 0.08}>
                 <ClueCard
                   state={written.released ? "open" : "new"}
-                  label={`Day ${written.day}`}
+                  label={`Clue ${written.number}`}
                   text={drafts[i] || "…"}
                   rot={DONE_ROTATIONS[i]}
                 />

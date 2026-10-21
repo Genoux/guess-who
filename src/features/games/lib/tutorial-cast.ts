@@ -1,8 +1,8 @@
 import type { StickerPerson } from "@/shared/components/game/sticker-view";
 
 // Fictional people for the welcome intro, so the tour never shows a real teammate's card before
-// the player collects it. shortcut: stand-in portraits from randomuser.me; host final art before launch.
-const portrait = (path: string) => `https://randomuser.me/api/portraits/${path}.jpg`;
+// the player collects it. shortcut: stand-in portraits from pravatar.cc; host final art before launch.
+const portrait = (id: number) => `https://i.pravatar.cc/600?img=${id}`;
 
 export const TUTORIAL_ALBUM: StickerPerson[] = [
   {
@@ -12,7 +12,7 @@ export const TUTORIAL_ALBUM: StickerPerson[] = [
     color: "#46BDF0",
     tint: "#B5E5F9",
     ask: "Film cameras",
-    photoUrl: portrait("women/65"),
+    photoUrl: portrait(29),
   },
   {
     name: "Malik Osei",
@@ -21,7 +21,7 @@ export const TUTORIAL_ALBUM: StickerPerson[] = [
     color: "#157428",
     tint: "#A1C8A9",
     ask: "Sourdough",
-    photoUrl: portrait("men/75"),
+    photoUrl: portrait(51),
   },
   {
     name: "Iris Moreau",
@@ -30,7 +30,7 @@ export const TUTORIAL_ALBUM: StickerPerson[] = [
     color: "#FF97AB",
     tint: "#FFD5DD",
     ask: "Cold-water swimming",
-    photoUrl: portrait("women/44"),
+    photoUrl: portrait(35),
   },
 ];
 
@@ -41,5 +41,5 @@ export const TUTORIAL_WELCOMER: StickerPerson = {
   color: "#FFC592",
   tint: "#FFE8D3",
   ask: "Coffee is on me.",
-  photoUrl: portrait("men/22"),
+  photoUrl: portrait(58),
 };

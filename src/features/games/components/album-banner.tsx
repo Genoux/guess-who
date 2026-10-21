@@ -3,7 +3,7 @@ import { GameButton } from "@/shared/components/game/game-button";
 
 type AlbumBannerProps = {
   href: string;
-  /** Yellow mono line, e.g. "Day 6 · New clue". */
+  /** Yellow mono line, e.g. "New clue". */
   eyebrow: string;
   title: string;
   cta: string;

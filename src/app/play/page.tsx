@@ -34,7 +34,7 @@ export default async function AlbumPage() {
         ) : album.newClue ? (
           <AlbumBanner
             href={ROUTES.playClue}
-            eyebrow={`Day ${album.newClue.day} · New clue`}
+            eyebrow="New clue"
             title={`Clue ${album.newClue.number} just landed.`}
             cta="Open it"
           />

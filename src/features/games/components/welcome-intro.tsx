@@ -106,13 +106,13 @@ function CluesArt() {
   return (
     <Row>
       <Dealt order={0}>
-        <ClueCard state="open" label="Day 3" text="Always their team." />
+        <ClueCard state="open" label="Clue 1" text="Always their team." />
       </Dealt>
       <Dealt order={1}>
-        <ClueCard state="new" label="Day 6" text="Then a hint, from them." />
+        <ClueCard state="new" label="Clue 2" text="Then a hint, from them." />
       </Dealt>
       <Dealt order={2}>
-        <ClueCard state="down" label="Day 9" />
+        <ClueCard state="down" label="Clue 3" footer="In 3 days" />
       </Dealt>
     </Row>
   );
@@ -182,7 +182,7 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
         {preview ? <GameAvatar name={firstName} color="#FF97AB" /> : <AccountButton />}
       </header>
 
-      <main className="flex flex-1 flex-col items-center justify-center px-6 py-8 text-center">
+      <main className="flex flex-1 flex-col items-center justify-center px-6 pt-6 pb-12 text-center">
         <div
           className="flex h-60 w-full items-center justify-center overflow-x-clip sm:h-75"
           aria-hidden
@@ -198,7 +198,8 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
           </AnimatePresence>
         </div>
 
-        <div className="mt-10 flex min-h-32 w-full max-w-130 flex-col items-center">
+        {/* Reserves the tallest copy so the buttons never jump between steps. */}
+        <div className="mt-10 flex min-h-36 w-full max-w-180 flex-col items-center sm:min-h-21">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={step}
@@ -213,27 +214,27 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
             </motion.div>
           </AnimatePresence>
         </div>
-      </main>
 
-      <footer className="flex flex-col items-center gap-6 px-6 pb-10 md:pb-14">
-        <div className="flex items-center justify-center gap-3">
-          {step > 0 ? (
-            <GameButton variant="light" onClick={() => setStep(step - 1)}>
-              Back
-            </GameButton>
-          ) : null}
-          {last ? (
-            <GameButton onClick={finish} disabled={pending}>
-              {preview ? "Replay" : "Open my album"}
-            </GameButton>
-          ) : (
-            <GameButton onClick={() => setStep(step + 1)}>
-              {step === 0 ? "How it works" : "Next"}
-            </GameButton>
-          )}
+        <div className="mt-8 flex flex-col items-center gap-6">
+          <div className="flex items-center justify-center gap-3">
+            {step > 0 ? (
+              <GameButton variant="light" onClick={() => setStep(step - 1)}>
+                Back
+              </GameButton>
+            ) : null}
+            {last ? (
+              <GameButton onClick={finish} disabled={pending}>
+                {preview ? "Replay" : "Open my album"}
+              </GameButton>
+            ) : (
+              <GameButton onClick={() => setStep(step + 1)}>
+                {step === 0 ? "How it works" : "Next"}
+              </GameButton>
+            )}
+          </div>
+          <Stepper count={steps.length} current={step + 1} />
         </div>
-        <Stepper count={steps.length} current={step + 1} />
-      </footer>
+      </main>
     </div>
   );
 }

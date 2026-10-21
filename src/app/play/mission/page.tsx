@@ -28,7 +28,7 @@ export default async function MissionPage() {
           </CountChip>
         </div>
 
-        <MissionClues clues={mission.clues} />
+        <MissionClues clues={mission.clues} nextClue={mission.nextClue} />
 
         <GameBook className="max-w-180 gap-8 px-8 py-10">
           <div className="flex flex-col items-center gap-1">

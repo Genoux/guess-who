@@ -12,7 +12,7 @@ import { parseArgs } from "node:util";
 import { normalizeEmail } from "@inbeat/core/email";
 import { Pool } from "@neondatabase/serverless";
 import { loadEnvConfig } from "@next/env";
-import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { assertNotProduction } from "../src/db/assert-not-production";
 import * as schema from "../src/db/schema";
@@ -128,22 +128,33 @@ const emailOf = (name: string) =>
 const DEMO_PLAYER = { name: "Léa Dubois", email: "lea.dubois@example.com" };
 
 // Stand-in profile pictures for demo people only; real people get their Clerk (Slack) picture.
-const WOMEN = new Set([
-  "Ana",
-  "Noor",
-  "Maya",
-  "Inès",
-  "Sofia",
-  "Ava",
-  "Hana",
-  "Zoe",
-  "Elena",
-  "Chloe",
-  "Julia",
-  "Léa",
-]);
-const portraitOf = (name: string, seed: number) =>
-  `https://randomuser.me/api/portraits/${WOMEN.has(name.split(" ")[0] ?? "") ? "women" : "men"}/${(seed * 7) % 90}.jpg`;
+const PORTRAITS: Record<string, number> = {
+  "Ana Ferreira": 30,
+  "Noor Haddad": 16,
+  "Maya Chen": 39,
+  "Inès Moreau": 44,
+  "Sofia Rossi": 31,
+  "Ava Patel": 34,
+  "Hana Kim": 25,
+  "Zoe Garcia": 49,
+  "Elena Rossi": 38,
+  "Chloe Nguyen": 5,
+  "Julia Novak": 45,
+  "Léa Dubois": 24,
+  "Mateo Ruiz": 14,
+  "Leo Martin": 8,
+  "Jonah Park": 59,
+  "Noah Dubois": 53,
+  "Ethan Kim": 52,
+  "Lucas Silva": 60,
+  "Omar Aziz": 18,
+  "Ben Carter": 11,
+  "Sam Taylor": 15,
+};
+const TESTER_PORTRAIT = 13;
+const portraitOf = (name: string) =>
+  `https://i.pravatar.cc/600?img=${PORTRAITS[name] ?? TESTER_PORTRAIT}`;
+const STAND_IN_HOSTS = ["https://i.pravatar.cc/%", "https://randomuser.me/%"];
 const CLUES = {
   2: "Has never owned a car, and never plans to.",
   3: "Learning an instrument most people quit as kids.",
@@ -169,10 +180,10 @@ try {
   await db
     .insert(schema.people)
     .values(
-      teammates.map(([name, team, location, fact, ask], index) => ({
+      teammates.map(([name, team, location, fact, ask]) => ({
         name,
         email: emailOf(name),
-        imageUrl: portraitOf(name, index + 1),
+        imageUrl: portraitOf(name),
         teamId: teamIds.get(team),
         location,
         fact,
@@ -236,11 +247,11 @@ try {
       .values({
         email: DEMO_PLAYER.email,
         name: DEMO_PLAYER.name,
-        imageUrl: portraitOf(DEMO_PLAYER.name, 40),
+        imageUrl: portraitOf(DEMO_PLAYER.name),
       })
       .onConflictDoUpdate({
         target: schema.people.email,
-        set: { imageUrl: sql`coalesce(${schema.people.imageUrl}, excluded.image_url)` },
+        set: { imageUrl: sql`excluded.image_url` },
       });
     const [welcomer] = await db
       .select({ id: schema.people.id })
@@ -273,12 +284,20 @@ try {
     }
   }
 
-  // A signed-in tester without a Slack picture gets a stand-in so their own sticker looks real.
+  // A signed-in tester without a real picture gets a stand-in so their own sticker looks real.
   for (const email of [player, asWelcomer].filter((value): value is string => Boolean(value))) {
     await db
       .update(schema.people)
-      .set({ imageUrl: portraitOf("", 32) })
-      .where(and(eq(schema.people.email, email), isNull(schema.people.imageUrl)));
+      .set({ imageUrl: portraitOf("") })
+      .where(
+        and(
+          eq(schema.people.email, email),
+          or(
+            isNull(schema.people.imageUrl),
+            ...STAND_IN_HOSTS.map((host) => like(schema.people.imageUrl, host)),
+          ),
+        ),
+      );
   }
 
   const [playerRow] = await db

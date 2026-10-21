@@ -48,7 +48,7 @@ export function ClueReveal({ clue }: { clue: ClueRevealData }) {
       </div>
       <GameStage middle className="gap-8 pt-0">
         <span className="font-game-mono text-caption text-game-shortlist uppercase">
-          Day {clue.day} · Clue {clue.number} of 4
+          Clue {clue.number} of 4
         </span>
 
         <motion.div

@@ -8,11 +8,11 @@ type ClueCardProps = {
   /** Face down until its day, yellow when new, white once read. */
   state: ClueCardState;
   size?: "sm" | "lg";
-  /** Caption: "Clue 2 · Day 6" on a face-up card, "Day 9" on a face-down one. */
+  /** Caption: which clue it is, "Clue 2". Never the day: timing goes in the footer as a countdown. */
   label: string;
   /** The clue itself; ignored while the card is face down. */
   text?: string;
-  /** Small line pinned to the bottom of a face-up card, e.g. "From your welcomer". */
+  /** Small line: "From your welcomer" at the bottom of a face-up card, "In 3 days" under a face-down one. */
   footer?: ReactNode;
   /** Hand-placed angle in degrees. */
   rot?: number;
@@ -60,6 +60,7 @@ export function ClueCard({
           <span className="sr-only">Clue face down, </span>
           {label}
         </span>
+        {footer ? <span className="text-game-shortlist text-small">{footer}</span> : null}
       </div>
     );
   }
