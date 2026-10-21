@@ -7,7 +7,7 @@ type GameTopNavProps = {
   logoHref?: string;
   /** Up to two pill tabs, centered: pass a PillTabs. */
   tabs?: ReactNode;
-  /** Right side: a CountChip and the player's GameAvatar. */
+  /** Right side: a CountChip and the AccountButton. */
   end?: ReactNode;
   className?: string;
 };

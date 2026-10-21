@@ -3,8 +3,10 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useState, useTransition } from "react";
+import { AccountButton } from "@/shared/components/account-button";
 import { ClueCard } from "@/shared/components/game/clue-card";
 import { CountChip } from "@/shared/components/game/count-chip";
+import { GameAvatar } from "@/shared/components/game/game-avatar";
 import { GameButton } from "@/shared/components/game/game-button";
 import { GAME_EASE } from "@/shared/components/game/game-motion";
 import { gameToast } from "@/shared/components/game/game-toaster";
@@ -191,14 +193,10 @@ export function WelcomeIntro({ firstName, fan, colors, preview = false }: Welcom
     <div className="flex min-h-dvh w-full flex-col">
       <header className="flex items-center justify-between px-6 pt-6 md:px-10 md:pt-8">
         <span className="font-game-serif text-logo">The Album</span>
-        {last ? null : (
-          <GameButton variant="link" onClick={finish} disabled={pending}>
-            Skip
-          </GameButton>
-        )}
+        {preview ? <GameAvatar name={firstName} color={FALLBACK_COLOR} /> : <AccountButton />}
       </header>
 
-      <main className="flex flex-1 flex-col items-center justify-center px-6 pt-6 pb-14 text-center md:pb-20">
+      <main className="flex flex-1 flex-col items-center justify-center px-6 py-8 text-center">
         <div
           className="flex h-60 w-full items-center justify-center overflow-x-clip sm:h-75"
           aria-hidden
@@ -229,27 +227,33 @@ export function WelcomeIntro({ firstName, fan, colors, preview = false }: Welcom
             </motion.div>
           </AnimatePresence>
         </div>
-
-        <div className="mt-8 flex flex-col items-center gap-6">
-          <Stepper count={steps.length} current={step + 1} />
-          <div className="flex items-center justify-center gap-3">
-            {step > 0 ? (
-              <GameButton variant="light" onClick={() => setStep(step - 1)}>
-                Back
-              </GameButton>
-            ) : null}
-            {last ? (
-              <GameButton onClick={finish} disabled={pending}>
-                {preview ? "Replay" : "Open my album"}
-              </GameButton>
-            ) : (
-              <GameButton onClick={() => setStep(step + 1)}>
-                {step === 0 ? "How it works" : "Next"}
-              </GameButton>
-            )}
-          </div>
-        </div>
       </main>
+
+      <footer className="mx-auto grid w-full max-w-140 grid-cols-[1fr_auto_1fr] items-center gap-4 px-6 pb-10 md:pb-14">
+        <div className="justify-self-start">
+          {step === 0 ? (
+            <GameButton variant="link" onClick={finish} disabled={pending}>
+              Skip
+            </GameButton>
+          ) : (
+            <GameButton variant="light" onClick={() => setStep(step - 1)}>
+              Back
+            </GameButton>
+          )}
+        </div>
+        <Stepper count={steps.length} current={step + 1} />
+        <div className="justify-self-end">
+          {last ? (
+            <GameButton onClick={finish} disabled={pending}>
+              {preview ? "Replay" : "Open my album"}
+            </GameButton>
+          ) : (
+            <GameButton onClick={() => setStep(step + 1)}>
+              {step === 0 ? "How it works" : "Next"}
+            </GameButton>
+          )}
+        </div>
+      </footer>
     </div>
   );
 }

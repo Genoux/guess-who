@@ -1,5 +1,5 @@
+import { AccountButton } from "@/shared/components/account-button";
 import { CountChip } from "@/shared/components/game/count-chip";
-import { GameAvatar } from "@/shared/components/game/game-avatar";
 import { GameTopNav } from "@/shared/components/game/game-top-nav";
 import { PillTabs } from "@/shared/components/game/pill-tabs";
 import { ROUTES } from "@/shared/config/routes";
@@ -10,7 +10,7 @@ type PlayerTopNavProps = {
   current: "album" | "mission";
 };
 
-/** Album and Mission tabs, the sticker count and the player's initial. */
+/** Album and Mission tabs, the sticker count and the account menu. */
 export function PlayerTopNav({ nav, current }: PlayerTopNavProps) {
   return (
     <GameTopNav
@@ -34,7 +34,7 @@ export function PlayerTopNav({ nav, current }: PlayerTopNavProps) {
             <span className="sr-only">Stickers collected: </span>
             {nav.collectedCount} / {nav.total}
           </CountChip>
-          <GameAvatar name={nav.name} color={nav.color} />
+          <AccountButton />
         </>
       }
     />

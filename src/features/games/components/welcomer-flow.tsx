@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { AccountButton } from "@/shared/components/account-button";
 import { ClueCard } from "@/shared/components/game/clue-card";
 import { CountChip } from "@/shared/components/game/count-chip";
 import { GameButton } from "@/shared/components/game/game-button";
@@ -104,15 +105,19 @@ export function WelcomerFlow({ desk }: { desk: WelcomerDesk }) {
   const header = (
     <div className="flex items-center justify-between gap-4 px-4 py-5 md:px-10">
       <span className="font-game-serif text-logo">The Album</span>
-      <CountChip>Secret · for {desk.playerFirstName}</CountChip>
+      <div className="flex items-center gap-3">
+        <CountChip>Secret · for {desk.playerFirstName}</CountChip>
+        <AccountButton />
+      </div>
     </div>
   );
 
   if (step === "intro") {
     return (
       <GameShell tone="ink">
-        <div className="px-4 py-5 md:px-10">
+        <div className="flex items-center justify-between gap-4 px-4 py-5 md:px-10">
           <span className="font-game-serif text-logo">The Album</span>
+          <AccountButton />
         </div>
         <GameStage middle className="gap-8 pt-0">
           <Pop>

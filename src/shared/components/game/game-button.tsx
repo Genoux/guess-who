@@ -23,7 +23,7 @@ const gameButtonVariants = cva(
       {
         variant: ["cta", "yellow", "light", "on-dark"],
         className:
-          "rounded-full font-medium transition-[transform,background-color] duration-160 ease-game hover:-translate-y-px focus-visible:outline-offset-3 active:scale-97 motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100",
+          "rounded-full font-medium transition-colors duration-160 ease-game focus-visible:outline-offset-3 motion-reduce:transition-none",
       },
       { variant: "link", className: "h-auto px-0 text-button-sm" },
     ],
