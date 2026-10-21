@@ -1,5 +1,6 @@
 {
   "extends": ["@inbeat/config/biome"],
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
   "files": {
     "includes": ["**", "!!**/.next", "!**/next-env.d.ts"]
   }
