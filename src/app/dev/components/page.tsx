@@ -21,6 +21,7 @@ import { ana, jonah, noor } from "./_components/fixtures";
 import { ModalDemo } from "./_components/modal-demo";
 import { PropTable } from "./_components/prop-table";
 import { ToastDemo } from "./_components/toast-demo";
+import { isCatalogueEnabled } from "./_lib/catalogue-access";
 
 export const metadata: Metadata = {
   title: "Game components",
@@ -30,9 +31,11 @@ export const metadata: Metadata = {
 const MODES: StickerMode[] = ["locked", "collected", "maybe", "ruled", "found"];
 const HREF = "/dev/components";
 
-/** Dev-only catalogue of the game UI kit; 404 in production. */
+/** Catalogue of the game UI kit, for local dev and previews only; 404 everywhere else. */
 export default function GameComponentsPage() {
-  if (env.NEXT_PUBLIC_VERCEL_ENV === "production") notFound();
+  if (!isCatalogueEnabled({ nodeEnv: env.NODE_ENV, vercelEnv: env.NEXT_PUBLIC_VERCEL_ENV })) {
+    notFound();
+  }
 
   return (
     <GameShell>
@@ -110,6 +113,11 @@ export default function GameComponentsPage() {
                 name: "celebrateChanges",
                 values: "true · false",
                 notes: "Stars on unlock and on found",
+              },
+              {
+                name: "celebratePalette",
+                values: "light · dark · found",
+                notes: "Star colors for the background: game bg, ink or orange",
               },
             ]}
           />
@@ -225,7 +233,7 @@ export default function GameComponentsPage() {
               {
                 name: "CloseButton",
                 values: "label, tone: light · dark · on-color, asChild",
-                notes: "Icon only; label is the accessible name",
+                notes: "Icon only; label is the accessible name and the tooltip",
               },
             ]}
           />
