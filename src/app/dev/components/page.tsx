@@ -1,4 +1,3 @@
-import { CircleHelpIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -208,8 +207,13 @@ export default function GameComponentsPage() {
             <Example code={`CloseButton tone="light"`}>
               <CloseButton label="Back to album" />
             </Example>
-            <Example code={`IconButton tone="subtle" size="sm"`}>
-              <IconButton label="How it works" icon={<CircleHelpIcon />} tone="subtle" size="sm" />
+            <Example code={`IconButton tone="outline" size="sm"`}>
+              <IconButton
+                label="How it works"
+                icon={<span className="font-medium text-base">?</span>}
+                tone="outline"
+                size="sm"
+              />
             </Example>
           </div>
           <div className="flex flex-wrap items-center gap-x-7 gap-y-8 rounded-stage bg-game-ink p-6">

@@ -1,4 +1,3 @@
-import { CircleHelpIcon } from "lucide-react";
 import Link from "next/link";
 import { AccountButton } from "@/shared/components/account-button";
 import { CountChip } from "@/shared/components/game/count-chip";
@@ -36,8 +35,8 @@ export function PlayerTopNav({ nav, current }: PlayerTopNavProps) {
           <IconButton
             asChild
             label="How it works"
-            icon={<CircleHelpIcon />}
-            tone="subtle"
+            icon={<span className="font-medium text-base">?</span>}
+            tone="outline"
             size="sm"
           >
             <Link href={ROUTES.playWelcome} />
