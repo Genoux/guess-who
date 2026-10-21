@@ -72,6 +72,30 @@ describe("insertPerson", () => {
     expect(sent().sql).toMatch(/insert into people .* on conflict \(email\) do nothing returning/);
   });
 
+  it("treats a clerk_user_id race as a lost insert", async () => {
+    client.query.mockRejectedValueOnce(
+      Object.assign(new Error("duplicate key"), {
+        code: "23505",
+        constraint: "people_clerk_user_id_unique",
+      }),
+    );
+    await expect(
+      insertPerson({ clerkUserId: "user_1", email: "maya@inbeat.agency", name: "Maya" }),
+    ).resolves.toBeUndefined();
+  });
+
+  it("lets other unique violations through", async () => {
+    client.query.mockRejectedValueOnce(
+      Object.assign(new Error("duplicate key"), {
+        code: "23505",
+        constraint: "people_sticker_number_unique",
+      }),
+    );
+    await expect(
+      insertPerson({ clerkUserId: "user_1", email: "maya@inbeat.agency", name: "Maya" }),
+    ).rejects.toThrow();
+  });
+
   it("lets a database error through", async () => {
     client.query.mockRejectedValueOnce(new Error("people_sticker_number_unique"));
     await expect(

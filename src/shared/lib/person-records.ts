@@ -1,4 +1,5 @@
 import "server-only";
+import { errorChain, isUniqueViolation } from "@inbeat/core/errors";
 import { and, eq, isNull } from "drizzle-orm";
 import { games, type Person, people } from "@/db/schema";
 import { db } from "./db";
@@ -32,17 +33,31 @@ export async function claimPerson(personId: string, clerkUserId: string) {
   return person;
 }
 
+const CLERK_USER_ID_UNIQUE = "people_clerk_user_id_unique";
+
+const violatesConstraint = (err: unknown, constraint: string) =>
+  isUniqueViolation(err) &&
+  errorChain(err).some(
+    (link) => (link as { constraint?: unknown } | null)?.constraint === constraint,
+  );
+
 /**
- * Returns nothing when a concurrent request already inserted the email. Postgres takes one
- * conflict target, so any other unique violation (clerk_user_id, sticker_number) throws.
+ * Returns nothing when a concurrent request for the same user already inserted the row: Postgres
+ * takes one conflict target, so a clerk_user_id race surfaces as an error we treat the same way.
+ * Any other unique violation (sticker_number) throws.
  */
 export async function insertPerson(values: { clerkUserId: string; email: string; name: string }) {
-  const [person] = await db
-    .insert(people)
-    .values(values)
-    .onConflictDoNothing({ target: people.email })
-    .returning();
-  return person;
+  try {
+    const [person] = await db
+      .insert(people)
+      .values(values)
+      .onConflictDoNothing({ target: people.email })
+      .returning();
+    return person;
+  } catch (err) {
+    if (violatesConstraint(err, CLERK_USER_ID_UNIQUE)) return undefined;
+    throw err;
+  }
 }
 
 /** Makes the person the player of every unclaimed game created for this (normalized) email. */
