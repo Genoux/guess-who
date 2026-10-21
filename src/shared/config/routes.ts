@@ -6,4 +6,5 @@ export const ROUTES = {
   play: "/play",
   card: "/card",
   notOnTheList: "/not-on-the-list",
+  devComponents: "/dev/components",
 } as const;

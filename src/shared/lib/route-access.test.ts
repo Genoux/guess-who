@@ -9,6 +9,7 @@ describe("isPublicPath", () => {
     "/sign-up/verify",
     "/api/health",
     "/robots.txt",
+    "/dev/components",
   ])("lets %s through without a session", (path) => {
     expect(isPublicPath(path)).toBe(true);
   });
@@ -22,6 +23,8 @@ describe("isPublicPath", () => {
     "/api/healthz",
     "/sign-in-evil",
     "/robots.txt.bak",
+    "/dev",
+    "/dev/components-evil",
   ])("requires a session for %s", (path) => {
     expect(isPublicPath(path)).toBe(false);
   });
