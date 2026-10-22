@@ -8,7 +8,8 @@ export const cardSurfaceVariants = cva("border border-game-card-edge", {
       none: "",
       ink: "shadow-ink",
       maybe: "shadow-ink-maybe",
-      found: "shadow-ink-found",
+      // The edge takes the shadow's color, so the card reads as one solid block.
+      found: "border-game-found shadow-ink-found",
     },
   },
   defaultVariants: { size: "sm", shadow: "none" },
