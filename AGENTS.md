@@ -139,6 +139,11 @@ Never commit, push or open a PR unless explicitly asked.
 - Notifications leave the app as signed webhook events to n8n, which posts to Slack. No Slack API
   in the app.
 - Playwright e2e against previews (phase 8).
+- Storybook (`@storybook/nextjs-vite`) for the game UI kit: stories sit beside each component as
+  `src/shared/components/game/*.stories.tsx`; run `bun run storybook` (port 6006) or
+  `bun run build-storybook`. Stories share sample people with the dev catalogue through
+  `src/shared/components/game/fixtures.ts`; add data there, never inline. The static build copies
+  the licensed fonts from `public/fonts`, so never deploy `storybook-static` publicly.
 - `@biomejs/biome` pinned to 2.5.15: Biome 2.6 formats markdown and rewrites the managed toolkit
   files, which then fails `ib check`. Unpin when ib-toolkit excludes markdown.
 

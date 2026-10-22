@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { noor } from "@/shared/components/game/fixtures";
 import { GameButton } from "@/shared/components/game/game-button";
 import { Pop } from "@/shared/components/game/pop";
 import { Sticker } from "@/shared/components/game/sticker";
 import type { StickerMode } from "@/shared/components/game/sticker-view";
 import { celebrate } from "@/shared/lib/celebrate";
-import { noor } from "../../_lib/fixtures";
 import { PropCode } from "./prop-code";
 
 const STAMP_ORDER: StickerMode[] = ["collected", "maybe", "ruled", "found"];

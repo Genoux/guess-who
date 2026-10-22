@@ -19,7 +19,9 @@
     "db:seed": "bun scripts/db-seed.ts",
     "db:seed:demo": "bun scripts/db-seed-demo.ts",
     "ib:sync": "ib sync",
-    "ib:check": "ib check"
+    "ib:check": "ib check",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",
@@ -54,6 +56,9 @@
     "@biomejs/biome": "2.5.15",
     "@inbeat/config": "^0.12.2",
     "@inbeat/standards": "^0.12.2",
+    "@storybook/addon-a11y": "^10.6.3",
+    "@storybook/addon-docs": "^10.6.3",
+    "@storybook/nextjs-vite": "^10.6.3",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^22",
@@ -62,8 +67,10 @@
     "dependency-cruiser": "^17.0.1",
     "drizzle-kit": "^0.31.9",
     "shadcn": "^4.21.0",
+    "storybook": "^10.6.3",
     "tailwindcss": "^4.3.3",
     "typescript": "^5",
+    "vite": "^8",
     "vitest": "^4.1.1"
   },
   "packageManager": "bun@1.3.5",

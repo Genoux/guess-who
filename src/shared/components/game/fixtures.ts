@@ -1,6 +1,6 @@
-import type { StickerPerson } from "@/shared/components/game/sticker-view";
+import type { StickerPerson } from "./sticker-view";
 
-// Sample people for the catalogue only. Team colors come from the teams table in the app.
+// Team colors mirror the teams table in the app.
 const TEAMS = {
   Creative: { color: "#46BDF0", tint: "#B5E5F9" },
   Strategy: { color: "#157428", tint: "#A1C8A9" },
@@ -42,3 +42,6 @@ export const ana: StickerPerson = {
   ask: "Learning the cello at 30",
   photoUrl: SAMPLE_PHOTO,
 };
+
+/** A welcomer-written clue, as it reads on a face-up card. */
+export const welcomerClue = "Has never owned a car, and never plans to.";

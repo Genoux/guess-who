@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { CloseButton } from "@/shared/components/game/close-button";
 import { ClueCard } from "@/shared/components/game/clue-card";
 import { CountChip } from "@/shared/components/game/count-chip";
+import { ana, jonah, noor, welcomerClue } from "@/shared/components/game/fixtures";
 import { GameAvatar } from "@/shared/components/game/game-avatar";
 import { GameButton } from "@/shared/components/game/game-button";
 import { GameField } from "@/shared/components/game/game-field";
@@ -16,7 +17,6 @@ import { Sticker } from "@/shared/components/game/sticker";
 import type { StickerMode } from "@/shared/components/game/sticker-view";
 import { env } from "@/shared/config/env";
 import { isCatalogueEnabled } from "../_lib/catalogue-access";
-import { ana, jonah, noor } from "../_lib/fixtures";
 import { CatalogueSection } from "./_components/catalogue-section";
 import { EffectsDemo } from "./_components/effects-demo";
 import { Example } from "./_components/example";
@@ -134,11 +134,7 @@ export default function GameComponentsPage() {
               <ClueCard state="down" label="Clue 3" footer="In 3 days" />
             </Example>
             <Example code={`state="new"`}>
-              <ClueCard
-                state="new"
-                label="Clue 2"
-                text="Has never owned a car, and never plans to."
-              />
+              <ClueCard state="new" label="Clue 2" text={welcomerClue} />
             </Example>
             <Example code={`state="open"`}>
               <ClueCard state="open" label="Clue 1" text="Works in Creative." />
@@ -150,7 +146,7 @@ export default function GameComponentsPage() {
                 state="new"
                 size="lg"
                 label="Clue 2"
-                text="Has never owned a car, and never plans to."
+                text={welcomerClue}
                 footer="From your welcomer"
               />
             </Example>

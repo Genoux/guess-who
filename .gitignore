@@ -17,3 +17,7 @@ npm-debug.log*
 
 # Licensed brand fonts (Fieldtrip): never commit, the repo is public
 /public/fonts/
+
+# Storybook
+storybook-static/
+*storybook.log
