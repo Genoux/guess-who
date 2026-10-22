@@ -1,14 +1,9 @@
 import "server-only";
-import type { StickerMode, StickerPerson } from "@/shared/components/game/sticker-view";
 import { clueDay } from "../lib/game-clues";
 import { loadPlayerBoard, type PlayerNav, toPlayerNav } from "../server/load-player-board";
+import { type StickerDetail, toStickerDetail } from "../server/to-sticker-detail";
 
-export type AlbumSticker = {
-  id: string;
-  teamId: string | null;
-  person: StickerPerson;
-  mode: StickerMode;
-};
+export type AlbumSticker = StickerDetail & { teamId: string | null };
 
 export type PlayerAlbum = {
   nav: PlayerNav;
@@ -40,6 +35,9 @@ export async function getPlayerAlbum(): Promise<PlayerAlbum | null> {
         ? null
         : { welcomerFirstName: welcomer?.firstName ?? "", found: board.game.status === "found" },
     teams: board.teams.map(({ id, name, count }) => ({ id, name, count })),
-    stickers: board.stickers.map(({ id, teamId, person, mode }) => ({ id, teamId, person, mode })),
+    stickers: board.stickers.map((sticker) => ({
+      ...toStickerDetail(sticker),
+      teamId: sticker.teamId,
+    })),
   };
 }

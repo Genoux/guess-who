@@ -1,18 +1,9 @@
 import "server-only";
 import { z } from "zod";
-import type { StickerMode, StickerPerson } from "@/shared/components/game/sticker-view";
 import { loadPlayerBoard } from "../server/load-player-board";
+import { type StickerDetail, toStickerDetail } from "../server/to-sticker-detail";
 
-export type CollectTarget = {
-  id: string;
-  firstName: string;
-  person: StickerPerson;
-  mode: StickerMode;
-  collected: boolean;
-  shortlisted: boolean;
-  ruled: boolean;
-  /** The player's own note, once collected. */
-  note: string | null;
+export type CollectTarget = StickerDetail & {
   active: boolean;
   collectedCount: number;
   total: number;
@@ -25,14 +16,7 @@ export async function getCollectTarget(personId: string): Promise<CollectTarget 
   const sticker = board?.stickers.find((candidate) => candidate.id === personId);
   if (!board || !sticker) return null;
   return {
-    id: sticker.id,
-    firstName: sticker.firstName,
-    person: sticker.person,
-    mode: sticker.mode,
-    collected: sticker.collected,
-    shortlisted: sticker.shortlisted,
-    ruled: sticker.ruled,
-    note: sticker.note,
+    ...toStickerDetail(sticker),
     active: board.game.status === "active",
     collectedCount: board.collectedCount,
     total: board.stickers.length,

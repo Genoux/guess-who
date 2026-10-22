@@ -40,7 +40,12 @@ export default async function AlbumPage() {
           />
         ) : null}
         {album.stickers.length > 0 ? (
-          <AlbumBoard teams={album.teams} stickers={album.stickers} active={album.active} />
+          <AlbumBoard
+            teams={album.teams}
+            stickers={album.stickers}
+            active={album.active}
+            collectedCount={album.nav.collectedCount}
+          />
         ) : (
           <p className="text-game-muted">
             The album is still empty. Stickers arrive as teammates fill in their cards.

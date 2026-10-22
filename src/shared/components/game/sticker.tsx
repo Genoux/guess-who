@@ -101,9 +101,15 @@ type StickerPhotoProps = {
 /** The profile picture over a muted placeholder that breathes until the picture has loaded. */
 function StickerPhoto({ url, name, ruled, onError }: StickerPhotoProps) {
   const [loaded, setLoaded] = useState(false);
+  // A picture already in the cache shows at once, so a remounted sticker does not flash; only a
+  // picture that arrives later fades in.
+  const [fadeIn, setFadeIn] = useState(true);
   // A cached picture can finish before React attaches onLoad, so check it once it is in the page.
   const checkLoaded = useCallback((img: HTMLImageElement | null) => {
-    if (img?.complete && img.naturalWidth > 0) setLoaded(true);
+    if (img?.complete && img.naturalWidth > 0) {
+      setFadeIn(false);
+      setLoaded(true);
+    }
   }, []);
 
   return (
@@ -125,7 +131,8 @@ function StickerPhoto({ url, name, ruled, onError }: StickerPhotoProps) {
         onLoad={() => setLoaded(true)}
         onError={onError}
         className={gameCn(
-          "absolute inset-0 size-full object-cover transition-opacity duration-300 ease-game",
+          "absolute inset-0 size-full object-cover",
+          fadeIn && "transition-opacity duration-300 ease-game",
           loaded ? (ruled ? "opacity-50" : "opacity-100") : "opacity-0",
           ruled && "grayscale",
         )}
@@ -276,7 +283,8 @@ export function Sticker({
               if (view.open) onFlipped?.();
             }}
           />
-          <AnimatePresence>
+          {/* A badge already on the card shows as is; only one added while it is on screen stamps in. */}
+          <AnimatePresence initial={false}>
             {view.stamp ? (
               <StickerStampMark
                 key={view.stamp}

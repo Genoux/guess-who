@@ -14,4 +14,5 @@ export const ROUTES = {
   notOnTheList: "/not-on-the-list",
   devComponents: "/dev/components",
   devWelcome: "/dev/welcome",
+  devAlbum: "/dev/album",
 } as const;
