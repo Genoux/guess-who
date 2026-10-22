@@ -9,19 +9,20 @@ import { GameButton } from "@/shared/components/game/game-button";
 import { GameField } from "@/shared/components/game/game-field";
 import { GameShell } from "@/shared/components/game/game-shell";
 import { GameTopNav } from "@/shared/components/game/game-top-nav";
+import { IconButton } from "@/shared/components/game/icon-button";
 import { PillTabs } from "@/shared/components/game/pill-tabs";
 import { Stepper } from "@/shared/components/game/stepper";
 import { Sticker } from "@/shared/components/game/sticker";
 import type { StickerMode } from "@/shared/components/game/sticker-view";
 import { env } from "@/shared/config/env";
+import { isCatalogueEnabled } from "../_lib/catalogue-access";
+import { ana, jonah, noor } from "../_lib/fixtures";
 import { CatalogueSection } from "./_components/catalogue-section";
 import { EffectsDemo } from "./_components/effects-demo";
 import { Example } from "./_components/example";
-import { ana, jonah, noor } from "./_components/fixtures";
 import { ModalDemo } from "./_components/modal-demo";
 import { PropTable } from "./_components/prop-table";
 import { ToastDemo } from "./_components/toast-demo";
-import { isCatalogueEnabled } from "./_lib/catalogue-access";
 
 export const metadata: Metadata = {
   title: "Game components",
@@ -100,7 +101,7 @@ export default function GameComponentsPage() {
                 name: "mode",
                 values: "locked · collected · maybe · ruled · found",
                 notes:
-                  "Locked shows the ask-me-about line on the team tint. Unlocking flips it and throws stars.",
+                  "Locked shows the ask-me-about line on the team tint. Unlocking flips it and throws confetti.",
               },
               {
                 name: "size",
@@ -112,7 +113,7 @@ export default function GameComponentsPage() {
               {
                 name: "celebrateChanges",
                 values: "true · false",
-                notes: "Stars on unlock and on found",
+                notes: "Confetti on unlock and on found",
               },
               {
                 name: "celebratePalette",
@@ -130,17 +131,17 @@ export default function GameComponentsPage() {
         >
           <div className="flex flex-wrap items-start gap-x-6 gap-y-8">
             <Example code={`state="down"`}>
-              <ClueCard state="down" label="Day 9" />
+              <ClueCard state="down" label="Clue 3" footer="In 3 days" />
             </Example>
             <Example code={`state="new"`}>
               <ClueCard
                 state="new"
-                label="Clue 2 · Day 6"
+                label="Clue 2"
                 text="Has never owned a car, and never plans to."
               />
             </Example>
             <Example code={`state="open"`}>
-              <ClueCard state="open" label="Clue 1 · Day 3" text="Works in Creative." />
+              <ClueCard state="open" label="Clue 1" text="Works in Creative." />
             </Example>
           </div>
           <div className="flex flex-wrap items-start gap-x-6 gap-y-8">
@@ -154,7 +155,7 @@ export default function GameComponentsPage() {
               />
             </Example>
             <Example code={`size="lg" state="down"`}>
-              <ClueCard state="down" size="lg" label="Day 12" />
+              <ClueCard state="down" size="lg" label="Clue 4" />
             </Example>
           </div>
           <PropTable
@@ -165,7 +166,11 @@ export default function GameComponentsPage() {
                 values: "sm · lg",
                 notes: "200 × 260 on the mission, 320 × 420 alone",
               },
-              { name: "label", values: "string", notes: "“Clue 2 · Day 6”, or “Day 9” face down" },
+              {
+                name: "label",
+                values: "string",
+                notes: "“Clue 2”; never a day. Timing goes in footer as a countdown",
+              },
               { name: "text", values: "string", notes: "The clue; never sent before its day" },
               { name: "footer", values: "node", notes: "Pinned to the bottom of a face-up card" },
               { name: "rot", values: "degrees", notes: "Hand-placed angle" },
@@ -201,6 +206,14 @@ export default function GameComponentsPage() {
             </Example>
             <Example code={`CloseButton tone="light"`}>
               <CloseButton label="Back to album" />
+            </Example>
+            <Example code={`IconButton tone="outline" size="xs"`}>
+              <IconButton
+                label="How it works"
+                icon={<span className="font-medium text-small">?</span>}
+                tone="outline"
+                size="xs"
+              />
             </Example>
           </div>
           <div className="flex flex-wrap items-center gap-x-7 gap-y-8 rounded-stage bg-game-ink p-6">
@@ -383,7 +396,7 @@ export default function GameComponentsPage() {
               {
                 name: "celebrate",
                 values: "origin, { kind?, palette? }",
-                notes: "canvas-confetti stars, skipped for reduced motion",
+                notes: "canvas-confetti, skipped for reduced motion",
               },
               { name: "Tilt", values: "disabled?", notes: "react-parallax-tilt, 10°, scale 1.03" },
               { name: "Pop", values: "delay?", notes: "motion pop-in for titles and actions" },

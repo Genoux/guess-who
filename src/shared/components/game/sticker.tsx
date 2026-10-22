@@ -3,10 +3,11 @@
 import { cva } from "class-variance-authority";
 import { PlusIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { type CelebratePalette, celebrate, originFromElement } from "@/shared/lib/celebrate";
+import { type CardShadow, cardSurfaceVariants } from "./card-surface";
+import { Flip } from "./flip";
 import { gameCn } from "./game-cn";
-import { FLIP_EASE } from "./game-motion";
 import { StickerStampMark } from "./sticker-stamp";
 import {
   getStickerView,
@@ -25,10 +26,14 @@ export type StickerProps = {
   rot?: number;
   /** Hover tilt; off for stickers fanned out behind another one. */
   tilt?: boolean;
-  /** Star burst when the sticker unlocks or turns found. */
+  /** Confetti when the sticker unlocks or turns found. */
   celebrateChanges?: boolean;
-  /** Star colors for the background the sticker sits on: light, ink (dark) or orange (found). */
+  /** Confetti colors for the background the sticker sits on: light, ink (dark) or orange (found). */
   celebratePalette?: CelebratePalette;
+  /** Seconds to wait before a mode change turns the card, for a beat after it arrives. */
+  flipDelay?: number;
+  /** Runs once a turn to the collected face has landed. */
+  onFlipped?: () => void;
   className?: string;
 };
 
@@ -38,58 +43,88 @@ const stickerVariants = cva("relative flex-none text-left text-game-ink", {
   },
 });
 
-// Faces swap visibility halfway through the 640ms flip. Only the visible face is ever styled:
-// a filter or opacity on a 3D face breaks backface hiding and mirrors its text.
-const faceVariants = cva(
-  "absolute inset-0 flex flex-col bg-game-surface backface-hidden transition-[visibility] duration-0 delay-320 motion-reduce:delay-0",
-  {
-    variants: {
-      size: {
-        sm: "gap-2.5 rounded-sticker p-2",
-        lg: "gap-3 rounded-sticker-lg p-2.5",
-      },
-      shadow: {
-        edge: "shadow-edge",
-        ink: "shadow-ink",
-        maybe: "shadow-ink-maybe",
-        found: "shadow-ink-found",
-      },
-    },
-  },
-);
-
-const artVariants = cva("relative flex min-h-0 flex-1 overflow-hidden", {
+// A face never gets a filter or opacity of its own: the photo fades, the face does not.
+const faceVariants = cva("absolute inset-0 flex flex-col bg-game-surface", {
   variants: {
-    size: { sm: "rounded-sticker-art", lg: "rounded-sticker-art-lg" },
+    size: { sm: "gap-2.5 p-2", lg: "gap-3 p-2.5" },
   },
 });
 
-const nameVariants = cva("truncate font-game-serif", {
+const artVariants = cva("relative flex min-h-0 flex-1 overflow-hidden", {
+  variants: {
+    size: { sm: "rounded-card-art", lg: "rounded-card-art-lg" },
+  },
+});
+
+const nameVariants = cva("max-w-full truncate font-game-serif", {
   variants: {
     size: { sm: "text-name", lg: "text-name-lg" },
     muted: { true: "text-game-muted", false: "" },
   },
 });
 
-const metaVariants = cva("truncate font-game-mono uppercase text-game-muted", {
+const metaVariants = cva("max-w-full truncate font-game-mono uppercase text-game-muted", {
   variants: {
     size: { sm: "text-meta", lg: "text-caption" },
   },
 });
 
-const infoVariants = cva("flex min-w-0 flex-none flex-col", {
+const infoVariants = cva("flex min-w-0 flex-none flex-col items-center text-center", {
   variants: {
     size: { sm: "gap-0.5 px-1 pb-0.5", lg: "gap-1 px-1.5 pb-1" },
   },
 });
 
-const BACK_SHADOW: Record<StickerMode, "edge" | "ink" | "maybe" | "found"> = {
+const BACK_SHADOW: Record<StickerMode, CardShadow> = {
   locked: "ink",
   collected: "ink",
   maybe: "maybe",
-  ruled: "edge",
+  ruled: "none",
   found: "found",
 };
+
+type StickerPhotoProps = {
+  url: string;
+  name: string;
+  ruled: boolean;
+  onError: () => void;
+};
+
+/** The profile picture over a muted placeholder that breathes until the picture has loaded. */
+function StickerPhoto({ url, name, ruled, onError }: StickerPhotoProps) {
+  const [loaded, setLoaded] = useState(false);
+  // A cached picture can finish before React attaches onLoad, so check it once it is in the page.
+  const checkLoaded = useCallback((img: HTMLImageElement | null) => {
+    if (img?.complete && img.naturalWidth > 0) setLoaded(true);
+  }, []);
+
+  return (
+    <>
+      {loaded ? null : (
+        <motion.span
+          aria-hidden
+          className="absolute inset-0 bg-game-hover"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: [1, 0.55, 1] }}
+          transition={{ duration: 1.6, ease: "easeInOut", repeat: Number.POSITIVE_INFINITY }}
+        />
+      )}
+      {/* biome-ignore lint/performance/noImgElement: profile pictures come from Clerk or storage at their own size, not optimised per request */}
+      <img
+        ref={checkLoaded}
+        src={url}
+        alt={name}
+        onLoad={() => setLoaded(true)}
+        onError={onError}
+        className={gameCn(
+          "absolute inset-0 size-full object-cover transition-opacity duration-300 ease-game",
+          loaded ? (ruled ? "opacity-30" : "opacity-100") : "opacity-0",
+          ruled && "grayscale",
+        )}
+      />
+    </>
+  );
+}
 
 /** The person card: locked shows the ask-me-about line, every other mode the collected face. */
 export function Sticker({
@@ -100,19 +135,125 @@ export function Sticker({
   tilt = true,
   celebrateChanges = true,
   celebratePalette = "light",
+  flipDelay,
+  onFlipped,
   className,
 }: StickerProps) {
   const view = getStickerView(person, mode, size);
   const rootRef = useRef<HTMLDivElement>(null);
   const previousMode = useRef(mode);
+  // The celebration a mode change earned, spent when its moment lands: the turn or the stamp.
+  const pendingCelebration = useRef<"unlock" | "found" | null>(null);
   const ruled = mode === "ruled";
+  // A picture that fails to load (expired, blocked) falls back to the initials.
+  const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
+  const photoUrl = person.photoUrl && person.photoUrl !== failedPhoto ? person.photoUrl : null;
 
   useEffect(() => {
     const kind = stickerCelebration(previousMode.current, mode);
     previousMode.current = mode;
-    if (!kind || !celebrateChanges || !rootRef.current) return;
-    void celebrate(originFromElement(rootRef.current), { kind, palette: celebratePalette });
-  }, [mode, celebrateChanges, celebratePalette]);
+    pendingCelebration.current = celebrateChanges ? kind : null;
+  }, [mode, celebrateChanges]);
+
+  const celebrateIf = (kind: "unlock" | "found") => {
+    if (pendingCelebration.current !== kind) return;
+    pendingCelebration.current = null;
+    if (rootRef.current) {
+      void celebrate(originFromElement(rootRef.current), { kind, palette: celebratePalette });
+    }
+  };
+
+  const front = (
+    <div className={gameCn(faceVariants({ size }), cardSurfaceVariants({ size }))}>
+      <div
+        className={gameCn(
+          artVariants({ size }),
+          "flex-col justify-between gap-2",
+          size === "lg" ? "p-5" : "p-3",
+        )}
+        style={{ backgroundColor: person.tint }}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-game-mono text-caption uppercase">Ask me about</span>
+          <span
+            className={gameCn(
+              "inline-flex flex-none items-center justify-center rounded-full bg-game-surface",
+              size === "lg" ? "size-7.5" : "size-5.5",
+            )}
+          >
+            <PlusIcon aria-hidden className="size-3.5" strokeWidth={2.25} />
+          </span>
+        </div>
+        <span
+          className={gameCn(
+            "line-clamp-5 font-game-serif",
+            size === "lg" ? "text-name-lg" : "text-quote",
+          )}
+        >
+          {person.ask}
+        </span>
+      </div>
+      <div className={infoVariants({ size })}>
+        <span className={nameVariants({ size, muted: false })}>{person.name}</span>
+        <span className={metaVariants({ size })}>{view.lockedMeta}</span>
+      </div>
+    </div>
+  );
+
+  const back = (
+    <div
+      className={gameCn(
+        faceVariants({ size }),
+        cardSurfaceVariants({ size, shadow: BACK_SHADOW[mode] }),
+      )}
+    >
+      <div
+        className={gameCn(
+          artVariants({ size }),
+          "items-center justify-center",
+          (ruled || photoUrl) && "bg-game-hover",
+        )}
+        style={ruled || photoUrl ? undefined : { backgroundColor: person.color }}
+      >
+        {photoUrl ? (
+          <StickerPhoto
+            key={photoUrl}
+            url={photoUrl}
+            name={person.name}
+            ruled={ruled}
+            onError={() => setFailedPhoto(photoUrl)}
+          />
+        ) : (
+          <span
+            aria-hidden
+            className={gameCn(
+              "font-game-serif",
+              size === "lg" ? "text-mark-lg" : "text-mark",
+              ruled
+                ? "text-game-muted"
+                : view.initialsTone === "white"
+                  ? "text-white"
+                  : "text-game-ink",
+            )}
+          >
+            {view.initials}
+          </span>
+        )}
+      </div>
+      <div className={infoVariants({ size })}>
+        <span className={nameVariants({ size, muted: ruled })}>{person.name}</span>
+        <span className={metaVariants({ size })}>{view.openMeta}</span>
+      </div>
+      {view.showMore ? (
+        <div className="flex flex-none flex-col items-center gap-1.5 border-game-border border-t px-1.5 pt-3 pb-1 text-center">
+          {person.fact ? <p className="text-sm">{person.fact}</p> : null}
+          <span className="font-game-mono text-caption text-game-muted uppercase">
+            Ask me about · <span className="text-game-ink">{person.ask}</span>
+          </span>
+        </div>
+      ) : null}
+    </div>
+  );
 
   return (
     <div ref={rootRef} className={gameCn(stickerVariants({ size }), className)}>
@@ -121,112 +262,25 @@ export function Sticker({
           className="relative size-full"
           style={rot ? { transform: `rotate(${rot}deg)` } : undefined}
         >
-          <motion.div
-            className="relative size-full transform-3d"
-            initial={false}
-            animate={{ rotateY: view.open ? 180 : 0 }}
-            transition={{ duration: 0.64, ease: FLIP_EASE }}
-            style={{ transformPerspective: 1200 }}
-          >
-            <div
-              className={gameCn(
-                faceVariants({ size, shadow: "edge" }),
-                view.open ? "invisible" : "visible",
-              )}
-            >
-              <div
-                className={gameCn(
-                  artVariants({ size }),
-                  "flex-col justify-between gap-2",
-                  size === "lg" ? "p-5" : "p-3",
-                )}
-                style={{ backgroundColor: person.tint }}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-game-mono text-caption uppercase">Ask me about</span>
-                  <span
-                    className={gameCn(
-                      "inline-flex flex-none items-center justify-center rounded-full bg-game-surface",
-                      size === "lg" ? "size-7.5" : "size-5.5",
-                    )}
-                  >
-                    <PlusIcon aria-hidden className="size-3.5" strokeWidth={2.25} />
-                  </span>
-                </div>
-                <span
-                  className={gameCn(
-                    "line-clamp-5 font-game-serif",
-                    size === "lg" ? "text-name-lg" : "text-quote",
-                  )}
-                >
-                  {person.ask}
-                </span>
-              </div>
-              <div className={infoVariants({ size })}>
-                <span className={nameVariants({ size, muted: false })}>{person.name}</span>
-                <span className={metaVariants({ size })}>{view.lockedMeta}</span>
-              </div>
-            </div>
-
-            <div
-              className={gameCn(
-                faceVariants({ size, shadow: BACK_SHADOW[mode] }),
-                "rotate-y-180",
-                view.open ? "visible" : "invisible",
-              )}
-            >
-              <div
-                className={gameCn(
-                  artVariants({ size }),
-                  "items-center justify-center",
-                  ruled && "bg-game-hover",
-                )}
-                style={ruled ? undefined : { backgroundColor: person.color }}
-              >
-                {person.photoUrl ? (
-                  // biome-ignore lint/performance/noImgElement: photos are signed storage URLs sized at upload, not optimised per request
-                  <img
-                    src={person.photoUrl}
-                    alt={person.name}
-                    className={gameCn(
-                      "absolute inset-0 size-full object-cover",
-                      ruled && "opacity-30 grayscale",
-                    )}
-                  />
-                ) : (
-                  <span
-                    aria-hidden
-                    className={gameCn(
-                      "font-game-serif",
-                      size === "lg" ? "text-mark-lg" : "text-mark",
-                      ruled
-                        ? "text-game-muted"
-                        : view.initialsTone === "white"
-                          ? "text-white"
-                          : "text-game-ink",
-                    )}
-                  >
-                    {view.initials}
-                  </span>
-                )}
-              </div>
-              <div className={infoVariants({ size })}>
-                <span className={nameVariants({ size, muted: ruled })}>{person.name}</span>
-                <span className={metaVariants({ size })}>{view.openMeta}</span>
-              </div>
-              {view.showMore ? (
-                <div className="flex flex-none flex-col gap-1.5 border-game-border border-t px-1.5 pt-3 pb-1">
-                  {person.fact ? <p className="text-sm">{person.fact}</p> : null}
-                  <span className="font-game-mono text-caption text-game-muted uppercase">
-                    Ask me about · <span className="text-game-ink">{person.ask}</span>
-                  </span>
-                </div>
-              ) : null}
-            </div>
-          </motion.div>
+          <Flip
+            className="size-full"
+            flipped={view.open}
+            delay={flipDelay}
+            front={front}
+            back={back}
+            onFlipped={() => {
+              celebrateIf("unlock");
+              if (view.open) onFlipped?.();
+            }}
+          />
           <AnimatePresence>
             {view.stamp ? (
-              <StickerStampMark key={view.stamp} stamp={view.stamp} size={size} />
+              <StickerStampMark
+                key={view.stamp}
+                stamp={view.stamp}
+                size={size}
+                onLanded={() => celebrateIf("found")}
+              />
             ) : null}
           </AnimatePresence>
         </div>

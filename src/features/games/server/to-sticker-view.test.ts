@@ -11,6 +11,7 @@ const person: Person = {
   location: "Montréal",
   fact: "Visited 40 countries",
   ask: "Ask me about night trains",
+  imageUrl: "https://img.clerk.com/teammate",
   photoKey: "people/teammate.jpg",
   stickerNumber: 7,
   hidden: false,
@@ -18,7 +19,7 @@ const person: Person = {
   updatedAt: new Date(),
 };
 
-const LOCKED_FIELDS = ["fact", "location", "photoKey"];
+const LOCKED_FIELDS = ["fact", "location", "imageUrl", "photoKey"];
 const PRIVATE_FIELDS = ["email", "clerkUserId", "hidden", "createdAt", "updatedAt"];
 
 describe("toStickerView", () => {
@@ -44,6 +45,7 @@ describe("toStickerView", () => {
       locked: false,
       fact: "Visited 40 countries",
       location: "Montréal",
+      imageUrl: "https://img.clerk.com/teammate",
       photoKey: "people/teammate.jpg",
     });
   });

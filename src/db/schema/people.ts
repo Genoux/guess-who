@@ -22,6 +22,8 @@ export const people = pgTable(
     location: text("location"),
     fact: text("fact"),
     ask: text("ask"),
+    // Profile picture from Clerk: the Slack photo for people who sign in with Slack.
+    imageUrl: text("image_url"),
     photoKey: text("photo_key"),
     stickerNumber: integer("sticker_number").notNull().generatedByDefaultAsIdentity(),
     hidden: boolean("hidden").notNull().default(false),

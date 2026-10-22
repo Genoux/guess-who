@@ -10,6 +10,8 @@ const game = (status: Game["status"]): Game => ({
   startDate: "2026-11-02",
   status,
   foundAt: null,
+  introSeenAt: null,
+  lastReadClue: 0,
   createdBy: "admin",
   createdAt: new Date(),
   updatedAt: new Date(),

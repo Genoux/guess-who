@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildCelebrateOptions, originFromRect } from "./celebrate";
 
 describe("buildCelebrateOptions", () => {
-  it("always uses stars and respects reduced motion", () => {
+  it("uses the library's own confetti shapes and respects reduced motion", () => {
     const options = buildCelebrateOptions({ x: 0.5, y: 0.5 });
-    expect(options.shapes).toEqual(["star"]);
+    expect(options.shapes).toBeUndefined();
     expect(options.disableForReducedMotion).toBe(true);
   });
 
@@ -15,7 +15,7 @@ describe("buildCelebrateOptions", () => {
     expect(options.origin).toEqual({ x: 0.2, y: 0.7 });
   });
 
-  it("throws more stars for found than for an unlock", () => {
+  it("throws more confetti for found than for an unlock", () => {
     const found = buildCelebrateOptions({ x: 0.5, y: 0.5 }, { kind: "found" });
     const unlock = buildCelebrateOptions({ x: 0.5, y: 0.5 }, { kind: "unlock" });
     expect(found.particleCount).toBeGreaterThan(unlock.particleCount ?? 0);

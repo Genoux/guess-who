@@ -52,7 +52,7 @@ async function linkOrCreatePerson(clerkUserId: string): Promise<Person> {
   }
 
   const person = existing
-    ? await claimPerson(existing.id, clerkUserId)
+    ? await claimPerson(existing.id, clerkUserId, identity.imageUrl)
     : await insertPerson({ clerkUserId, ...identity });
   if (!person) {
     // A concurrent request for the same user won the claim or insert.

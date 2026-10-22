@@ -8,7 +8,7 @@ export type CelebrateOrigin = { x: number; y: number };
 
 export type CelebrateKind = "unlock" | "found" | "burst";
 
-/** Which background the stars land on; each keeps them visible against it. */
+/** Which background the confetti lands on; each keeps it visible against it. */
 export type CelebratePalette = "light" | "dark" | "found";
 
 export type CelebrateOptions = {
@@ -36,8 +36,6 @@ export function buildCelebrateOptions(
     spread: kind === "burst" ? 80 : 75,
     startVelocity: kind === "burst" ? 32 : 30,
     ticks: 140,
-    scalar: 1.1,
-    shapes: ["star"],
     colors: PALETTES[palette],
     origin: { x: clamp(origin.x), y: clamp(origin.y) },
     disableForReducedMotion: true,
@@ -64,8 +62,8 @@ export function originFromElement(element: Element): CelebrateOrigin {
 }
 
 /**
- * Fires a star burst. Browser only; does nothing when the user prefers reduced motion. Never
- * rejects: the stars are decorative, so a failed chunk load (a stale deploy) is only logged.
+ * Fires a confetti burst. Browser only; does nothing when the user prefers reduced motion. Never
+ * rejects: the confetti is decorative, so a failed chunk load (a stale deploy) is only logged.
  */
 export async function celebrate(
   origin: CelebrateOrigin,

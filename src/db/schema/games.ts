@@ -4,6 +4,7 @@ import {
   index,
   pgEnum,
   pgTable,
+  smallint,
   text,
   timestamp,
   uniqueIndex,
@@ -29,6 +30,9 @@ export const games = pgTable(
     startDate: date("start_date").notNull(),
     status: gameStatus("status").notNull().default("active"),
     foundAt: timestamp("found_at", { withTimezone: true }),
+    // Player-only progress: when they finished the welcome intro, and the highest clue they opened.
+    introSeenAt: timestamp("intro_seen_at", { withTimezone: true }),
+    lastReadClue: smallint("last_read_clue").notNull().default(0),
     // Null when an integration (Deel) creates the game instead of an admin.
     createdBy: uuid("created_by").references(() => people.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

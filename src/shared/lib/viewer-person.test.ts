@@ -35,6 +35,7 @@ const person = (overrides: Partial<Person> = {}): Person => ({
   location: null,
   fact: null,
   ask: null,
+  imageUrl: null,
   photoKey: null,
   stickerNumber: 1,
   hidden: false,
@@ -107,7 +108,7 @@ describe("syncViewerPerson", () => {
     );
     records.claimPerson.mockResolvedValue(person({ email: "contractor@gmail.com" }));
     await syncViewerPerson("user_1");
-    expect(records.claimPerson).toHaveBeenCalledWith("person_1", "user_1");
+    expect(records.claimPerson).toHaveBeenCalledWith("person_1", "user_1", undefined);
     expect(records.insertPerson).not.toHaveBeenCalled();
     expect(records.linkPersonToGamesByEmail).toHaveBeenCalledWith(
       "person_1",

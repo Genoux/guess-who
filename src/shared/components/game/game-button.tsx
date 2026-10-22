@@ -10,7 +10,7 @@ const gameButtonVariants = cva(
       variant: {
         cta: "bg-game-ink text-white hover:bg-game-ink-hover",
         yellow: "bg-game-shortlist text-game-ink hover:bg-game-shortlist-hover",
-        light: "bg-game-surface text-game-ink shadow-edge hover:bg-game-sidebar",
+        light: "bg-game-surface text-game-ink shadow-edge hover:shadow-edge-strong",
         "on-dark": "bg-game-surface text-game-ink hover:bg-game-sidebar",
         link: "rounded-sm text-game-muted underline underline-offset-3 hover:text-game-ink focus-visible:outline-offset-3",
       },
@@ -23,7 +23,7 @@ const gameButtonVariants = cva(
       {
         variant: ["cta", "yellow", "light", "on-dark"],
         className:
-          "rounded-full font-medium transition-[transform,background-color] duration-160 ease-game hover:-translate-y-px focus-visible:outline-offset-3 active:scale-97 motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100",
+          "rounded-full font-medium transition-[color,background-color,box-shadow] duration-160 ease-game focus-visible:outline-offset-3 motion-reduce:transition-none",
       },
       { variant: "link", className: "h-auto px-0 text-button-sm" },
     ],
