@@ -2,7 +2,6 @@
 
 import { motion } from "motion/react";
 import Link from "next/link";
-import { useEffect } from "react";
 import { CloseButton } from "@/shared/components/game/close-button";
 import { GameButton } from "@/shared/components/game/game-button";
 import { GameStage } from "@/shared/components/game/game-stage";
@@ -29,22 +28,11 @@ function foundLead(day: number | null, clues: number | null) {
 
 /** The orange ending: the welcomer's sticker, who it was, and the way to the player's own card. */
 export function FoundScreen({ found, welcomer, foundOnDay, cluesUsed }: FoundScreenProps) {
-  useEffect(() => {
-    const burst = (x: number) =>
+  // Two waves of confetti: as the sticker lands, then as the name pops in.
+  const burst = (left: number, right: number) => {
+    for (const x of [left, right])
       void celebrate({ x, y: 0.75 }, { kind: "found", palette: "found" });
-    const first = window.setTimeout(() => {
-      burst(0.15);
-      burst(0.85);
-    }, 600);
-    const second = window.setTimeout(() => {
-      burst(0.3);
-      burst(0.7);
-    }, 1300);
-    return () => {
-      window.clearTimeout(first);
-      window.clearTimeout(second);
-    };
-  }, []);
+  };
 
   return (
     <>
@@ -59,6 +47,7 @@ export function FoundScreen({ found, welcomer, foundOnDay, cluesUsed }: FoundScr
           initial={{ opacity: 0, y: 80, rotate: -6, scale: 0.85 }}
           animate={{ opacity: 1, y: 0, rotate: 0, scale: 1 }}
           transition={{ duration: 0.7, delay: 0.15, ease: [0.2, 0.9, 0.3, 1.2] }}
+          onAnimationComplete={() => burst(0.15, 0.85)}
         >
           <Sticker
             person={welcomer.person}
@@ -68,7 +57,11 @@ export function FoundScreen({ found, welcomer, foundOnDay, cluesUsed }: FoundScr
             celebrateChanges={false}
           />
         </motion.div>
-        <Pop delay={0.7} className="flex flex-col items-center gap-2">
+        <Pop
+          delay={0.7}
+          onShown={() => burst(0.3, 0.7)}
+          className="flex flex-col items-center gap-2"
+        >
           <span className="font-game-mono text-caption uppercase">
             {found ? "Mission complete" : "Day 14"}
           </span>

@@ -1,5 +1,6 @@
 import { cva } from "class-variance-authority";
 import type { ReactNode } from "react";
+import { cardSurfaceVariants } from "./card-surface";
 import { gameCn } from "./game-cn";
 
 export type ClueCardState = "down" | "new" | "open";
@@ -23,15 +24,23 @@ const clueCardVariants = cva("flex flex-none flex-col text-left", {
   variants: {
     state: {
       down: "items-center justify-center bg-game-ink text-center text-white",
-      new: "bg-game-shortlist text-game-ink shadow-ink",
-      open: "bg-game-surface text-game-ink shadow-ink",
+      new: "bg-game-shortlist text-game-ink",
+      open: "bg-game-surface text-game-ink",
     },
     size: {
-      sm: "h-65 w-50 gap-3 rounded-clue p-5",
-      lg: "h-105 w-80 gap-3 rounded-clue-lg p-7",
+      sm: "h-65 w-50 gap-3 p-5",
+      lg: "h-105 w-80 gap-3 p-7",
     },
   },
 });
+
+/** A clue is a card like a sticker: same edge and corner, and the ink shadow once it is face up. */
+const clueClasses = (state: ClueCardState, size: "sm" | "lg", className?: string) =>
+  gameCn(
+    clueCardVariants({ state, size }),
+    cardSurfaceVariants({ size, shadow: state === "down" ? "none" : "ink" }),
+    className,
+  );
 
 export function ClueCard({
   state,
@@ -46,7 +55,7 @@ export function ClueCard({
 
   if (state === "down") {
     return (
-      <div className={gameCn(clueCardVariants({ state, size }), className)} style={style}>
+      <div className={clueClasses(state, size, className)} style={style}>
         <span
           aria-hidden
           className={gameCn(
@@ -66,7 +75,7 @@ export function ClueCard({
   }
 
   return (
-    <div className={gameCn(clueCardVariants({ state, size }), className)} style={style}>
+    <div className={clueClasses(state, size, className)} style={style}>
       <span
         className={gameCn(
           "font-game-mono text-caption uppercase",

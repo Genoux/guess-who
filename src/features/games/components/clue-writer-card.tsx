@@ -31,7 +31,7 @@ export function ClueWriterCard({
     <div className="flex w-140 max-w-full flex-col items-center gap-3">
       <label
         className={gameCn(
-          "flex min-h-70 w-full -rotate-1 flex-col gap-4 rounded-clue-lg bg-game-shortlist p-7 text-left text-game-ink shadow-[6px_6px_0_var(--color-game-ink)] focus-within:shadow-[6px_6px_0_var(--color-game-ink),0_0_0_3px_var(--color-game-ink)] motion-reduce:rotate-0",
+          "flex min-h-70 w-full -rotate-1 flex-col gap-4 rounded-card-lg border border-game-card-edge bg-game-shortlist p-7 text-left text-game-ink shadow-[6px_6px_0_var(--color-game-ink)] focus-within:shadow-[6px_6px_0_var(--color-game-ink),0_0_0_3px_var(--color-game-ink)] motion-reduce:rotate-0",
           locked && "bg-game-shortlist-soft",
         )}
       >

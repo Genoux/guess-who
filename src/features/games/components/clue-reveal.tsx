@@ -5,9 +5,8 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { CloseButton } from "@/shared/components/game/close-button";
 import { ClueCard } from "@/shared/components/game/clue-card";
+import { Flip } from "@/shared/components/game/flip";
 import { GameButton } from "@/shared/components/game/game-button";
-import { gameCn } from "@/shared/components/game/game-cn";
-import { FLIP_EASE } from "@/shared/components/game/game-motion";
 import { GameStage } from "@/shared/components/game/game-stage";
 import { gameToast } from "@/shared/components/game/game-toaster";
 import { Pop } from "@/shared/components/game/pop";
@@ -17,23 +16,17 @@ import { celebrate, originFromElement } from "@/shared/lib/celebrate";
 import { markClueRead } from "../actions/mark-clue-read";
 import type { ClueReveal as ClueRevealData } from "../queries/get-clue-reveal";
 
-// Faces swap visibility halfway through the flip, like the Sticker: a 3D face never gets a
-// filter or opacity, which would break backface hiding.
-const faceClass =
-  "absolute inset-0 backface-hidden transition-[visibility] duration-0 delay-320 motion-reduce:delay-0";
-
 /** The dark moment a clue lands: tap the face-down card, it flips and the player reads it. */
 export function ClueReveal({ clue }: { clue: ClueRevealData }) {
   const [open, setOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const landed = () => {
+    if (cardRef.current) void celebrate(originFromElement(cardRef.current), { palette: "dark" });
+  };
 
   const flip = () => {
     if (open) return;
     setOpen(true);
-    const card = cardRef.current;
-    if (card) {
-      window.setTimeout(() => void celebrate(originFromElement(card), { palette: "dark" }), 320);
-    }
     void markClueRead({ number: clue.number as 1 | 2 | 3 | 4 }).then((result) => {
       if (!result.ok) gameToast(result.error);
     });
@@ -61,24 +54,21 @@ export function ClueReveal({ clue }: { clue: ClueRevealData }) {
             type="button"
             onClick={flip}
             aria-label={open ? `Clue ${clue.number}: ${clue.text}` : "Flip the clue"}
-            className="block cursor-pointer rounded-clue-lg outline-none focus-visible:outline-2 focus-visible:outline-game-shortlist focus-visible:outline-offset-6"
+            className="block cursor-pointer rounded-card-lg outline-none focus-visible:outline-2 focus-visible:outline-game-shortlist focus-visible:outline-offset-6"
           >
-            <motion.div
-              className="relative h-105 w-80 max-w-[calc(100vw-32px)] transform-3d"
-              initial={false}
-              animate={{ rotateY: open ? 180 : 0 }}
-              transition={{ duration: 0.64, ease: FLIP_EASE }}
-              style={{ transformPerspective: 1200 }}
-            >
-              <div className={gameCn(faceClass, open ? "invisible" : "visible")}>
+            <Flip
+              className="h-105 w-80 max-w-[calc(100vw-32px)]"
+              flipped={open}
+              onFlipped={landed}
+              front={
                 <ClueCard
                   state="down"
                   size="lg"
                   label="Tap to flip"
                   className="size-full max-w-full gap-4 bg-game-ink-soft shadow-[6px_6px_0_var(--color-game-shortlist)]"
                 />
-              </div>
-              <div className={gameCn(faceClass, "rotate-y-180", open ? "visible" : "invisible")}>
+              }
+              back={
                 <ClueCard
                   state="new"
                   size="lg"
@@ -87,8 +77,8 @@ export function ClueReveal({ clue }: { clue: ClueRevealData }) {
                   footer={clue.generated ? "Their team" : "From your welcomer"}
                   className="size-full max-w-full shadow-[6px_6px_0_white]"
                 />
-              </div>
-            </motion.div>
+              }
+            />
           </button>
         </motion.div>
 

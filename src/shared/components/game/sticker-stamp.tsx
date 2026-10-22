@@ -33,7 +33,14 @@ const STAMP_ROTATION: Record<StickerStamp, number> = { maybe: 12, ruled: 0, foun
  * The maybe, not-them and found marks stamped on a sticker. Reduced motion comes from the
  * MotionConfig in GameShell, so `initial` is the same on the server and the client.
  */
-export function StickerStampMark({ stamp, size }: { stamp: StickerStamp; size: StickerSize }) {
+type StickerStampMarkProps = {
+  stamp: StickerStamp;
+  size: StickerSize;
+  /** Runs once the stamp has hit the card (and after it leaves; callers guard for that). */
+  onLanded?: () => void;
+};
+
+export function StickerStampMark({ stamp, size, onLanded }: StickerStampMarkProps) {
   const centred = stamp !== "maybe";
   return (
     <motion.span
@@ -43,6 +50,7 @@ export function StickerStampMark({ stamp, size }: { stamp: StickerStamp; size: S
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.12 } }}
       transition={{ duration: 0.26, ease: STAMP_EASE }}
+      onAnimationComplete={onLanded}
       {...(stamp === "ruled" ? { role: "img", "aria-label": "Not them" } : {})}
     >
       {stamp === "maybe" ? "Maybe" : null}

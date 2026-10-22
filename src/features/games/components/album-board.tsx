@@ -68,7 +68,7 @@ export function AlbumBoard({ teams, stickers, active }: AlbumBoardProps) {
                 <Link
                   href={`${ROUTES.playCollect}/${sticker.id}`}
                   aria-label={label}
-                  className="block rounded-sticker no-underline outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-6"
+                  className="block rounded-card no-underline outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-6"
                 >
                   {card}
                 </Link>

@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { type ReactNode, useEffect, useState, useTransition } from "react";
+import { type ReactNode, useState, useTransition } from "react";
 import { AccountButton } from "@/shared/components/account-button";
 import { ClueCard } from "@/shared/components/game/clue-card";
 import { CountChip } from "@/shared/components/game/count-chip";
@@ -25,28 +25,26 @@ type WelcomeIntroProps = {
 
 const SLOT = "w-40 px-0";
 
+type DealtProps = {
+  children: ReactNode;
+  order?: number;
+  /** Runs once the card has landed in its slot. */
+  onDealt?: () => void;
+};
+
 /** One card dealt into its slot: rises and fades in after `order` beats. */
-function Dealt({ children, order = 0 }: { children: ReactNode; order?: number }) {
+function Dealt({ children, order = 0, onDealt }: DealtProps) {
   return (
     <motion.div
       className="flex-none"
       initial={{ opacity: 0, y: 28 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: 0.1 + order * 0.12, ease: GAME_EASE }}
+      onAnimationComplete={onDealt}
     >
       {children}
     </motion.div>
   );
-}
-
-/** Plays a demo sticker's change once, so the step shows the real mechanic. */
-function useDemoMode(from: StickerMode, to: StickerMode, afterMs: number) {
-  const [mode, setMode] = useState<StickerMode>(from);
-  useEffect(() => {
-    const timer = setTimeout(() => setMode(to), afterMs);
-    return () => clearTimeout(timer);
-  }, [to, afterMs]);
-  return mode;
 }
 
 /** Three full-size cards side by side, scaled to fit a phone. */
@@ -82,18 +80,26 @@ function AlbumArt() {
   );
 }
 
+/** The card arrives locked, turns to collected after a beat, and the +1 lands with it. */
 function CollectArt({ person }: { person: StickerPerson }) {
-  const mode = useDemoMode("locked", "collected", 1200);
+  const [mode, setMode] = useState<StickerMode>("locked");
+  const [landed, setLanded] = useState(false);
   return (
     <Single>
       <div className="flex flex-col items-center gap-4">
-        <Dealt>
-          <Sticker person={person} mode={mode} tilt={false} />
+        <Dealt onDealt={() => setMode("collected")}>
+          <Sticker
+            person={person}
+            mode={mode}
+            tilt={false}
+            flipDelay={0.6}
+            onFlipped={() => setLanded(true)}
+          />
         </Dealt>
         <motion.div
           initial={false}
-          animate={mode === "collected" ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
-          transition={{ duration: 0.35, delay: mode === "collected" ? 0.55 : 0, ease: GAME_EASE }}
+          animate={landed ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+          transition={{ duration: 0.35, ease: GAME_EASE }}
         >
           <CountChip variant="yellow" size="sm">
             +1 sticker
@@ -120,11 +126,12 @@ function CluesArt() {
   );
 }
 
+/** The welcomer's card arrives, then the found stamp hits it. */
 function WinArt() {
-  const mode = useDemoMode("collected", "found", 1100);
+  const [mode, setMode] = useState<StickerMode>("collected");
   return (
     <Single>
-      <Dealt>
+      <Dealt onDealt={() => setMode("found")}>
         <Sticker person={TUTORIAL_WELCOMER} mode={mode} tilt={false} />
       </Dealt>
     </Single>
