@@ -54,7 +54,7 @@ export function getStickerView(
   return {
     open,
     stamp: mode === "maybe" || mode === "ruled" || mode === "found" ? mode : null,
-    subtitle: mode === "ruled" ? "Not them" : teamLine,
+    subtitle: teamLine,
     showMore: open && size === "lg",
     initials: getInitials(person.name, "?"),
     initialsTone: readableOn(person.color),

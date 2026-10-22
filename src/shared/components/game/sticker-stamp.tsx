@@ -11,7 +11,7 @@ const stampVariants = cva("pointer-events-none absolute z-3 flex items-center ju
     stamp: {
       maybe:
         "rounded-full border-2 border-game-card-edge bg-game-shortlist font-game-mono text-game-ink uppercase tracking-caption",
-      ruled: "top-[30%] left-1/2 rounded-full bg-game-ink text-white",
+      ruled: "rounded-full border-2 border-game-card-edge bg-game-ink text-white",
       found:
         "top-[30%] left-1/2 whitespace-nowrap rounded-game-md border-2 border-game-card-edge bg-game-found font-game-serif text-white",
     },
@@ -20,8 +20,9 @@ const stampVariants = cva("pointer-events-none absolute z-3 flex items-center ju
   compoundVariants: [
     { stamp: "maybe", size: "sm", className: "-top-3 -right-3 size-14 text-meta" },
     { stamp: "maybe", size: "lg", className: "-top-4 -right-4 size-20 text-small" },
-    { stamp: "ruled", size: "sm", className: "size-13 [&_svg]:size-5.5" },
-    { stamp: "ruled", size: "lg", className: "size-19 [&_svg]:size-8" },
+    // Not-them sits where maybe does: corner badges mark a pick, the centred stamp only the find.
+    { stamp: "ruled", size: "sm", className: "-top-3 -right-3 size-14 [&_svg]:size-6" },
+    { stamp: "ruled", size: "lg", className: "-top-4 -right-4 size-20 [&_svg]:size-8" },
     { stamp: "found", size: "sm", className: "px-4 py-2 text-stamp" },
     { stamp: "found", size: "lg", className: "px-5 py-2.5 text-stamp-lg" },
   ],
@@ -41,7 +42,7 @@ type StickerStampMarkProps = {
 };
 
 export function StickerStampMark({ stamp, size, onLanded }: StickerStampMarkProps) {
-  const centred = stamp !== "maybe";
+  const centred = stamp === "found";
   return (
     <motion.span
       className={stampVariants({ stamp, size })}

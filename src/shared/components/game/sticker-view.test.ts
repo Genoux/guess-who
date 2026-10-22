@@ -45,11 +45,11 @@ describe("getStickerView", () => {
     expect(getStickerView({ ...noor, city: null }, "collected", "lg").subtitle).toBe("Creative");
   });
 
-  it("says not them on a ruled out sticker", () => {
+  it("keeps the team on a ruled out sticker; the badge says not them", () => {
     const view = getStickerView(noor, "ruled", "sm");
     expect(view.open).toBe(true);
     expect(view.stamp).toBe("ruled");
-    expect(view.subtitle).toBe("Not them");
+    expect(view.subtitle).toBe("Creative");
   });
 
   it("maps maybe and found to their stamps", () => {

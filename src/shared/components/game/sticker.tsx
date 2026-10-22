@@ -126,7 +126,7 @@ function StickerPhoto({ url, name, ruled, onError }: StickerPhotoProps) {
         onError={onError}
         className={gameCn(
           "absolute inset-0 size-full object-cover transition-opacity duration-300 ease-game",
-          loaded ? (ruled ? "opacity-30" : "opacity-100") : "opacity-0",
+          loaded ? (ruled ? "opacity-50" : "opacity-100") : "opacity-0",
           ruled && "grayscale",
         )}
       />
