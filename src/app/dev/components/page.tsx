@@ -331,12 +331,26 @@ export default function GameComponentsPage() {
               defaultValue="Ranks croissants from every city. Lisbon is winning."
               help="Only you see this."
             />
+            <GameField
+              label="Team"
+              options={[
+                { value: "creative", label: "Creative" },
+                { value: "strategy", label: "Strategy" },
+              ]}
+              placeholder="Pick one"
+              defaultValue=""
+            />
             <GameField label="Ask me about" defaultValue="" error="Write a few words." />
           </div>
           <PropTable
             rows={[
               { name: "label", values: "string", notes: "Always visible" },
               { name: "multiline", values: "boolean", notes: "Textarea, 104 high, no resize" },
+              {
+                name: "options",
+                values: "{ value, label }[]",
+                notes: "Select instead of an input; placeholder is the empty first option",
+              },
               { name: "help", values: "string", notes: "Muted line under the field" },
               {
                 name: "error",
