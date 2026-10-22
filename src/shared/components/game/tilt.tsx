@@ -19,6 +19,16 @@ export function Tilt({ children, className, style, disabled = false }: TiltProps
   const reduceMotion = useReducedMotion();
   const enabled = !disabled && !reduceMotion;
 
+  // The library always sets a 3D transform, even with the tilt off. That puts the card on its own
+  // layer, which blurs its edges and steps through sub-pixel moves when a parent slides or scales it.
+  if (disabled) {
+    return (
+      <div className={className} style={style}>
+        {children}
+      </div>
+    );
+  }
+
   return (
     <ParallaxTilt
       className={className}
