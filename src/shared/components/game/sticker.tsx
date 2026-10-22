@@ -5,7 +5,7 @@ import { PlusIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type CelebratePalette, celebrate, originFromElement } from "@/shared/lib/celebrate";
-import { type CardShadow, cardSurfaceVariants } from "./card-surface";
+import { CardBacking, cardSurfaceVariants } from "./card-surface";
 import { Flip } from "./flip";
 import { gameCn } from "./game-cn";
 import { StickerStampMark } from "./sticker-stamp";
@@ -46,7 +46,7 @@ const stickerVariants = cva("relative flex-none text-left text-game-ink", {
 // A face never gets a filter or opacity of its own: the photo fades, the face does not.
 const faceVariants = cva("absolute inset-0 flex flex-col bg-game-surface", {
   variants: {
-    size: { sm: "gap-2.5 p-2", lg: "gap-3 p-2.5" },
+    size: { sm: "gap-2 p-2", lg: "gap-3 p-2.5" },
   },
 });
 
@@ -63,25 +63,33 @@ const nameVariants = cva("max-w-full truncate font-game-serif", {
   },
 });
 
-const metaVariants = cva("max-w-full truncate font-game-mono uppercase text-game-muted", {
+const subtitleVariants = cva("max-w-full truncate text-game-muted", {
   variants: {
-    size: { sm: "text-meta", lg: "text-caption" },
+    size: { sm: "text-sm", lg: "text-base" },
   },
 });
 
-const infoVariants = cva("flex min-w-0 flex-none flex-col items-center text-center", {
+const infoVariants = cva("flex min-w-0 flex-none flex-col text-left", {
   variants: {
-    size: { sm: "gap-0.5 px-1 pb-0.5", lg: "gap-1 px-1.5 pb-1" },
+    size: { sm: "px-1 pb-0.5", lg: "px-1.5 pb-1" },
   },
 });
 
-const BACK_SHADOW: Record<StickerMode, CardShadow> = {
-  locked: "ink",
-  collected: "ink",
-  maybe: "maybe",
-  ruled: "none",
-  found: "found",
+type StickerInfoProps = {
+  name: string;
+  subtitle: string;
+  size: StickerSize;
+  muted: boolean;
 };
+
+function StickerInfo({ name, subtitle, size, muted }: StickerInfoProps) {
+  return (
+    <div className={infoVariants({ size })}>
+      <span className={nameVariants({ size, muted })}>{name}</span>
+      <span className={subtitleVariants({ size })}>{subtitle}</span>
+    </div>
+  );
+}
 
 type StickerPhotoProps = {
   url: string;
@@ -164,95 +172,90 @@ export function Sticker({
   };
 
   const front = (
-    <div className={gameCn(faceVariants({ size }), cardSurfaceVariants({ size }))}>
-      <div
-        className={gameCn(
-          artVariants({ size }),
-          "flex-col justify-between gap-2",
-          size === "lg" ? "p-5" : "p-3",
-        )}
-        style={{ backgroundColor: person.tint }}
-      >
-        <div className="flex items-center justify-between gap-2">
-          <span className="font-game-mono text-caption uppercase">Ask me about</span>
+    <>
+      <CardBacking size={size} />
+      <div className={gameCn(faceVariants({ size }), cardSurfaceVariants({ size }))}>
+        <div
+          className={gameCn(
+            artVariants({ size }),
+            "flex-col justify-between gap-2",
+            size === "lg" ? "p-5" : "p-3",
+          )}
+          style={{ backgroundColor: person.tint }}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-game-mono text-caption uppercase">Ask me about</span>
+            <span
+              className={gameCn(
+                "inline-flex flex-none items-center justify-center rounded-full bg-game-surface",
+                size === "lg" ? "size-7.5" : "size-5.5",
+              )}
+            >
+              <PlusIcon aria-hidden className="size-3.5" strokeWidth={2.25} />
+            </span>
+          </div>
           <span
             className={gameCn(
-              "inline-flex flex-none items-center justify-center rounded-full bg-game-surface",
-              size === "lg" ? "size-7.5" : "size-5.5",
+              "line-clamp-5 font-game-serif",
+              size === "lg" ? "text-name-lg" : "text-quote",
             )}
           >
-            <PlusIcon aria-hidden className="size-3.5" strokeWidth={2.25} />
+            {person.ask}
           </span>
         </div>
-        <span
-          className={gameCn(
-            "line-clamp-5 font-game-serif",
-            size === "lg" ? "text-name-lg" : "text-quote",
-          )}
-        >
-          {person.ask}
-        </span>
+        <StickerInfo name={person.name} subtitle={person.team} size={size} muted={false} />
       </div>
-      <div className={infoVariants({ size })}>
-        <span className={nameVariants({ size, muted: false })}>{person.name}</span>
-        <span className={metaVariants({ size })}>{view.lockedMeta}</span>
-      </div>
-    </div>
+    </>
   );
 
   const back = (
-    <div
-      className={gameCn(
-        faceVariants({ size }),
-        cardSurfaceVariants({ size, shadow: BACK_SHADOW[mode] }),
-      )}
-    >
-      <div
-        className={gameCn(
-          artVariants({ size }),
-          "items-center justify-center",
-          (ruled || photoUrl) && "bg-game-hover",
-        )}
-        style={ruled || photoUrl ? undefined : { backgroundColor: person.color }}
-      >
-        {photoUrl ? (
-          <StickerPhoto
-            key={photoUrl}
-            url={photoUrl}
-            name={person.name}
-            ruled={ruled}
-            onError={() => setFailedPhoto(photoUrl)}
-          />
-        ) : (
-          <span
-            aria-hidden
-            className={gameCn(
-              "font-game-serif",
-              size === "lg" ? "text-mark-lg" : "text-mark",
-              ruled
-                ? "text-game-muted"
-                : view.initialsTone === "white"
-                  ? "text-white"
-                  : "text-game-ink",
-            )}
-          >
-            {view.initials}
-          </span>
-        )}
-      </div>
-      <div className={infoVariants({ size })}>
-        <span className={nameVariants({ size, muted: ruled })}>{person.name}</span>
-        <span className={metaVariants({ size })}>{view.openMeta}</span>
-      </div>
-      {view.showMore ? (
-        <div className="flex flex-none flex-col items-center gap-1.5 border-game-border border-t px-1.5 pt-3 pb-1 text-center">
-          {person.fact ? <p className="text-sm">{person.fact}</p> : null}
-          <span className="font-game-mono text-caption text-game-muted uppercase">
-            Ask me about · <span className="text-game-ink">{person.ask}</span>
-          </span>
+    <>
+      <CardBacking size={size} />
+      <div className={gameCn(faceVariants({ size }), cardSurfaceVariants({ size }))}>
+        <div
+          className={gameCn(
+            artVariants({ size }),
+            "items-center justify-center",
+            (ruled || photoUrl) && "bg-game-hover",
+          )}
+          style={ruled || photoUrl ? undefined : { backgroundColor: person.color }}
+        >
+          {photoUrl ? (
+            <StickerPhoto
+              key={photoUrl}
+              url={photoUrl}
+              name={person.name}
+              ruled={ruled}
+              onError={() => setFailedPhoto(photoUrl)}
+            />
+          ) : (
+            <span
+              aria-hidden
+              className={gameCn(
+                "font-game-serif",
+                size === "lg" ? "text-mark-lg" : "text-mark",
+                ruled
+                  ? "text-game-muted"
+                  : view.initialsTone === "white"
+                    ? "text-white"
+                    : "text-game-ink",
+              )}
+            >
+              {view.initials}
+            </span>
+          )}
         </div>
-      ) : null}
-    </div>
+        <StickerInfo name={person.name} subtitle={view.subtitle} size={size} muted={ruled} />
+        {view.showMore ? (
+          <div className="flex flex-none flex-col items-start gap-1.5 border-game-border border-t px-1.5 pt-3 pb-1 text-left">
+            {person.fact ? <p className="text-sm">{person.fact}</p> : null}
+            <span className="font-game-mono text-caption text-game-muted uppercase">
+              Ask me about · <span className="text-game-ink">{person.ask}</span>
+            </span>
+          </div>
+        ) : null}
+      </div>
+    </>
   );
 
   return (

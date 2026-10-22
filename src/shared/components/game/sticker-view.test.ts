@@ -30,27 +30,26 @@ describe("formatStickerNumber", () => {
 });
 
 describe("getStickerView", () => {
-  it("keeps a locked sticker closed with the number and team", () => {
+  it("keeps a locked sticker closed with the team", () => {
     const view = getStickerView(noor, "locked", "lg");
     expect(view.open).toBe(false);
     expect(view.stamp).toBeNull();
     expect(view.showMore).toBe(false);
-    expect(view.lockedMeta).toBe("No. 04 · Creative");
+    expect(view.subtitle).toBe("Creative");
+    expect(view).not.toHaveProperty("number");
   });
 
   it("adds the city on a large open sticker only", () => {
-    expect(getStickerView(noor, "collected", "lg").openMeta).toBe("No. 04 · Creative · Toronto");
-    expect(getStickerView(noor, "collected", "sm").openMeta).toBe("No. 04 · Creative");
-    expect(getStickerView({ ...noor, city: null }, "collected", "lg").openMeta).toBe(
-      "No. 04 · Creative",
-    );
+    expect(getStickerView(noor, "collected", "lg").subtitle).toBe("Creative · Toronto");
+    expect(getStickerView(noor, "collected", "sm").subtitle).toBe("Creative");
+    expect(getStickerView({ ...noor, city: null }, "collected", "lg").subtitle).toBe("Creative");
   });
 
   it("says not them on a ruled out sticker", () => {
     const view = getStickerView(noor, "ruled", "sm");
     expect(view.open).toBe(true);
     expect(view.stamp).toBe("ruled");
-    expect(view.openMeta).toBe("Not them · No. 04");
+    expect(view.subtitle).toBe("Not them");
   });
 
   it("maps maybe and found to their stamps", () => {

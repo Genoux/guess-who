@@ -152,7 +152,7 @@ Never commit, push or open a PR unless explicitly asked.
 | What | Why | Owner |
 |---|---|---|
 | Player screens use a game UI layer in `src/shared/components/game` built on Fieldtrip tokens and fonts, not `@inbeat/ui` | The product is a game with the Fieldtrip brand; `@inbeat/ui` stays for admin screens | John |
-| `canvas-confetti` and `react-parallax-tilt` for effects, beside `motion` | Use existing libraries instead of hand-built sparkle and tilt | John |
+| `canvas-confetti` for confetti, beside `motion` | Use an existing library instead of hand-built sparkle | John |
 | PR-title lint and release-please in this app | Versioned releases and a changelog for the app | John |
 
 ### Known gaps

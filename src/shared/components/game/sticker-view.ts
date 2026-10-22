@@ -28,9 +28,8 @@ export type StickerView = {
   /** The collected face is showing (every mode but locked). */
   open: boolean;
   stamp: StickerStamp | null;
-  number: string;
-  lockedMeta: string;
-  openMeta: string;
+  /** The line under the name: the team, plus the city on an open large sticker. */
+  subtitle: string;
   /** The large sticker adds the fact and the ask line under the name. */
   showMore: boolean;
   initials: string;
@@ -47,17 +46,15 @@ export function getStickerView(
   mode: StickerMode,
   size: StickerSize,
 ): StickerView {
-  const number = formatStickerNumber(person.number);
-  const lockedMeta = `No. ${number} · ${person.team}`;
-  const wideMeta = [lockedMeta, size === "lg" ? person.city : null].filter(Boolean).join(" · ");
   const open = mode !== "locked";
+  const teamLine = [person.team, open && size === "lg" ? person.city : null]
+    .filter(Boolean)
+    .join(" · ");
 
   return {
     open,
     stamp: mode === "maybe" || mode === "ruled" || mode === "found" ? mode : null,
-    number,
-    lockedMeta,
-    openMeta: mode === "ruled" ? `Not them · No. ${number}` : wideMeta,
+    subtitle: mode === "ruled" ? "Not them" : teamLine,
     showMore: open && size === "lg",
     initials: getInitials(person.name, "?"),
     initialsTone: readableOn(person.color),

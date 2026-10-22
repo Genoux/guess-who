@@ -408,7 +408,11 @@ export default function GameComponentsPage() {
                 values: "origin, { kind?, palette? }",
                 notes: "canvas-confetti, skipped for reduced motion",
               },
-              { name: "Tilt", values: "disabled?", notes: "react-parallax-tilt, 10°, scale 1.03" },
+              {
+                name: "Tilt",
+                values: "disabled?",
+                notes: "3D lean towards the pointer, 8°, flat at rest",
+              },
               { name: "Pop", values: "delay?", notes: "motion pop-in for titles and actions" },
               {
                 name: "PageTransition",

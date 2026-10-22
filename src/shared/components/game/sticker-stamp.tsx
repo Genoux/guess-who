@@ -10,10 +10,10 @@ const stampVariants = cva("pointer-events-none absolute z-3 flex items-center ju
   variants: {
     stamp: {
       maybe:
-        "rounded-full bg-game-shortlist font-game-mono text-game-ink uppercase tracking-caption",
+        "rounded-full border-2 border-game-card-edge bg-game-shortlist font-game-mono text-game-ink uppercase tracking-caption",
       ruled: "top-[30%] left-1/2 rounded-full bg-game-ink text-white",
       found:
-        "top-[30%] left-1/2 whitespace-nowrap rounded-game-md bg-game-found font-game-serif text-white",
+        "top-[30%] left-1/2 whitespace-nowrap rounded-game-md border-2 border-game-card-edge bg-game-found font-game-serif text-white",
     },
     size: { sm: "", lg: "" },
   },

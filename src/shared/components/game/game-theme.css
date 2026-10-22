@@ -78,11 +78,11 @@
   --text-quote: 17px;
   --text-quote--line-height: 20px;
   --text-quote--letter-spacing: -0.01em;
-  --text-name: 19px;
-  --text-name--line-height: 22px;
+  --text-name: 21px;
+  --text-name--line-height: 24px;
   --text-name--letter-spacing: -0.01em;
-  --text-name-lg: 28px;
-  --text-name-lg--line-height: 32px;
+  --text-name-lg: 30px;
+  --text-name-lg--line-height: 34px;
   --text-name-lg--letter-spacing: -0.01em;
   --text-stamp: 24px;
   --text-stamp--line-height: 28px;
@@ -98,18 +98,16 @@
   --radius-game-md: 8px;
   --radius-game-lg: 12px;
   --radius-field: 14px;
-  --radius-card: 16px;
-  --radius-card-art: 10px;
-  --radius-card-lg: 22px;
-  --radius-card-art-lg: 16px;
+  --radius-card: 10px;
+  --radius-card-art: 6px;
+  --radius-card-lg: 14px;
+  --radius-card-art-lg: 8px;
   --radius-stage: 20px;
   --radius-book: 24px;
   --radius-modal: 28px;
 
   /* Shadows: the 4px sticker ink shadow and the hairline edge */
   --shadow-ink: 4px 4px 0 var(--color-game-ink);
-  --shadow-ink-found: 4px 4px 0 var(--color-game-found);
-  --shadow-ink-maybe: 4px 4px 0 var(--color-game-ink), 0 0 0 3px var(--color-game-shortlist);
   --shadow-edge: inset 0 0 0 1px var(--color-game-border);
   --shadow-edge-strong: inset 0 0 0 1px var(--color-game-border-strong);
 
