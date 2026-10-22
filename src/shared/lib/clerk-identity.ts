@@ -3,7 +3,7 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { normalizeEmail } from "@inbeat/core/email";
 import { AppError } from "@inbeat/core/errors";
 
-export type VerifiedIdentity = { email: string; name: string };
+export type VerifiedIdentity = { email: string; name: string; imageUrl: string | null };
 
 /** The Clerk user's primary email, only when Clerk has verified it (Slack OAuth does). */
 export async function getVerifiedIdentity(clerkUserId: string): Promise<VerifiedIdentity> {
@@ -13,5 +13,10 @@ export async function getVerifiedIdentity(clerkUserId: string): Promise<Verified
     throw new AppError("forbidden", "primary email is not verified");
   }
   const email = normalizeEmail(primary.emailAddress);
-  return { email, name: user.fullName?.trim() || email.split("@")[0] || email };
+  return {
+    email,
+    name: user.fullName?.trim() || email.split("@")[0] || email,
+    // Clerk gives everyone a generated placeholder; keep only a real picture (Slack's, an upload).
+    imageUrl: user.hasImage ? user.imageUrl : null,
+  };
 }

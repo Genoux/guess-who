@@ -157,6 +157,13 @@ Never commit, push or open a PR unless explicitly asked.
 - Clerk runs on accountless development keys (written to `.env.local` by `clerk init`) until the
   owner claims the app and adds Slack, the allowlist and the `metadata` session claim. Until the
   claim exists every user resolves to `member`.
+- No cron yet (phase 6): clue visibility and the day-14 reveal are computed on read, and an
+  expired active game is ended as `revealed` by the first player or welcomer request after it
+  (`// shortcut:` in `finalize-expired-game-record.ts`). No notifications are sent.
+- Upstash is not set up: without `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` the rate
+  limiter keeps per-instance memory counters and logs a warning.
+- Sticker photos show initials until phase 3's signed R2 URL lands (`// shortcut:` in
+  `to-sticker-person.ts`).
 
 ### Learned facts
 
@@ -166,6 +173,12 @@ Never commit, push or open a PR unless explicitly asked.
   else verified primary email) and links unclaimed games whose `player_email` matches. A row
   already linked to another Clerk user is never moved; an admin clears `clerk_user_id` first.
 - Emails (`people.email`, `games.player_email`) are stored normalized with `normalizeEmail`.
+- The game runs on Montréal time (`America/Toronto`): day 1 is `games.start_date`, clues land at
+  09:00 on days 3, 6, 9 and 12, the reveal at 09:00 on day 14 (`features/games/lib/game-schedule.ts`).
+  Clue 1 is generated from the welcomer's team; clues 2 to 4 are the welcomer's rows.
+- Player pages read through `loadPlayerBoard()` and the view shapers; never pass a raw `games`,
+  `people` or `collections` row to a client component.
+- `bun run db:seed:demo` builds a playable dev game (see the script header for the flags).
 
 <!-- BEGIN:nextjs-agent-rules -->
 

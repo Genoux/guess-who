@@ -11,7 +11,8 @@ type PublicSticker = Pick<Person, "id" | "name" | "teamId" | "stickerNumber" | "
 
 export type StickerView =
   | (PublicSticker & { locked: true })
-  | (PublicSticker & Pick<Person, "fact" | "location" | "photoKey"> & { locked: false });
+  | (PublicSticker &
+      Pick<Person, "fact" | "location" | "imageUrl" | "photoKey"> & { locked: false });
 
 export function toStickerView(person: Person, viewer: StickerViewer): StickerView {
   const sticker: PublicSticker = {
@@ -31,6 +32,7 @@ export function toStickerView(person: Person, viewer: StickerViewer): StickerVie
     locked: false,
     fact: person.fact,
     location: person.location,
+    imageUrl: person.imageUrl,
     photoKey: person.photoKey,
   };
 }

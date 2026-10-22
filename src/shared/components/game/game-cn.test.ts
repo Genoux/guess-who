@@ -7,7 +7,7 @@ describe("gameCn", () => {
   });
 
   it("lets the later game token of the same group win", () => {
-    expect(gameCn("rounded-sticker", "rounded-sticker-lg")).toBe("rounded-sticker-lg");
+    expect(gameCn("rounded-card", "rounded-card-lg")).toBe("rounded-card-lg");
     expect(gameCn("shadow-ink", "shadow-edge")).toBe("shadow-edge");
     expect(gameCn("font-game-sans", "font-game-serif")).toBe("font-game-serif");
   });

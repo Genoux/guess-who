@@ -10,6 +10,7 @@ describe("isPublicPath", () => {
     "/api/health",
     "/robots.txt",
     "/dev/components",
+    "/dev/welcome",
   ])("lets %s through without a session", (path) => {
     expect(isPublicPath(path)).toBe(true);
   });

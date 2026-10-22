@@ -24,10 +24,10 @@ export async function hasGameForPlayerEmail(email: string): Promise<boolean> {
 }
 
 /** Links an unclaimed row; returns nothing if another Clerk user claimed it first. */
-export async function claimPerson(personId: string, clerkUserId: string) {
+export async function claimPerson(personId: string, clerkUserId: string, imageUrl?: string | null) {
   const [person] = await db
     .update(people)
-    .set({ clerkUserId })
+    .set(imageUrl ? { clerkUserId, imageUrl } : { clerkUserId })
     .where(and(eq(people.id, personId), isNull(people.clerkUserId)))
     .returning();
   return person;
@@ -46,7 +46,12 @@ const violatesConstraint = (err: unknown, constraint: string) =>
  * takes one conflict target, so a clerk_user_id race surfaces as an error we treat the same way.
  * Any other unique violation (sticker_number) throws.
  */
-export async function insertPerson(values: { clerkUserId: string; email: string; name: string }) {
+export async function insertPerson(values: {
+  clerkUserId: string;
+  email: string;
+  name: string;
+  imageUrl?: string | null;
+}) {
   try {
     const [person] = await db
       .insert(people)
