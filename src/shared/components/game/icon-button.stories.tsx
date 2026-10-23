@@ -3,7 +3,7 @@ import { CircleHelpIcon } from "lucide-react";
 import { gameCn } from "./game-cn";
 import { IconButton } from "./icon-button";
 
-const TONES = ["light", "surface", "dark", "on-color", "subtle", "outline"] as const;
+const TONES = ["light", "soft", "dark", "on-color", "subtle", "outline"] as const;
 const SIZES = ["default", "sm", "xs"] as const;
 const TONE_PANEL = { "on-color": "bg-game-found" } as const;
 

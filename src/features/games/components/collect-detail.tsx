@@ -4,7 +4,6 @@ import Link from "next/link";
 import type { ElementType, ReactNode } from "react";
 import { CardDetail, CardDetailFacts } from "@/shared/components/game/card-detail";
 import { CloseButton } from "@/shared/components/game/close-button";
-import { CountChip } from "@/shared/components/game/count-chip";
 import { Sticker } from "@/shared/components/game/sticker";
 import { ROUTES } from "@/shared/config/routes";
 import { OPEN_SCALE } from "../lib/album-motion";
@@ -19,21 +18,17 @@ type CollectBarProps = {
 };
 
 /** The collected count and the close control above a collect detail. */
-export function CollectBar({ target, onClose }: CollectBarProps) {
+export function CollectBar({ onClose }: CollectBarProps) {
   return (
-    <>
-      <CountChip variant="surface">
-        <span className="sr-only">Stickers collected: </span>
-        {target.collectedCount} / {target.total}
-      </CountChip>
+    <div className="flex items-center justify-end w-full">
       {onClose ? (
-        <CloseButton tone="surface" label="Back to album" onClick={onClose} />
+        <CloseButton tone="soft" label="Back to album" onClick={onClose} />
       ) : (
-        <CloseButton asChild tone="surface" label="Back to album">
+        <CloseButton asChild tone="soft" label="Back to album">
           <Link href={ROUTES.play} />
         </CloseButton>
       )}
-    </>
+    </div>
   );
 }
 

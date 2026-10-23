@@ -19,7 +19,7 @@ export default async function AlbumPage() {
   return (
     <GameShell>
       <PlayerTopNav nav={album.nav} current="album" />
-      <GameStage className="max-w-280">
+      <GameStage className="max-w-360">
         <div className="flex flex-col items-center gap-5">
           <h1 className="font-game-serif text-hero">Your album</h1>
           <ProgressSlots collected={album.nav.collectedCount} total={album.nav.total} />
