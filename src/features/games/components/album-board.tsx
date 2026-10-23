@@ -2,18 +2,20 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
-import { type MouseEvent, useEffect, useRef, useState } from "react";
+import { type MouseEvent, useEffect, useState } from "react";
 import { GameBook } from "@/shared/components/game/game-book";
 import { gameCn } from "@/shared/components/game/game-cn";
 import { Sticker } from "@/shared/components/game/sticker";
 import { ROUTES } from "@/shared/config/routes";
 import { useCardParam } from "../hooks/use-card-param";
-import { DROP, DROP_FROM, DROP_STAGGER_S, FLIGHT, LEAVE_S, SLIDE } from "../lib/album-motion";
-import { dropRotation, restingRotation } from "../lib/sticker-rotation";
+import { CLEAR_S, DEAL, DEAL_BUDGET_S, DEAL_STAGGER_S, FLIGHT } from "../lib/album-motion";
+import { restingRotation } from "../lib/sticker-rotation";
 import type { AlbumSticker } from "../queries/get-player-album";
 import { AlbumCardOverlay } from "./album-card-overlay";
 
 const EVERYONE = "all";
+// A fixed locale: the server and the browser must sort alike.
+const byName = new Intl.Collator("en", { sensitivity: "base" });
 
 type AlbumBoardProps = {
   teams: { id: string; name: string; count: number }[];
@@ -29,9 +31,15 @@ const isPlainClick = (event: MouseEvent) =>
 /** The album page: team filter pills over one grid of stickers, each opening in place. */
 export function AlbumBoard({ teams, stickers, active, collectedCount }: AlbumBoardProps) {
   const [team, setTeam] = useState(EVERYONE);
+  const [filtered, setFiltered] = useState(false);
   const { cardId, open, close } = useCardParam();
   const filters = [{ id: EVERYONE, name: "Everyone", count: stickers.length }, ...teams];
-  const shown = team === EVERYONE ? stickers : stickers.filter((s) => s.teamId === team);
+  const album = stickers.toSorted((a, b) => byName.compare(a.person.name, b.person.name));
+  const shown = team === EVERYONE ? album : album.filter((s) => s.teamId === team);
+  const dealStepS = Math.min(DEAL_STAGGER_S, DEAL_BUDGET_S / shown.length);
+  // Scoped to the grid: the cards of the grid being cleared and the one being dealt share sticker
+  // ids, and a shared layoutId would fly each one across from its old slot.
+  const flightIdOf = (stickerId: string) => `${team}/${stickerId}`;
 
   // Rotations belong to the sticker, not to its place in the filtered list.
   const albumIndexById = new Map(stickers.map((sticker, index) => [sticker.id, index]));
@@ -57,15 +65,6 @@ export function AlbumBoard({ teams, stickers, active, collectedCount }: AlbumBoa
     setReturningId(openId === null ? lastOpenId : null);
   }
 
-  // Only cards that were not on the table before the filter changed get dropped in.
-  const previousIds = useRef<ReadonlySet<string> | null>(null);
-  const entering = previousIds.current
-    ? shown.filter((sticker) => !previousIds.current?.has(sticker.id))
-    : [];
-  useEffect(() => {
-    previousIds.current = new Set(shown.map((sticker) => sticker.id));
-  });
-
   return (
     <GameBook className="gap-8 px-6 pt-8 pb-10">
       <div role="toolbar" aria-label="Teams" className="flex flex-wrap justify-center gap-1.5">
@@ -76,7 +75,10 @@ export function AlbumBoard({ teams, stickers, active, collectedCount }: AlbumBoa
               key={filter.id}
               type="button"
               aria-pressed={on}
-              onClick={() => setTeam(filter.id)}
+              onClick={() => {
+                setTeam(filter.id);
+                setFiltered(true);
+              }}
               className={gameCn(
                 "inline-flex h-10 cursor-pointer items-center gap-2 rounded-full px-4 text-button-sm outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2",
                 on
@@ -91,10 +93,14 @@ export function AlbumBoard({ teams, stickers, active, collectedCount }: AlbumBoa
         })}
       </div>
 
-      <ul className="relative grid w-full grid-cols-[repeat(auto-fill,176px)] justify-center gap-8">
-        <AnimatePresence mode="popLayout">
-          {shown.map((sticker) => {
-            const enterIndex = entering.indexOf(sticker);
+      <AnimatePresence mode="wait">
+        <motion.ul
+          key={team}
+          className="relative grid w-full grid-cols-[repeat(auto-fill,176px)] justify-center gap-8"
+          // A click on a fading card would open it under the next grid's flight ids, with no flight.
+          exit={{ opacity: 0, pointerEvents: "none", transition: { duration: CLEAR_S } }}
+        >
+          {shown.map((sticker, index) => {
             const rotation = rotationOf(sticker);
             const returning = sticker.id === returningId;
             const card = (
@@ -103,24 +109,11 @@ export function AlbumBoard({ teams, stickers, active, collectedCount }: AlbumBoa
             return (
               <motion.li
                 key={sticker.id}
-                layout
+                initial={filtered ? { opacity: 0 } : false}
+                animate={{ opacity: 1 }}
+                transition={{ ...DEAL, delay: index * dealStepS }}
                 className="relative"
                 style={returning ? { zIndex: 60 } : undefined}
-                initial={
-                  enterIndex < 0
-                    ? false
-                    : {
-                        opacity: 0,
-                        ...DROP_FROM,
-                        rotate: dropRotation(albumIndexById.get(sticker.id) ?? 0),
-                      }
-                }
-                animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }}
-                exit={{ opacity: 0, scale: 0.8, transition: { duration: LEAVE_S } }}
-                transition={{
-                  layout: SLIDE,
-                  default: { ...DROP, delay: Math.max(enterIndex, 0) * DROP_STAGGER_S },
-                }}
               >
                 {sticker.id === openId ? (
                   // Holds the slot open while the card is out, so the grid does not reflow. Opacity, not
@@ -147,7 +140,7 @@ export function AlbumBoard({ teams, stickers, active, collectedCount }: AlbumBoa
                     className="block rounded-card no-underline outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-6"
                   >
                     <motion.div
-                      layoutId={sticker.id}
+                      layoutId={flightIdOf(sticker.id)}
                       layoutCrossfade={false}
                       transition={{
                         layout: FLIGHT,
@@ -168,13 +161,14 @@ export function AlbumBoard({ teams, stickers, active, collectedCount }: AlbumBoa
               </motion.li>
             );
           })}
-        </AnimatePresence>
-      </ul>
+        </motion.ul>
+      </AnimatePresence>
 
       <AlbumCardOverlay
         target={
           openSticker ? { ...openSticker, active, collectedCount, total: stickers.length } : null
         }
+        flightId={openSticker ? flightIdOf(openSticker.id) : ""}
         rotation={openSticker ? rotationOf(openSticker) : 0}
         onClose={close}
         // The returning card stays above the overlay until the backdrop is gone: dropping it on

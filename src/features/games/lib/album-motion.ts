@@ -12,15 +12,11 @@ export const CONTENT_FADE_S = 0.15;
 // still accelerates, where an ease-out or a spring starts at full speed and reads as flat.
 export const FLIGHT = { duration: FLIGHT_S, ease: [0.45, 0, 0.1, 1] } as const;
 
-/** Cards that stay slide to their new cell without overshoot. */
-export const SLIDE = { type: "spring", stiffness: 300, damping: 34 } as const;
-
-/** A card set down on the table: a short settle from just above, critically damped, no bounce. */
-export const DROP = { type: "spring", stiffness: 400, damping: 40 } as const;
-export const DROP_FROM = { y: -12, scale: 1.03 } as const;
-
-export const DROP_STAGGER_S = 0.025;
-export const LEAVE_S = 0.15;
+export const CLEAR_S = 0.12;
+export const DEAL = { duration: 0.24, ease: [0.2, 0, 0, 1] } as const;
+export const DEAL_STAGGER_S = 0.04;
+/** The most the deal may spread over, so a full album does not crawl. */
+export const DEAL_BUDGET_S = 0.3;
 
 /** The open card is the album's small card zoomed to the large card's size (300 / 176). */
 export const OPEN_SCALE = 1.7;

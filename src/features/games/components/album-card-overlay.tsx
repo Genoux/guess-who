@@ -17,6 +17,8 @@ import { CollectBar, CollectDetail } from "./collect-detail";
 type AlbumCardOverlayProps = {
   /** The open card; null while closed. Updates in place when the server refreshes the album. */
   target: CollectTarget | null;
+  /** The layoutId the grid card flies under. */
+  flightId: string;
   /** The hand-stuck angle the card flies back to. */
   rotation: number;
   onClose: () => void;
@@ -30,7 +32,13 @@ type AlbumCardOverlayProps = {
  * leaves. The backdrop is the first thing in, and on the way out it fades while the card is in the
  * air, so the album and the empty slot are there to see it land.
  */
-export function AlbumCardOverlay({ target, rotation, onClose, onExited }: AlbumCardOverlayProps) {
+export function AlbumCardOverlay({
+  target,
+  flightId,
+  rotation,
+  onClose,
+  onExited,
+}: AlbumCardOverlayProps) {
   const reduceMotion = useReducedMotion();
   // The exit holds the overlay layer until the card has landed; reduced motion has no flight.
   const landedAt = reduceMotion ? 0 : FLIGHT_S;
@@ -77,7 +85,12 @@ export function AlbumCardOverlay({ target, rotation, onClose, onExited }: AlbumC
                 // Empty space lets the click through to the backdrop, so Radix reads it as an outside click.
                 style={{ pointerEvents: "none" }}
               >
-                <OverlayBody target={target} rotation={rotation} onClose={onClose} />
+                <OverlayBody
+                  target={target}
+                  flightId={flightId}
+                  rotation={rotation}
+                  onClose={onClose}
+                />
               </motion.div>
             </Dialog.Content>
           ) : null}
@@ -87,11 +100,11 @@ export function AlbumCardOverlay({ target, rotation, onClose, onExited }: AlbumC
   );
 }
 
-type OverlayBodyProps = Pick<AlbumCardOverlayProps, "rotation" | "onClose"> & {
+type OverlayBodyProps = Pick<AlbumCardOverlayProps, "flightId" | "rotation" | "onClose"> & {
   target: CollectTarget;
 };
 
-function OverlayBody({ target, rotation, onClose }: OverlayBodyProps) {
+function OverlayBody({ target, flightId, rotation, onClose }: OverlayBodyProps) {
   const isPresent = useIsPresent();
   const [landed, setLanded] = useState(false);
 
@@ -120,7 +133,7 @@ function OverlayBody({ target, rotation, onClose }: OverlayBodyProps) {
             // One card on screen: no crossfade with the grid copy, and this copy vanishes the
             // instant the grid copy takes off from the same spot.
             <motion.div
-              layoutId={target.id}
+              layoutId={flightId}
               layoutCrossfade={false}
               transition={{ layout: FLIGHT }}
               exit={{ opacity: 0, transition: { duration: 0 } }}
