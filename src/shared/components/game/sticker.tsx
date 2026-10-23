@@ -43,7 +43,7 @@ const stickerVariants = cva("relative flex-none text-left text-game-ink", {
   },
 });
 
-// A face never gets a filter or opacity of its own: the photo fades, the face does not.
+// Only loading fades the photo; ruled-out cards keep their normal appearance.
 const faceVariants = cva("absolute inset-0 flex flex-col bg-game-surface", {
   variants: {
     size: { sm: "gap-2 p-2", lg: "gap-3 p-2.5" },
@@ -59,7 +59,6 @@ const artVariants = cva("relative flex min-h-0 flex-1 overflow-hidden", {
 const nameVariants = cva("max-w-full truncate font-game-serif", {
   variants: {
     size: { sm: "text-name", lg: "text-name-lg" },
-    muted: { true: "text-game-muted", false: "" },
   },
 });
 
@@ -79,13 +78,12 @@ type StickerInfoProps = {
   name: string;
   subtitle: string;
   size: StickerSize;
-  muted: boolean;
 };
 
-function StickerInfo({ name, subtitle, size, muted }: StickerInfoProps) {
+function StickerInfo({ name, subtitle, size }: StickerInfoProps) {
   return (
     <div className={infoVariants({ size })}>
-      <span className={nameVariants({ size, muted })}>{name}</span>
+      <span className={nameVariants({ size })}>{name}</span>
       <span className={subtitleVariants({ size })}>{subtitle}</span>
     </div>
   );
@@ -94,12 +92,11 @@ function StickerInfo({ name, subtitle, size, muted }: StickerInfoProps) {
 type StickerPhotoProps = {
   url: string;
   name: string;
-  ruled: boolean;
   onError: () => void;
 };
 
 /** The profile picture over a muted placeholder that breathes until the picture has loaded. */
-function StickerPhoto({ url, name, ruled, onError }: StickerPhotoProps) {
+function StickerPhoto({ url, name, onError }: StickerPhotoProps) {
   const [loaded, setLoaded] = useState(false);
   // A picture already in the cache shows at once, so a remounted sticker does not flash; only a
   // picture that arrives later fades in.
@@ -133,8 +130,7 @@ function StickerPhoto({ url, name, ruled, onError }: StickerPhotoProps) {
         className={gameCn(
           "absolute inset-0 size-full object-cover",
           fadeIn && "transition-opacity duration-300 ease-game",
-          loaded ? (ruled ? "opacity-50" : "opacity-100") : "opacity-0",
-          ruled && "grayscale",
+          loaded ? "opacity-100" : "opacity-0",
         )}
       />
     </>
@@ -159,7 +155,6 @@ export function Sticker({
   const previousMode = useRef(mode);
   // The celebration a mode change earned, spent when its moment lands: the turn or the stamp.
   const pendingCelebration = useRef<"unlock" | "found" | null>(null);
-  const ruled = mode === "ruled";
   // A picture that fails to load (expired, blocked) falls back to the initials.
   const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
   const photoUrl = person.photoUrl && person.photoUrl !== failedPhoto ? person.photoUrl : null;
@@ -210,7 +205,7 @@ export function Sticker({
             {person.ask}
           </span>
         </div>
-        <StickerInfo name={person.name} subtitle={person.team} size={size} muted={false} />
+        <StickerInfo name={person.name} subtitle={person.team} size={size} />
       </div>
     </>
   );
@@ -223,16 +218,15 @@ export function Sticker({
           className={gameCn(
             artVariants({ size }),
             "items-center justify-center",
-            (ruled || photoUrl) && "bg-game-hover",
+            photoUrl && "bg-game-hover",
           )}
-          style={ruled || photoUrl ? undefined : { backgroundColor: person.color }}
+          style={photoUrl ? undefined : { backgroundColor: person.color }}
         >
           {photoUrl ? (
             <StickerPhoto
               key={photoUrl}
               url={photoUrl}
               name={person.name}
-              ruled={ruled}
               onError={() => setFailedPhoto(photoUrl)}
             />
           ) : (
@@ -241,18 +235,14 @@ export function Sticker({
               className={gameCn(
                 "font-game-serif",
                 size === "lg" ? "text-mark-lg" : "text-mark",
-                ruled
-                  ? "text-game-muted"
-                  : view.initialsTone === "white"
-                    ? "text-white"
-                    : "text-game-ink",
+                view.initialsTone === "white" ? "text-white" : "text-game-ink",
               )}
             >
               {view.initials}
             </span>
           )}
         </div>
-        <StickerInfo name={person.name} subtitle={view.subtitle} size={size} muted={ruled} />
+        <StickerInfo name={person.name} subtitle={view.subtitle} size={size} />
         {view.showMore ? (
           <div className="flex flex-none flex-col items-start gap-1.5 border-game-border border-t px-1.5 pt-3 pb-1 text-left">
             {person.fact ? <p className="text-sm">{person.fact}</p> : null}

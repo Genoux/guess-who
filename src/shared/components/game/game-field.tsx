@@ -6,6 +6,8 @@ import { gameCn } from "./game-cn";
 
 type FieldBase = {
   label: string;
+  /** Keeps the label for screen readers only, when a visible heading already names the field. */
+  hideLabel?: boolean;
   /** Short line under the field, only when it matters ("Only you see this."). */
   help?: string;
   /** One message for the field; marks it invalid and is announced. */
@@ -41,6 +43,7 @@ export function GameField(props: GameFieldProps) {
   const generatedId = useId();
   const {
     label,
+    hideLabel,
     help,
     error,
     className,
@@ -64,6 +67,7 @@ export function GameField(props: GameFieldProps) {
   if (props.multiline) {
     const {
       label: _label,
+      hideLabel: _hideLabel,
       help: _help,
       error: _error,
       className: _className,
@@ -83,6 +87,7 @@ export function GameField(props: GameFieldProps) {
   } else if ("options" in props) {
     const {
       label: _label,
+      hideLabel: _hideLabel,
       help: _help,
       error: _error,
       className: _className,
@@ -125,6 +130,7 @@ export function GameField(props: GameFieldProps) {
   } else {
     const {
       label: _label,
+      hideLabel: _hideLabel,
       help: _help,
       error: _error,
       className: _className,
@@ -142,7 +148,10 @@ export function GameField(props: GameFieldProps) {
 
   return (
     <div className={gameCn("flex w-full flex-col gap-2 text-left", className)}>
-      <label htmlFor={id} className="font-medium text-game-ink text-small">
+      <label
+        htmlFor={id}
+        className={gameCn("font-medium text-game-ink text-small", hideLabel && "sr-only")}
+      >
         {label}
       </label>
       {control}

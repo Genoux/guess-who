@@ -12,6 +12,7 @@ const iconButtonVariants = cva(
     variants: {
       tone: {
         light: "bg-game-sidebar text-game-ink hover:bg-game-hover",
+        surface: "bg-game-surface text-game-ink shadow-edge-strong hover:bg-game-sidebar",
         dark: "bg-game-ink-soft text-white hover:bg-game-ink-hover",
         "on-color": "bg-game-ink/12 text-game-ink hover:bg-game-ink/20",
         subtle: "text-game-muted hover:bg-game-sidebar hover:text-game-ink",

@@ -265,7 +265,7 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
         {step === 0 ? (
           <motion.main
             key="welcome"
-            className="col-span-full row-span-full row-start-1 flex flex-col items-center justify-center px-6 text-center"
+            className="col-span-full row-[2/-1] flex flex-col items-center justify-center px-6 text-center"
             custom={direction}
             variants={WELCOME_MOTION}
             initial="enter"

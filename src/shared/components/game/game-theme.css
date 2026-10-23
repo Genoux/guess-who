@@ -110,6 +110,8 @@
   --shadow-ink: 4px 4px 0 var(--color-game-ink);
   --shadow-edge: inset 0 0 0 1px var(--color-game-border);
   --shadow-edge-strong: inset 0 0 0 1px var(--color-game-border-strong);
+  /* Menus and popovers lifted off the page: the hairline edge plus a soft drop. */
+  --shadow-pop: 0 0 0 1px var(--color-game-border), 0 12px 32px -8px rgb(25 25 16 / 0.18);
 
   /* Easing: keep in sync with GAME_EASE in game-motion.ts */
   --ease-game: cubic-bezier(0.2, 0.8, 0.2, 1);

@@ -58,7 +58,7 @@ export function MissionSuspects({ maybes, nextClue }: MissionSuspectsProps) {
   if (maybes.length === 0 && !open) {
     return (
       <p className="max-w-105 text-game-muted">
-        No maybes yet. Open a sticker you collected and tap “Could be my welcomer”.
+        No maybes yet. Open a sticker you collected and turn on “Could be my welcomer”.
       </p>
     );
   }

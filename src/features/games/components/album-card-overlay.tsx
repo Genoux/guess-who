@@ -119,13 +119,11 @@ function OverlayBody({ target, flightId, rotation, onClose }: OverlayBodyProps) 
         <CollectBar target={target} onClose={onClose} />
       </motion.div>
 
-      <div className="m-auto flex w-full flex-col items-center gap-8 px-4 pt-2 pb-10 text-center [&>*]:pointer-events-auto">
+      <div className="m-auto w-full px-4 pt-2 pb-16 md:px-10">
         <CollectDetail
           target={target}
-          onBack={onClose}
           headingAs={Dialog.Title}
           tilt={landed && isPresent}
-          cardSize="sm"
           wrapCard={(card) => (
             // The album's own small card, zoomed: zoom lays it out and paints it at the large size, so
             // the text stays the same and sharp, where scale() would stretch a small bitmap. The zoom
@@ -133,7 +131,12 @@ function OverlayBody({ target, flightId, rotation, onClose }: OverlayBodyProps) 
             // One card on screen: no crossfade with the grid copy, and this copy vanishes the
             // instant the grid copy takes off from the same spot.
             <motion.div
+              className="pointer-events-auto"
               layoutId={flightId}
+              // Re-measures only for a new card: a server refresh (saving a note) re-rendered it while
+              // this layer was scrolled, misread the scroll as movement and flew it back into place.
+              // layoutScroll on the layer fixes that but breaks the flight home to the album.
+              layoutDependency={flightId}
               layoutCrossfade={false}
               transition={{ layout: FLIGHT }}
               exit={{ opacity: 0, transition: { duration: 0 } }}
@@ -148,9 +151,9 @@ function OverlayBody({ target, flightId, rotation, onClose }: OverlayBodyProps) 
               </motion.div>
             </motion.div>
           )}
-          wrapPanel={(panel) => (
+          wrapContent={(content) => (
             <motion.div
-              className="max-w-full"
+              className="pointer-events-auto w-full"
               initial={{ opacity: 0 }}
               animate={{
                 opacity: 1,
@@ -158,7 +161,7 @@ function OverlayBody({ target, flightId, rotation, onClose }: OverlayBodyProps) 
               }}
               exit={{ opacity: 0, transition: { duration: CONTENT_FADE_S } }}
             >
-              {panel}
+              {content}
             </motion.div>
           )}
         />

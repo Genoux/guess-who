@@ -181,10 +181,10 @@ export default function GameComponentsPage() {
         >
           <div className="flex flex-wrap items-center gap-x-7 gap-y-8">
             <Example code={`variant="cta"`}>
-              <GameButton>Stick it in</GameButton>
+              <GameButton>Collect sticker</GameButton>
             </Example>
             <Example code={`variant="yellow"`}>
-              <GameButton variant="yellow">Could be my welcomer</GameButton>
+              <GameButton variant="yellow">Try Jonah</GameButton>
             </Example>
             <Example code={`variant="light"`}>
               <GameButton variant="light">Back to album</GameButton>

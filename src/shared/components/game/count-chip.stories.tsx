@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { CountChip } from "./count-chip";
 import { jonah } from "./fixtures";
 
-const VARIANTS = ["default", "yellow", "dark"] as const;
+const VARIANTS = ["default", "surface", "yellow", "dark"] as const;
 const SIZES = ["default", "sm"] as const;
 
 const meta = {

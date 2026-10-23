@@ -9,7 +9,7 @@ export function CollectScreen({ target }: { target: CollectTarget }) {
       <div className="flex items-center justify-between px-4 py-5 md:px-10">
         <CollectBar target={target} />
       </div>
-      <GameStage middle className="gap-8 pt-2">
+      <GameStage middle className="pt-2">
         <CollectDetail target={target} />
       </GameStage>
     </>

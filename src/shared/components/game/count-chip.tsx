@@ -8,6 +8,8 @@ const countChipVariants = cva(
     variants: {
       variant: {
         default: "bg-game-sidebar text-game-ink",
+        /** On the page background, where the sidebar grey all but disappears. */
+        surface: "bg-game-surface text-game-ink shadow-edge-strong",
         yellow: "bg-game-shortlist text-game-ink",
         dark: "bg-game-ink-soft text-white",
       },

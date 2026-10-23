@@ -1,16 +1,17 @@
 import { z } from "zod";
 
-export const NOTE_MAX = 280;
+export const NOTE_MAX = 1000;
 export const CLUE_MAX = 160;
 
-export const collectStickerSchema = z.object({
-  personId: z.uuid(),
-  note: z
-    .string()
-    .trim()
-    .min(1, "Write one thing you learned.")
-    .max(NOTE_MAX, `Keep it under ${NOTE_MAX} characters.`),
-});
+const noteText = z
+  .string()
+  .trim()
+  .min(1, "Write one thing you learned.")
+  .max(NOTE_MAX, `Keep it under ${NOTE_MAX} characters.`);
+
+export const collectStickerSchema = z.object({ personId: z.uuid(), note: noteText });
+
+export const saveNoteSchema = z.object({ personId: z.uuid(), note: noteText });
 
 export const shortlistSchema = z.object({ personId: z.uuid(), on: z.boolean() });
 

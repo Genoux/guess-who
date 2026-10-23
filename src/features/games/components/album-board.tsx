@@ -5,10 +5,12 @@ import Link from "next/link";
 import { type MouseEvent, useEffect, useState } from "react";
 import { GameBook } from "@/shared/components/game/game-book";
 import { gameCn } from "@/shared/components/game/game-cn";
+import { GameFilterMenu } from "@/shared/components/game/game-filter-menu";
 import { Sticker } from "@/shared/components/game/sticker";
 import { ROUTES } from "@/shared/config/routes";
 import { useCardParam } from "../hooks/use-card-param";
 import { CLEAR_S, DEAL, DEAL_BUDGET_S, DEAL_STAGGER_S, FLIGHT } from "../lib/album-motion";
+import { matchesStickerFilter, STICKER_FILTERS, type StickerFilter } from "../lib/sticker-filter";
 import { restingRotation } from "../lib/sticker-rotation";
 import type { AlbumSticker } from "../queries/get-player-album";
 import { AlbumCardOverlay } from "./album-card-overlay";
@@ -28,18 +30,34 @@ type AlbumBoardProps = {
 const isPlainClick = (event: MouseEvent) =>
   event.button === 0 && !(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey);
 
-/** The album page: team filter pills over one grid of stickers, each opening in place. */
+/**
+ * The album page: team pills and a status menu over one grid of stickers, each opening in place.
+ * Each control counts what it would show combined with the other one.
+ */
 export function AlbumBoard({ teams, stickers, active, collectedCount }: AlbumBoardProps) {
   const [team, setTeam] = useState(EVERYONE);
+  const [status, setStatus] = useState<StickerFilter>("all");
   const [filtered, setFiltered] = useState(false);
   const { cardId, open, close } = useCardParam();
-  const filters = [{ id: EVERYONE, name: "Everyone", count: stickers.length }, ...teams];
+  const inTeam = (sticker: AlbumSticker, teamId: string) =>
+    teamId === EVERYONE || sticker.teamId === teamId;
+  const countWhere = (teamId: string, filter: StickerFilter) =>
+    stickers.filter((s) => inTeam(s, teamId) && matchesStickerFilter(s, filter)).length;
+  const teamFilters = [{ id: EVERYONE, name: "Everyone" }, ...teams].map((filter) => ({
+    ...filter,
+    count: countWhere(filter.id, status),
+  }));
+  const statusOptions = STICKER_FILTERS.map((filter) => ({
+    ...filter,
+    count: countWhere(team, filter.value),
+  }));
   const album = stickers.toSorted((a, b) => byName.compare(a.person.name, b.person.name));
-  const shown = team === EVERYONE ? album : album.filter((s) => s.teamId === team);
-  const dealStepS = Math.min(DEAL_STAGGER_S, DEAL_BUDGET_S / shown.length);
+  const shown = album.filter((s) => inTeam(s, team) && matchesStickerFilter(s, status));
+  const dealStepS = Math.min(DEAL_STAGGER_S, DEAL_BUDGET_S / Math.max(shown.length, 1));
   // Scoped to the grid: the cards of the grid being cleared and the one being dealt share sticker
   // ids, and a shared layoutId would fly each one across from its old slot.
-  const flightIdOf = (stickerId: string) => `${team}/${stickerId}`;
+  const grid = `${team}/${status}`;
+  const flightIdOf = (stickerId: string) => `${grid}/${stickerId}`;
 
   // Rotations belong to the sticker, not to its place in the filtered list.
   const albumIndexById = new Map(stickers.map((sticker, index) => [sticker.id, index]));
@@ -66,103 +84,130 @@ export function AlbumBoard({ teams, stickers, active, collectedCount }: AlbumBoa
   }
 
   return (
-    <GameBook className="gap-8 px-6 pt-8 pb-10">
-      <div role="toolbar" aria-label="Teams" className="flex flex-wrap justify-center gap-1.5">
-        {filters.map((filter) => {
-          const on = filter.id === team;
-          return (
-            <button
-              key={filter.id}
-              type="button"
-              aria-pressed={on}
-              onClick={() => {
-                setTeam(filter.id);
-                setFiltered(true);
-              }}
-              className={gameCn(
-                "inline-flex h-10 cursor-pointer items-center gap-2 rounded-full px-4 text-button-sm outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2",
-                on
-                  ? "bg-game-ink text-white"
-                  : "bg-game-surface text-game-ink shadow-edge hover:bg-game-sidebar",
-              )}
-            >
-              {filter.name}
-              <span className="text-small opacity-60">{filter.count}</span>
-            </button>
-          );
-        })}
-      </div>
+    <GameBook className="px-6 pt-8 pb-10">
+      {/* On wider screens the toolbar shares the grid's centred tracks, so the pills start at the
+          first card and the menu ends at the last one. */}
+      <div className="flex w-full flex-col gap-8 md:grid md:grid-cols-[repeat(auto-fill,176px)] md:justify-center md:gap-x-8">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3 md:col-span-full">
+          <div role="toolbar" aria-label="Teams" className="flex flex-wrap gap-1.5">
+            {teamFilters.map((filter) => {
+              const on = filter.id === team;
+              return (
+                <button
+                  key={filter.id}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => {
+                    setTeam(filter.id);
+                    setFiltered(true);
+                  }}
+                  className={gameCn(
+                    "inline-flex h-10 cursor-pointer items-center gap-2 rounded-full px-4 text-button-sm outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2",
+                    on
+                      ? "bg-game-ink text-white"
+                      : "bg-game-surface text-game-ink shadow-edge hover:bg-game-sidebar",
+                  )}
+                >
+                  {filter.name}
+                  <span className="text-small opacity-60">{filter.count}</span>
+                </button>
+              );
+            })}
+          </div>
+          <GameFilterMenu
+            label="Show"
+            value={status}
+            options={statusOptions}
+            onValueChange={(next) => {
+              setStatus(next);
+              setFiltered(true);
+            }}
+          />
+        </div>
 
-      <AnimatePresence mode="wait">
-        <motion.ul
-          key={team}
-          className="relative grid w-full grid-cols-[repeat(auto-fill,176px)] justify-center gap-8"
-          // A click on a fading card would open it under the next grid's flight ids, with no flight.
-          exit={{ opacity: 0, pointerEvents: "none", transition: { duration: CLEAR_S } }}
-        >
-          {shown.map((sticker, index) => {
-            const rotation = rotationOf(sticker);
-            const returning = sticker.id === returningId;
-            const card = (
-              <Sticker person={sticker.person} mode={sticker.mode} celebrateChanges={false} />
-            );
-            return (
-              <motion.li
-                key={sticker.id}
-                initial={filtered ? { opacity: 0 } : false}
-                animate={{ opacity: 1 }}
-                transition={{ ...DEAL, delay: index * dealStepS }}
-                className="relative"
-                style={returning ? { zIndex: 60 } : undefined}
-              >
-                {sticker.id === openId ? (
-                  // Holds the slot open while the card is out, so the grid does not reflow. Opacity, not
-                  // visibility: the flip sets visibility on its faces, which overrides a hidden parent.
-                  <div aria-hidden className="pointer-events-none opacity-0">
-                    {card}
-                  </div>
-                ) : canOpen(sticker) ? (
-                  <Link
-                    href={`${ROUTES.play}?card=${sticker.id}`}
-                    prefetch={false}
-                    data-card-id={sticker.id}
-                    aria-label={
-                      sticker.mode === "locked"
-                        ? `Collect ${sticker.person.name}`
-                        : sticker.person.name
-                    }
-                    aria-haspopup="dialog"
-                    onClick={(event) => {
-                      if (!isPlainClick(event)) return;
-                      event.preventDefault();
-                      open(sticker.id);
-                    }}
-                    className="block rounded-card no-underline outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-6"
+        <AnimatePresence mode="wait">
+          {shown.length === 0 ? (
+            <motion.p
+              key={`${grid}/empty`}
+              className="py-16 text-center text-game-muted md:col-span-full"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, transition: { duration: CLEAR_S } }}
+            >
+              No stickers here yet.
+            </motion.p>
+          ) : (
+            <motion.ul
+              key={grid}
+              className="relative grid w-full grid-cols-[repeat(auto-fill,176px)] justify-center gap-8 md:col-span-full md:grid-cols-subgrid"
+              // A click on a fading card would open it under the next grid's flight ids, with no flight.
+              exit={{ opacity: 0, pointerEvents: "none", transition: { duration: CLEAR_S } }}
+            >
+              {shown.map((sticker, index) => {
+                const rotation = rotationOf(sticker);
+                const returning = sticker.id === returningId;
+                const card = (
+                  <Sticker person={sticker.person} mode={sticker.mode} celebrateChanges={false} />
+                );
+                return (
+                  <motion.li
+                    key={sticker.id}
+                    initial={filtered ? { opacity: 0 } : false}
+                    animate={{ opacity: 1 }}
+                    transition={{ ...DEAL, delay: index * dealStepS }}
+                    className="relative"
+                    style={returning ? { zIndex: 60 } : undefined}
                   >
-                    <motion.div
-                      layoutId={flightIdOf(sticker.id)}
-                      layoutCrossfade={false}
-                      transition={{
-                        layout: FLIGHT,
-                      }}
-                    >
-                      <motion.div
-                        initial={returning ? { rotate: 0 } : false}
-                        animate={{ rotate: rotation }}
-                        transition={FLIGHT}
-                      >
+                    {sticker.id === openId ? (
+                      // Holds the slot open while the card is out, so the grid does not reflow. Opacity, not
+                      // visibility: the flip sets visibility on its faces, which overrides a hidden parent.
+                      <div aria-hidden className="pointer-events-none opacity-0">
                         {card}
-                      </motion.div>
-                    </motion.div>
-                  </Link>
-                ) : (
-                  card
-                )}
-              </motion.li>
-            );
-          })}
-        </motion.ul>
-      </AnimatePresence>
+                      </div>
+                    ) : canOpen(sticker) ? (
+                      <Link
+                        href={`${ROUTES.play}?card=${sticker.id}`}
+                        prefetch={false}
+                        data-card-id={sticker.id}
+                        aria-label={
+                          sticker.mode === "locked"
+                            ? `Collect ${sticker.person.name}`
+                            : sticker.person.name
+                        }
+                        aria-haspopup="dialog"
+                        onClick={(event) => {
+                          if (!isPlainClick(event)) return;
+                          event.preventDefault();
+                          open(sticker.id);
+                        }}
+                        className="block rounded-card no-underline outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-6"
+                      >
+                        <motion.div
+                          layoutId={flightIdOf(sticker.id)}
+                          layoutCrossfade={false}
+                          transition={{
+                            layout: FLIGHT,
+                          }}
+                        >
+                          <motion.div
+                            initial={returning ? { rotate: 0 } : false}
+                            animate={{ rotate: rotation }}
+                            transition={FLIGHT}
+                          >
+                            {card}
+                          </motion.div>
+                        </motion.div>
+                      </Link>
+                    ) : (
+                      card
+                    )}
+                  </motion.li>
+                );
+              })}
+            </motion.ul>
+          )}
+        </AnimatePresence>
+      </div>
 
       <AlbumCardOverlay
         target={
