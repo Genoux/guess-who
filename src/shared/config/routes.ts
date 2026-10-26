@@ -7,7 +7,6 @@ export const ROUTES = {
   playWelcome: "/play/welcome",
   playCollect: "/play/collect",
   playMission: "/play/mission",
-  playClue: "/play/clue",
   playFound: "/play/found",
   welcomer: "/welcomer",
   card: "/card",
@@ -15,4 +14,5 @@ export const ROUTES = {
   devComponents: "/dev/components",
   devWelcome: "/dev/welcome",
   devAlbum: "/dev/album",
+  devMission: "/dev/mission",
 } as const;

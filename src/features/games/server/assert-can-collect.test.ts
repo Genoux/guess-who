@@ -1,10 +1,9 @@
 import { type AppErrorKind, isAppError } from "@inbeat/core/errors";
 import { describe, expect, it } from "vitest";
-import type { Game } from "../types";
 import { assertCanCollect } from "./assert-can-collect";
 
 const allowed = {
-  game: { playerPersonId: "player", status: "active" as Game["status"] },
+  game: { playerPersonId: "player" },
   viewerPersonId: "player",
   person: { id: "teammate", hidden: false, teamId: "team_1", ask: "Night trains" },
   alreadyCollected: false,
@@ -13,19 +12,13 @@ const allowed = {
 const failsWith = (kind: AppErrorKind) => expect.toSatisfy((err) => isAppError(err, kind));
 
 describe("assertCanCollect", () => {
-  it("lets the player collect a teammate in an active game", () => {
+  it("lets the player collect a teammate", () => {
     expect(() => assertCanCollect(allowed)).not.toThrow();
   });
 
   it("forbids anyone but the player", () => {
     expect(() => assertCanCollect({ ...allowed, viewerPersonId: "welcomer" })).toThrow(
       failsWith("forbidden"),
-    );
-  });
-
-  it.each(["found", "revealed"] as const)("refuses once the game is %s", (status) => {
-    expect(() => assertCanCollect({ ...allowed, game: { ...allowed.game, status } })).toThrow(
-      failsWith("conflict"),
     );
   });
 

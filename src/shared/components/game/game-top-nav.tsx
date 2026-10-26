@@ -5,7 +5,7 @@ import { gameCn } from "./game-cn";
 type GameTopNavProps = {
   /** Where the logo goes; plain text when omitted. */
   logoHref?: string;
-  /** Up to two pill tabs, centered: pass a PillTabs. */
+  /** Up to three pill tabs, centered: pass a PillTabs. */
   tabs?: ReactNode;
   /** Right side: a CountChip and the AccountButton. */
   end?: ReactNode;
@@ -15,7 +15,7 @@ type GameTopNavProps = {
 const logoClass =
   "justify-self-start rounded-sm font-game-serif text-logo text-game-ink no-underline outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2";
 
-/** The game top bar: logo, up to two pill tabs and a count with the avatar. Nothing else. */
+/** The game top bar: logo, up to three pill tabs and a count with the avatar. Nothing else. */
 export function GameTopNav({ logoHref, tabs, end, className }: GameTopNavProps) {
   return (
     <header

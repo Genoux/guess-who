@@ -9,27 +9,27 @@ import type { PlayerNav } from "../server/load-player-board";
 
 type PlayerTopNavProps = {
   nav: PlayerNav;
-  current: "album" | "mission";
+  current: "album" | "mission" | "card";
 };
 
-/** Album and Mission tabs, a way back to the intro, the sticker count and the account menu. */
+/**
+ * Album and Mission tabs, plus My card once the game is over, a way back to the intro, the
+ * sticker count and the account menu.
+ */
 export function PlayerTopNav({ nav, current }: PlayerTopNavProps) {
+  const album = { href: ROUTES.play, label: "Album", current: current === "album" };
+  const mission = {
+    href: ROUTES.playMission,
+    label: "Mission",
+    current: current === "mission",
+    badge: nav.hasNewClue ? "New clue" : undefined,
+  };
+  const card = { href: ROUTES.card, label: "My card", current: current === "card" };
+
   return (
     <GameTopNav
       logoHref={ROUTES.play}
-      tabs={
-        <PillTabs
-          tabs={[
-            { href: ROUTES.play, label: "Album", current: current === "album" },
-            {
-              href: ROUTES.playMission,
-              label: "Mission",
-              current: current === "mission",
-              badge: nav.hasNewClue ? "New clue" : undefined,
-            },
-          ]}
-        />
-      }
+      tabs={<PillTabs tabs={nav.over ? [album, mission, card] : [album, mission]} />}
       end={
         <>
           <IconButton

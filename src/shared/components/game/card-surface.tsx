@@ -5,13 +5,12 @@ type CardSize = "sm" | "lg";
 
 const RADIUS: Record<CardSize, string> = { sm: "rounded-card", lg: "rounded-card-lg" };
 
-/** The card look every sticker and clue shares: the ink edge, the corner and the hard shadow. */
+/** The card look every sticker and clue shares: the ink edge and the corner. */
 export const cardSurfaceVariants = cva("border-2 border-game-card-edge", {
   variants: {
     size: RADIUS,
-    shadow: { none: "", ink: "shadow-ink" },
   },
-  defaultVariants: { size: "sm", shadow: "none" },
+  defaultVariants: { size: "sm" },
 });
 
 // Tilt drives `--shadow-x`/`--shadow-y` (the offset) and `--lift` (0 to 1): at rest the shadow
@@ -21,8 +20,8 @@ const SHADOW_MOTION =
   "[translate:var(--shadow-x,0px)_var(--shadow-y,0px)] [opacity:calc(var(--lift,0)*4)]";
 
 /**
- * The hover shadow of a sticker, which tilts and is always clickable: a solid card-shaped layer
- * placed before the card in a positioned parent.
+ * The hard shadow of a card: a solid card-shaped layer placed before the card in a positioned
+ * parent; it slides out from under the card on hover.
  * Not a box-shadow: it would share the border's outer edge, and Firefox antialiases the two
  * separately, so a tilted card shows a light seam between them.
  */

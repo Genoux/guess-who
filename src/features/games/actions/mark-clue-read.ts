@@ -20,6 +20,5 @@ export const markClueRead = action({
     });
     return ok();
   },
-  // The reveal screen stays as it is; the album and mission drop their new clue marks.
   revalidate: () => [ROUTES.play, ROUTES.playMission],
 });

@@ -7,7 +7,7 @@ import { GameShell } from "@/shared/components/game/game-shell";
 import { GameStage } from "@/shared/components/game/game-stage";
 import type { StickerPerson } from "@/shared/components/game/sticker-view";
 import { env } from "@/shared/config/env";
-import { isCatalogueEnabled } from "../_lib/catalogue-access";
+import { isCatalogueEnabled } from "@/shared/lib/catalogue-access";
 
 export const metadata: Metadata = {
   title: "Album (dev)",

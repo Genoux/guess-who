@@ -6,11 +6,13 @@ type CardDetailProps = {
   /** Controls that act on the card itself, kept under it and apart from the panel. */
   cardFooter?: ReactNode;
   panel: ReactNode;
+  /** The decision on the whole card, across both columns. */
+  footer?: ReactNode;
   className?: string;
 };
 
 /** One open card: the card on the left, what you know and write about it on the right. */
-export function CardDetail({ card, cardFooter, panel, className }: CardDetailProps) {
+export function CardDetail({ card, cardFooter, panel, footer, className }: CardDetailProps) {
   return (
     <div
       className={gameCn(
@@ -25,6 +27,7 @@ export function CardDetail({ card, cardFooter, panel, className }: CardDetailPro
       <div className="flex w-full min-w-0 max-w-md flex-col justify-self-center text-left md:max-w-none md:justify-self-stretch">
         {panel}
       </div>
+      {footer && <div className="w-full md:col-span-2">{footer}</div>}
     </div>
   );
 }

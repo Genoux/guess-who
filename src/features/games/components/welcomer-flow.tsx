@@ -5,10 +5,11 @@ import { AccountButton } from "@/shared/components/account-button";
 import { ClueCard } from "@/shared/components/game/clue-card";
 import { CountChip } from "@/shared/components/game/count-chip";
 import { GameButton } from "@/shared/components/game/game-button";
+import { stagger } from "@/shared/components/game/game-motion";
 import { GameShell } from "@/shared/components/game/game-shell";
 import { GameStage } from "@/shared/components/game/game-stage";
 import { gameToast } from "@/shared/components/game/game-toaster";
-import { Pop } from "@/shared/components/game/pop";
+import { Reveal } from "@/shared/components/game/reveal";
 import { Stepper } from "@/shared/components/game/stepper";
 import { Sticker } from "@/shared/components/game/sticker";
 import { celebrate } from "@/shared/lib/celebrate";
@@ -128,9 +129,9 @@ export function WelcomerFlow({ desk }: { desk: WelcomerDesk }) {
           <AccountButton />
         </div>
         <GameStage middle className="gap-8 pt-0">
-          <Pop>
+          <Reveal variant="land">
             <Sticker person={desk.player} mode="locked" rot={-3} celebrateChanges={false} />
-          </Pop>
+          </Reveal>
           <div className="flex flex-col items-center gap-3">
             <span className="font-game-mono text-caption text-game-shortlist uppercase">
               Top secret
@@ -165,7 +166,7 @@ export function WelcomerFlow({ desk }: { desk: WelcomerDesk }) {
             <h1 className="font-game-serif text-hero-md">{hint.heading}</h1>
             <p className="text-game-muted text-lead">{hint.hint}</p>
           </div>
-          <Pop key={clue.number}>
+          <Reveal key={clue.number}>
             <ClueWriterCard
               number={clue.number}
               caption={`Clue ${clue.number}`}
@@ -177,7 +178,7 @@ export function WelcomerFlow({ desk }: { desk: WelcomerDesk }) {
                 setDrafts((current) => current.map((draft, i) => (i === index ? value : draft)))
               }
             />
-          </Pop>
+          </Reveal>
           <p className="text-game-muted text-small">
             {deliveryNote(desk.playerFirstName, clue.released, clue.day - desk.day)}
             {index === 0 ? " Clue 1 is your team; we send that one for you." : null}
@@ -205,16 +206,14 @@ export function WelcomerFlow({ desk }: { desk: WelcomerDesk }) {
       <GameStage middle className="gap-9 pt-4">
         <ul aria-label="Your clues" className="flex flex-wrap justify-center gap-5">
           {desk.clues.map((written, i) => (
-            <li key={written.number}>
-              <Pop delay={i * 0.08}>
-                <ClueCard
-                  state={written.released ? "open" : "new"}
-                  label={`Clue ${written.number}`}
-                  text={drafts[i] || "…"}
-                  rot={DONE_ROTATIONS[i]}
-                />
-              </Pop>
-            </li>
+            <Reveal key={written.number} as="li" delay={stagger(i, desk.clues.length)}>
+              <ClueCard
+                state="up"
+                label={`Clue ${written.number}`}
+                text={drafts[i] || "…"}
+                rot={DONE_ROTATIONS[i]}
+              />
+            </Reveal>
           ))}
         </ul>
         <div className="flex flex-col items-center gap-3">

@@ -16,7 +16,7 @@ type StepperProps = {
 };
 
 const dotVariants = cva(
-  "h-2 rounded-full transition-[width,background-color] duration-200 ease-game motion-reduce:transition-none",
+  "h-2 rounded-full transition-[width,background-color] duration-fast ease-game motion-reduce:transition-none",
   {
     variants: {
       tone: { light: "", dark: "" },

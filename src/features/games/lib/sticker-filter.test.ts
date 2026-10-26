@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchesStickerFilter } from "./sticker-filter";
+import { matchesStickerFilter, parseStickerFilter } from "./sticker-filter";
 
 const locked = { mode: "locked", collected: false } as const;
 const collected = { mode: "collected", collected: true } as const;
@@ -30,5 +30,17 @@ describe("matchesStickerFilter", () => {
   ] as const)("matches %s by mode only", (filter, sticker) => {
     expect(matchesStickerFilter(sticker, filter)).toBe(true);
     expect(matchesStickerFilter(collected, filter)).toBe(false);
+  });
+});
+
+describe("parseStickerFilter", () => {
+  it("reads a known filter from the URL", () => {
+    expect(parseStickerFilter("collected")).toBe("collected");
+  });
+
+  it("falls back to all for a missing or unknown value", () => {
+    expect(parseStickerFilter(undefined)).toBe("all");
+    expect(parseStickerFilter("everything")).toBe("all");
+    expect(parseStickerFilter(["collected", "ruled"])).toBe("all");
   });
 });

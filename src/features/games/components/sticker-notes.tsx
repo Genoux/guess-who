@@ -106,10 +106,5 @@ function EditNote({ target }: NotesProps) {
 /** The player's private notes on one teammate: written to collect, editable for good after. */
 export function StickerNotes({ target }: NotesProps) {
   if (target.collected) return <EditNote key={target.id} target={target} />;
-  if (target.active) return <CollectNote key={target.id} target={target} />;
-  return (
-    <NotesBlock>
-      <p className="text-game-muted">You didn’t collect {target.firstName}.</p>
-    </NotesBlock>
-  );
+  return <CollectNote key={target.id} target={target} />;
 }

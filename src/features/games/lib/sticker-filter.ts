@@ -17,3 +17,10 @@ export function matchesStickerFilter(sticker: FilterableSticker, filter: Sticker
   if (filter === "collected") return sticker.collected;
   return sticker.mode === filter;
 }
+
+/** The `?show=` param of an album link, so a link can open the album already filtered. */
+export const STICKER_FILTER_PARAM = "show";
+
+export function parseStickerFilter(value: string | string[] | undefined): StickerFilter {
+  return STICKER_FILTERS.find((filter) => filter.value === value)?.value ?? "all";
+}

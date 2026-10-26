@@ -6,7 +6,7 @@ import { GameBook } from "@/shared/components/game/game-book";
 import { GameButton } from "@/shared/components/game/game-button";
 import { GameField } from "@/shared/components/game/game-field";
 import { gameToast } from "@/shared/components/game/game-toaster";
-import { Pop } from "@/shared/components/game/pop";
+import { Reveal } from "@/shared/components/game/reveal";
 import { Sticker } from "@/shared/components/game/sticker";
 import { formatStickerNumber, type StickerPerson } from "@/shared/components/game/sticker-view";
 import { celebrate, originFromElement } from "@/shared/lib/celebrate";
@@ -37,7 +37,7 @@ const COPY: Record<CardAudience, Copy> = {
     savedNote: "When someone new chats with you, they’ll unlock it.",
   },
   "new-hire": {
-    title: "Your turn.",
+    title: "Your card",
     lead: "Make your sticker. The next new hire will collect it.",
     submit: "Add me to the album",
     savedTitle: "You’re in.",
@@ -129,13 +129,13 @@ export function CardEditor({ card }: { card: MyCard }) {
         </div>
 
         {saved ? (
-          <Pop className="flex w-95 max-w-full flex-col items-center gap-5">
+          <Reveal className="flex w-95 max-w-full flex-col items-center gap-5">
             <CountChip variant="yellow">{copy.savedChip(number, team.name)}</CountChip>
             <p className="text-lead">{copy.savedNote}</p>
             <GameButton variant="light" onClick={() => setSaved(false)}>
               Edit my sticker
             </GameButton>
-          </Pop>
+          </Reveal>
         ) : (
           <GameBook as="div" className="w-95 max-w-full p-7 md:p-7">
             <form noValidate onSubmit={submit} className="flex w-full flex-col gap-4.5">

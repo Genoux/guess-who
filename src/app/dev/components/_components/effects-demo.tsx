@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { noor } from "@/shared/components/game/fixtures";
 import { GameButton } from "@/shared/components/game/game-button";
-import { Pop } from "@/shared/components/game/pop";
+import { Reveal } from "@/shared/components/game/reveal";
 import { Sticker } from "@/shared/components/game/sticker";
 import type { StickerMode } from "@/shared/components/game/sticker-view";
 import { celebrate } from "@/shared/lib/celebrate";
@@ -11,10 +11,10 @@ import { PropCode } from "./prop-code";
 
 const STAMP_ORDER: StickerMode[] = ["collected", "maybe", "ruled", "found"];
 
-/** Flip, stamp, pop, tilt and confetti, all live. */
+/** Flip, stamp, reveal, tilt and confetti, all live. */
 export function EffectsDemo() {
   const [mode, setMode] = useState<StickerMode>("locked");
-  const [popKey, setPopKey] = useState(0);
+  const [revealKey, setRevealKey] = useState(0);
 
   const nextStamp = () => {
     const index = STAMP_ORDER.indexOf(mode);
@@ -37,15 +37,15 @@ export function EffectsDemo() {
         <GameButton size="sm" variant="light" onClick={() => void celebrate({ x: 0.5, y: 0.7 })}>
           Sparkle burst
         </GameButton>
-        <GameButton size="sm" variant="light" onClick={() => setPopKey((key) => key + 1)}>
-          Replay pop
+        <GameButton size="sm" variant="light" onClick={() => setRevealKey((key) => key + 1)}>
+          Replay reveal
         </GameButton>
         <p className="text-game-muted text-small">Hover the sticker to tilt it.</p>
       </div>
-      <Pop key={popKey} className="flex flex-col items-center gap-1.5">
+      <Reveal key={revealKey} className="flex flex-col items-center gap-1.5">
         <span className="font-game-serif text-hero-md">Noor’s in.</span>
         <span className="text-game-muted text-lead">6 of 20 collected.</span>
-      </Pop>
+      </Reveal>
     </div>
   );
 }

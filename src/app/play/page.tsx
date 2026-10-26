@@ -4,6 +4,7 @@ import { AlbumBanner } from "@/features/games/components/album-banner";
 import { AlbumBoard } from "@/features/games/components/album-board";
 import { PlayerTopNav } from "@/features/games/components/player-top-nav";
 import { ProgressSlots } from "@/features/games/components/progress-slots";
+import { parseStickerFilter, STICKER_FILTER_PARAM } from "@/features/games/lib/sticker-filter";
 import { getPlayerAlbum } from "@/features/games/queries/get-player-album";
 import { GameShell } from "@/shared/components/game/game-shell";
 import { GameStage } from "@/shared/components/game/game-stage";
@@ -11,8 +12,8 @@ import { ROUTES } from "@/shared/config/routes";
 
 export const metadata: Metadata = { title: "Your album" };
 
-export default async function AlbumPage() {
-  const album = await getPlayerAlbum();
+export default async function AlbumPage(props: PageProps<"/play">) {
+  const [album, query] = await Promise.all([getPlayerAlbum(), props.searchParams]);
   if (!album) redirect(ROUTES.card);
   if (album.active && !album.introSeen) redirect(ROUTES.playWelcome);
 
@@ -33,7 +34,7 @@ export default async function AlbumPage() {
           />
         ) : album.newClue ? (
           <AlbumBanner
-            href={ROUTES.playClue}
+            href={ROUTES.playMission}
             eyebrow="New clue"
             title={`Clue ${album.newClue.number} just landed.`}
             cta="Open it"
@@ -45,6 +46,7 @@ export default async function AlbumPage() {
             stickers={album.stickers}
             active={album.active}
             collectedCount={album.nav.collectedCount}
+            initialStatus={parseStickerFilter(query[STICKER_FILTER_PARAM])}
           />
         ) : (
           <p className="text-game-muted">

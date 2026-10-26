@@ -7,7 +7,7 @@ import { gameCn } from "./game-cn";
 import { GameTooltip } from "./game-tooltip";
 
 const iconButtonVariants = cva(
-  "inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full outline-none transition-colors duration-160 ease-game motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2",
+  "inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full outline-none transition-colors duration-fast ease-game motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2",
   {
     variants: {
       tone: {

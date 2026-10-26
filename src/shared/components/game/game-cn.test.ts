@@ -10,6 +10,7 @@ describe("gameCn", () => {
     expect(gameCn("rounded-card", "rounded-card-lg")).toBe("rounded-card-lg");
     expect(gameCn("shadow-ink", "shadow-edge")).toBe("shadow-edge");
     expect(gameCn("font-game-sans", "font-game-serif")).toBe("font-game-serif");
+    expect(gameCn("duration-fast", "duration-slow")).toBe("duration-slow");
   });
 
   it("drops falsy values", () => {

@@ -8,6 +8,7 @@ import { Sticker } from "@/shared/components/game/sticker";
 import { ROUTES } from "@/shared/config/routes";
 import { OPEN_SCALE } from "../lib/album-motion";
 import type { CollectTarget } from "../queries/get-collect-target";
+import { StickerGuess } from "./sticker-guess";
 import { StickerMaybe } from "./sticker-maybe";
 import { StickerNotes } from "./sticker-notes";
 
@@ -82,6 +83,17 @@ export function CollectDetail({
           <StickerNotes target={target} />
         </div>,
       )}
+      footer={
+        target.active && target.collected
+          ? wrapContent(
+              // Not gated on `ruled`: the guess keeps its "Not X." moment open after the card is
+              // ruled out, and the rule hides once the button is gone.
+              <div className="hidden justify-end border-game-border border-t pt-6 has-[button]:flex">
+                <StickerGuess target={target} />
+              </div>,
+            )
+          : null
+      }
     />
   );
 }

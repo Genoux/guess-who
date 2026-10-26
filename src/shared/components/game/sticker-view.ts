@@ -16,6 +16,8 @@ export type StickerPerson = {
   color: string;
   /** Lighter team tint, behind the "Ask me about" line. */
   tint: string;
+  /** Text color on the tint; ink when unset. */
+  tintInk?: string;
   ask: string;
   city?: string | null;
   fact?: string | null;

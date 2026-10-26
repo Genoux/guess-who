@@ -169,8 +169,18 @@ describe("loadPlayerBoard while the game is active", () => {
       collectedCount: 2,
       total: 4,
       hasNewClue: true,
+      over: false,
     });
   });
+
+  it.each(["found", "revealed"] as const)(
+    "marks the nav over once the game is %s",
+    async (status) => {
+      setUp(status);
+      const board = await loadPlayerBoard();
+      expect(board && toPlayerNav(board).over).toBe(true);
+    },
+  );
 
   it("gives the player their own notes, on collected stickers only", async () => {
     setUp("active");

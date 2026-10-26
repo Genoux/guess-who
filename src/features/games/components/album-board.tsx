@@ -6,10 +6,11 @@ import { type MouseEvent, useEffect, useState } from "react";
 import { GameBook } from "@/shared/components/game/game-book";
 import { gameCn } from "@/shared/components/game/game-cn";
 import { GameFilterMenu } from "@/shared/components/game/game-filter-menu";
+import { stagger, TRANSITION } from "@/shared/components/game/game-motion";
 import { Sticker } from "@/shared/components/game/sticker";
 import { ROUTES } from "@/shared/config/routes";
 import { useCardParam } from "../hooks/use-card-param";
-import { CLEAR_S, DEAL, DEAL_BUDGET_S, DEAL_STAGGER_S, FLIGHT } from "../lib/album-motion";
+import { FLIGHT } from "../lib/album-motion";
 import { matchesStickerFilter, STICKER_FILTERS, type StickerFilter } from "../lib/sticker-filter";
 import { restingRotation } from "../lib/sticker-rotation";
 import type { AlbumSticker } from "../queries/get-player-album";
@@ -25,6 +26,8 @@ type AlbumBoardProps = {
   /** Locked stickers open while the game is on. */
   active: boolean;
   collectedCount: number;
+  /** The status filter a link opened the album with. */
+  initialStatus?: StickerFilter;
 };
 
 const isPlainClick = (event: MouseEvent) =>
@@ -34,9 +37,15 @@ const isPlainClick = (event: MouseEvent) =>
  * The album page: team pills and a status menu over one grid of stickers, each opening in place.
  * Each control counts what it would show combined with the other one.
  */
-export function AlbumBoard({ teams, stickers, active, collectedCount }: AlbumBoardProps) {
+export function AlbumBoard({
+  teams,
+  stickers,
+  active,
+  collectedCount,
+  initialStatus = "all",
+}: AlbumBoardProps) {
   const [team, setTeam] = useState(EVERYONE);
-  const [status, setStatus] = useState<StickerFilter>("all");
+  const [status, setStatus] = useState<StickerFilter>(initialStatus);
   const [filtered, setFiltered] = useState(false);
   const { cardId, open, close } = useCardParam();
   const inTeam = (sticker: AlbumSticker, teamId: string) =>
@@ -53,7 +62,6 @@ export function AlbumBoard({ teams, stickers, active, collectedCount }: AlbumBoa
   }));
   const album = stickers.toSorted((a, b) => byName.compare(a.person.name, b.person.name));
   const shown = album.filter((s) => inTeam(s, team) && matchesStickerFilter(s, status));
-  const dealStepS = Math.min(DEAL_STAGGER_S, DEAL_BUDGET_S / Math.max(shown.length, 1));
   // Scoped to the grid: the cards of the grid being cleared and the one being dealt share sticker
   // ids, and a shared layoutId would fly each one across from its old slot.
   const grid = `${team}/${status}`;
@@ -63,12 +71,10 @@ export function AlbumBoard({ teams, stickers, active, collectedCount }: AlbumBoa
   const albumIndexById = new Map(stickers.map((sticker, index) => [sticker.id, index]));
   const rotationOf = (sticker: AlbumSticker) =>
     sticker.mode === "locked" ? 0 : restingRotation(albumIndexById.get(sticker.id) ?? 0);
-  const canOpen = (sticker: AlbumSticker) => active || sticker.mode !== "locked";
+  const openSticker = stickers.find((sticker) => sticker.id === cardId);
 
-  const openSticker = stickers.find((sticker) => sticker.id === cardId && canOpen(sticker));
-
-  // A link to a card that cannot open (unknown, or locked after the game) clears itself, so the
-  // URL does not keep a card Back would step through.
+  // A link to a card that is not in the album clears itself, so the URL does not keep a card Back
+  // would step through.
   const deadCard = cardId !== null && openSticker === undefined;
   useEffect(() => {
     if (deadCard) close();
@@ -132,7 +138,7 @@ export function AlbumBoard({ teams, stickers, active, collectedCount }: AlbumBoa
               className="py-16 text-center text-game-muted md:col-span-full"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0, transition: { duration: CLEAR_S } }}
+              exit={{ opacity: 0, transition: TRANSITION.clear }}
             >
               No stickers here yet.
             </motion.p>
@@ -141,7 +147,11 @@ export function AlbumBoard({ teams, stickers, active, collectedCount }: AlbumBoa
               key={grid}
               className="relative grid w-full grid-cols-[repeat(auto-fill,176px)] justify-center gap-8 md:col-span-full md:grid-cols-subgrid"
               // A click on a fading card would open it under the next grid's flight ids, with no flight.
-              exit={{ opacity: 0, pointerEvents: "none", transition: { duration: CLEAR_S } }}
+              exit={{
+                opacity: 0,
+                pointerEvents: "none",
+                transition: TRANSITION.clear,
+              }}
             >
               {shown.map((sticker, index) => {
                 const rotation = rotationOf(sticker);
@@ -154,7 +164,7 @@ export function AlbumBoard({ teams, stickers, active, collectedCount }: AlbumBoa
                     key={sticker.id}
                     initial={filtered ? { opacity: 0 } : false}
                     animate={{ opacity: 1 }}
-                    transition={{ ...DEAL, delay: index * dealStepS }}
+                    transition={{ ...TRANSITION.deal, delay: stagger(index, shown.length) }}
                     className="relative"
                     style={returning ? { zIndex: 60 } : undefined}
                   >
@@ -164,7 +174,7 @@ export function AlbumBoard({ teams, stickers, active, collectedCount }: AlbumBoa
                       <div aria-hidden className="pointer-events-none opacity-0">
                         {card}
                       </div>
-                    ) : canOpen(sticker) ? (
+                    ) : (
                       <Link
                         href={`${ROUTES.play}?card=${sticker.id}`}
                         prefetch={false}
@@ -198,8 +208,6 @@ export function AlbumBoard({ teams, stickers, active, collectedCount }: AlbumBoa
                           </motion.div>
                         </motion.div>
                       </Link>
-                    ) : (
-                      card
                     )}
                   </motion.li>
                 );

@@ -1,11 +1,11 @@
 "use client";
 
-import { motion } from "motion/react";
 import Link from "next/link";
 import { CloseButton } from "@/shared/components/game/close-button";
 import { GameButton } from "@/shared/components/game/game-button";
+import { beats, TRANSITION } from "@/shared/components/game/game-motion";
 import { GameStage } from "@/shared/components/game/game-stage";
-import { Pop } from "@/shared/components/game/pop";
+import { Reveal } from "@/shared/components/game/reveal";
 import { Sticker } from "@/shared/components/game/sticker";
 import type { StickerMode, StickerPerson } from "@/shared/components/game/sticker-view";
 import { ROUTES } from "@/shared/config/routes";
@@ -18,6 +18,11 @@ type FoundScreenProps = {
   cluesUsed: number | null;
 };
 
+const STICKER_AT = beats(1);
+const WORDS_AT = STICKER_AT + TRANSITION.land.duration;
+const ACTIONS_AT = WORDS_AT + beats(1);
+const SECOND_WAVE_MS = beats(1) * 1000;
+
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
 
 function foundLead(day: number | null, clues: number | null) {
@@ -28,10 +33,14 @@ function foundLead(day: number | null, clues: number | null) {
 
 /** The orange ending: the welcomer's sticker, who it was, and the way to the player's own card. */
 export function FoundScreen({ found, welcomer, foundOnDay, cluesUsed }: FoundScreenProps) {
-  // Two waves of confetti: as the sticker lands, then as the name pops in.
+  // Confetti waits until the last words have settled, so nothing moves under it: two waves a beat apart.
   const burst = (left: number, right: number) => {
     for (const x of [left, right])
       void celebrate({ x, y: 0.75 }, { kind: "found", palette: "found" });
+  };
+  const celebrateFind = () => {
+    burst(0.15, 0.85);
+    setTimeout(() => burst(0.3, 0.7), SECOND_WAVE_MS);
   };
 
   return (
@@ -43,12 +52,7 @@ export function FoundScreen({ found, welcomer, foundOnDay, cluesUsed }: FoundScr
         </CloseButton>
       </div>
       <GameStage middle className="gap-8 pt-0">
-        <motion.div
-          initial={{ opacity: 0, y: 80, rotate: -6, scale: 0.85 }}
-          animate={{ opacity: 1, y: 0, rotate: 0, scale: 1 }}
-          transition={{ duration: 0.7, delay: 0.15, ease: [0.2, 0.9, 0.3, 1.2] }}
-          onAnimationComplete={() => burst(0.15, 0.85)}
-        >
+        <Reveal variant="land" delay={STICKER_AT}>
           <Sticker
             person={welcomer.person}
             mode={welcomer.mode}
@@ -56,12 +60,8 @@ export function FoundScreen({ found, welcomer, foundOnDay, cluesUsed }: FoundScr
             rot={-2}
             celebrateChanges={false}
           />
-        </motion.div>
-        <Pop
-          delay={0.7}
-          onShown={() => burst(0.3, 0.7)}
-          className="flex flex-col items-center gap-2"
-        >
+        </Reveal>
+        <Reveal delay={WORDS_AT} className="flex flex-col items-center gap-2">
           <span className="font-game-mono text-caption uppercase">
             {found ? "Mission complete" : "Day 14"}
           </span>
@@ -73,12 +73,16 @@ export function FoundScreen({ found, welcomer, foundOnDay, cluesUsed }: FoundScr
               ? foundLead(foundOnDay, cluesUsed)
               : "You were close. Now you know who to say hi to."}
           </p>
-        </Pop>
-        <Pop delay={0.85} className="flex flex-wrap items-center justify-center gap-4">
+        </Reveal>
+        <Reveal
+          delay={ACTIONS_AT}
+          onShown={celebrateFind}
+          className="flex flex-wrap items-center justify-center gap-4"
+        >
           <GameButton asChild>
             <Link href={ROUTES.card}>Make my card</Link>
           </GameButton>
-        </Pop>
+        </Reveal>
       </GameStage>
     </>
   );

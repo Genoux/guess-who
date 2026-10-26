@@ -4,7 +4,7 @@ import { extendTailwindMerge } from "tailwind-merge";
 type ClassValue = Parameters<typeof cx>[number];
 
 // The default merger reads `text-hero` as a color and drops it next to `text-game-ink`; it has to
-// know the game theme's size, radius, shadow and font names (game-theme.css).
+// know the game theme's size, radius, shadow, font and duration names (game-theme.css).
 const mergeGameClasses = extendTailwindMerge({
   extend: {
     theme: {
@@ -49,6 +49,9 @@ const mergeGameClasses = extendTailwindMerge({
       "font-weight": ["book"],
       ease: ["game"],
       tracking: ["caption"],
+    },
+    classGroups: {
+      duration: [{ duration: ["instant", "fast", "base", "slow", "slower"] }],
     },
   },
 });

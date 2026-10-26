@@ -176,9 +176,11 @@ export type PlayerNav = {
   collectedCount: number;
   total: number;
   hasNewClue: boolean;
+  /** The game ended, so the player can make their own card. */
+  over: boolean;
 };
 
-/** The top bar: who is playing, the n / total count and the new clue dot. */
+/** The top bar: who is playing, the n / total count, the new clue dot and the card tab. */
 export function toPlayerNav(board: PlayerBoard): PlayerNav {
   return {
     name: board.player.name,
@@ -186,5 +188,6 @@ export function toPlayerNav(board: PlayerBoard): PlayerNav {
     collectedCount: board.collectedCount,
     total: board.stickers.length,
     hasNewClue: board.newClue !== null,
+    over: board.game.status !== "active",
   };
 }

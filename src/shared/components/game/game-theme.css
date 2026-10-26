@@ -18,7 +18,7 @@
   /* Quiet outlines on small controls, lighter than a card edge. */
   --color-game-outline: #d4d4cc;
   --color-game-ink: #191910;
-  --color-game-ink-hover: #33332a;
+  --color-game-ink-hover: #0a0a05;
   --color-game-ink-soft: #2e2e26;
   --color-game-ink-dots: #4a4a40;
   --color-game-muted: #5c5c55;
@@ -113,6 +113,11 @@
   /* Menus and popovers lifted off the page: the hairline edge plus a soft drop. */
   --shadow-pop: 0 0 0 1px var(--color-game-border), 0 12px 32px -8px rgb(25 25 16 / 0.18);
 
-  /* Easing: keep in sync with GAME_EASE in game-motion.ts */
+  /* Timing mirrors game-motion.ts; game-motion.test.ts fails when they drift apart. */
   --ease-game: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --transition-duration-instant: 120ms;
+  --transition-duration-fast: 200ms;
+  --transition-duration-base: 320ms;
+  --transition-duration-slow: 500ms;
+  --transition-duration-slower: 640ms;
 }

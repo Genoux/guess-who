@@ -3,6 +3,7 @@ import { useState } from "react";
 import { fn } from "storybook/test";
 import { Flip } from "./flip";
 import { GameButton } from "./game-button";
+import { DURATION } from "./game-motion";
 
 const meta = {
   title: "Game/Motion/Flip",
@@ -30,7 +31,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {};
 export const Flipped: Story = { args: { flipped: true } };
-export const Delayed: Story = { args: { delay: 1 } };
+export const Delayed: Story = { args: { delay: DURATION.slower } };
 
 export const Interactive: Story = {
   render: (args) => {

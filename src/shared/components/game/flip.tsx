@@ -3,7 +3,7 @@
 import { motion, useMotionValue, useTransform } from "motion/react";
 import type { ReactNode } from "react";
 import { gameCn } from "./game-cn";
-import { FLIP_EASE } from "./game-motion";
+import { TRANSITION } from "./game-motion";
 
 type FlipProps = {
   /** Shows the back face; changing it turns the card. */
@@ -41,7 +41,7 @@ export function Flip({ flipped, front, back, delay = 0, onFlipped, className }: 
       style={{ rotateY }}
       initial={false}
       animate={{ rotateY: flipped ? 180 : 0 }}
-      transition={{ duration: 0.64, delay, ease: FLIP_EASE }}
+      transition={{ ...TRANSITION.flip, delay }}
       transformTemplate={({ rotateY: value }) => {
         const degrees = toDegrees(value);
         if (atRest(degrees)) return "none";

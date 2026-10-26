@@ -3,7 +3,7 @@
 import { cva } from "class-variance-authority";
 import { XIcon } from "lucide-react";
 import { motion } from "motion/react";
-import { STAMP_EASE } from "./game-motion";
+import { TRANSITION } from "./game-motion";
 import type { StickerSize, StickerStamp } from "./sticker-view";
 
 const stampVariants = cva("pointer-events-none absolute z-3 flex items-center justify-center", {
@@ -13,7 +13,7 @@ const stampVariants = cva("pointer-events-none absolute z-3 flex items-center ju
         "rounded-full border-2 border-game-card-edge bg-game-shortlist font-game-mono text-game-ink uppercase tracking-caption",
       ruled: "rounded-full border-2 border-game-card-edge bg-game-ink text-white",
       found:
-        "top-[30%] left-1/2 whitespace-nowrap rounded-game-md border-2 border-game-card-edge bg-game-found font-game-serif text-white",
+        "top-[30%] left-1/2 whitespace-nowrap rounded-game-md bg-game-found font-game-serif text-white",
     },
     size: { sm: "", lg: "" },
   },
@@ -49,14 +49,14 @@ export function StickerStampMark({ stamp, size, onLanded }: StickerStampMarkProp
       style={{ x: centred ? "-50%" : 0, rotate: STAMP_ROTATION[stamp] }}
       initial={{ opacity: 0, scale: 1.7 }}
       animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.12 } }}
-      transition={{ duration: 0.26, ease: STAMP_EASE }}
+      exit={{ opacity: 0, scale: 0.9, transition: TRANSITION.clear }}
+      transition={TRANSITION.stamp}
       onAnimationComplete={onLanded}
       {...(stamp === "ruled" ? { role: "img", "aria-label": "Not them" } : {})}
     >
       {stamp === "maybe" ? "Maybe" : null}
       {stamp === "ruled" ? <XIcon aria-hidden strokeWidth={2.5} /> : null}
-      {stamp === "found" ? "Found" : null}
+      {stamp === "found" ? "Welcomer" : null}
     </motion.span>
   );
 }

@@ -184,6 +184,9 @@ Never commit, push or open a PR unless explicitly asked.
 - Player pages read through `loadPlayerBoard()` and the view shapers; never pass a raw `games`,
   `people` or `collections` row to a client component.
 - `bun run db:seed:demo` builds a playable dev game (see the script header for the flags).
+- Motion timing is shared from `src/shared/components/game/game-motion.ts` (durations, eases, `beats()`,
+  `stagger()`, transitions) and content enters through `Reveal`; a feature's own choreography lives in a
+  `*-motion.ts` file. `game-motion.test.ts` fails on inline timing literals and on CSS tokens that drift.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

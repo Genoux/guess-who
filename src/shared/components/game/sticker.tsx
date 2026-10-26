@@ -8,6 +8,7 @@ import { type CelebratePalette, celebrate, originFromElement } from "@/shared/li
 import { CardBacking, cardSurfaceVariants } from "./card-surface";
 import { Flip } from "./flip";
 import { gameCn } from "./game-cn";
+import { TRANSITION } from "./game-motion";
 import { StickerStampMark } from "./sticker-stamp";
 import {
   getStickerView,
@@ -117,7 +118,7 @@ function StickerPhoto({ url, name, onError }: StickerPhotoProps) {
           className="absolute inset-0 bg-game-hover"
           initial={{ opacity: 1 }}
           animate={{ opacity: [1, 0.55, 1] }}
-          transition={{ duration: 1.6, ease: "easeInOut", repeat: Number.POSITIVE_INFINITY }}
+          transition={TRANSITION.pulse}
         />
       )}
       {/* biome-ignore lint/performance/noImgElement: profile pictures come from Clerk or storage at their own size, not optimised per request */}
@@ -129,7 +130,7 @@ function StickerPhoto({ url, name, onError }: StickerPhotoProps) {
         onError={onError}
         className={gameCn(
           "absolute inset-0 size-full object-cover",
-          fadeIn && "transition-opacity duration-300 ease-game",
+          fadeIn && "transition-opacity duration-base ease-game",
           loaded ? "opacity-100" : "opacity-0",
         )}
       />
@@ -183,13 +184,13 @@ export function Sticker({
             "flex-col justify-between gap-2",
             size === "lg" ? "p-5" : "p-3",
           )}
-          style={{ backgroundColor: person.tint }}
+          style={{ backgroundColor: person.tint, color: person.tintInk }}
         >
           <div className="flex items-center justify-between gap-2">
             <span className="font-game-mono text-caption uppercase">Ask me about</span>
             <span
               className={gameCn(
-                "inline-flex flex-none items-center justify-center rounded-full bg-game-surface",
+                "inline-flex flex-none items-center justify-center rounded-full bg-game-surface text-game-ink",
                 size === "lg" ? "size-7.5" : "size-5.5",
               )}
             >
@@ -244,11 +245,17 @@ export function Sticker({
         </div>
         <StickerInfo name={person.name} subtitle={view.subtitle} size={size} />
         {view.showMore ? (
-          <div className="flex flex-none flex-col items-start gap-1.5 border-game-border border-t px-1.5 pt-3 pb-1 text-left">
-            {person.fact ? <p className="text-sm">{person.fact}</p> : null}
-            <span className="font-game-mono text-caption text-game-muted uppercase">
-              Ask me about · <span className="text-game-ink">{person.ask}</span>
-            </span>
+          <div className="flex flex-none flex-col items-start gap-3 border-game-border border-t px-1.5 pt-3 pb-1 text-left">
+            {/* The locked face already printed the ask; open, the fact is the new part. */}
+            {person.fact ? (
+              <p className="line-clamp-2 text-balance font-game-serif text-quote">{person.fact}</p>
+            ) : null}
+            <div className="flex flex-col gap-0.5">
+              <span className="font-game-mono text-caption text-game-muted uppercase">
+                Ask me about
+              </span>
+              <p className="line-clamp-1 text-game-muted text-sm">{person.ask}</p>
+            </div>
           </div>
         ) : null}
       </div>

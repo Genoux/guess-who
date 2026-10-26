@@ -4,7 +4,10 @@ import { Toaster } from "@inbeat/ui/components/sonner";
 import { TooltipProvider } from "@inbeat/ui/components/tooltip";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { DevPanel } from "@/features/games/components/dev-panel";
+import { env } from "@/shared/config/env";
 import { ROUTES } from "@/shared/config/routes";
+import { isCatalogueEnabled } from "@/shared/lib/catalogue-access";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -20,6 +23,12 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
           <TooltipProvider>
             <Toaster position="top-center" />
             {children}
+            {isCatalogueEnabled({
+              nodeEnv: env.NODE_ENV,
+              vercelEnv: env.NEXT_PUBLIC_VERCEL_ENV,
+            }) ? (
+              <DevPanel />
+            ) : null}
           </TooltipProvider>
         </ClerkProvider>
       </body>

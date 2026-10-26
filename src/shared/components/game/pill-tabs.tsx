@@ -11,8 +11,8 @@ export type PillTab = {
 };
 
 type PillTabsProps = {
-  /** Up to two tabs. */
-  tabs: readonly [PillTab] | readonly [PillTab, PillTab];
+  /** Up to three tabs. */
+  tabs: readonly [PillTab] | readonly [PillTab, PillTab] | readonly [PillTab, PillTab, PillTab];
   label?: string;
   className?: string;
 };

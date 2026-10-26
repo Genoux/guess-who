@@ -31,3 +31,15 @@ export const writeClueSchema = z.object({
     .min(1, "Write a clue first.")
     .max(CLUE_MAX, `Keep it under ${CLUE_MAX} characters.`),
 });
+
+export const devStateSchema = z.object({
+  role: z.enum(["member", "admin"]),
+  view: z.enum(["new-hire", "welcomer", "teammate"]),
+  outcome: z.enum(["active", "found", "revealed"]),
+  day: z.number().int().min(1).max(14),
+  cluesWritten: z.number().int().min(0).max(3),
+  cluesRead: z.number().int().min(0).max(4),
+  album: z.enum(["empty", "started"]),
+  introSeen: z.boolean(),
+  card: z.enum(["empty", "filled"]),
+});

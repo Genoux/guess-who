@@ -16,7 +16,7 @@ import { Stepper } from "@/shared/components/game/stepper";
 import { Sticker } from "@/shared/components/game/sticker";
 import type { StickerMode } from "@/shared/components/game/sticker-view";
 import { env } from "@/shared/config/env";
-import { isCatalogueEnabled } from "../_lib/catalogue-access";
+import { isCatalogueEnabled } from "@/shared/lib/catalogue-access";
 import { CatalogueSection } from "./_components/catalogue-section";
 import { EffectsDemo } from "./_components/effects-demo";
 import { Example } from "./_components/example";
@@ -127,23 +127,23 @@ export default function GameComponentsPage() {
         <CatalogueSection
           number="02"
           title="Clue card"
-          description="Face down until its day, yellow when new, white once read."
+          description="Locked until its day, face down until the player turns it over, then yellow."
         >
           <div className="flex flex-wrap items-start gap-x-6 gap-y-8">
+            <Example code={`state="locked"`}>
+              <ClueCard state="locked" label="Clue 3" footer="Unlocks in 3 days" />
+            </Example>
             <Example code={`state="down"`}>
-              <ClueCard state="down" label="Clue 3" footer="In 3 days" />
+              <ClueCard state="down" label="Clue 3" />
             </Example>
-            <Example code={`state="new"`}>
-              <ClueCard state="new" label="Clue 2" text={welcomerClue} />
-            </Example>
-            <Example code={`state="open"`}>
-              <ClueCard state="open" label="Clue 1" text="Works in Creative." />
+            <Example code={`state="up"`}>
+              <ClueCard state="up" label="Clue 2" text={welcomerClue} />
             </Example>
           </div>
           <div className="flex flex-wrap items-start gap-x-6 gap-y-8">
-            <Example code={`size="lg" state="new" footer`}>
+            <Example code={`size="lg" state="up" footer`}>
               <ClueCard
-                state="new"
+                state="up"
                 size="lg"
                 label="Clue 2"
                 text={welcomerClue}
@@ -156,7 +156,11 @@ export default function GameComponentsPage() {
           </div>
           <PropTable
             rows={[
-              { name: "state", values: "down · new · open", notes: "What the player has seen" },
+              {
+                name: "state",
+                values: "locked · down · up",
+                notes: "Released, then turned over by the player",
+              },
               {
                 name: "size",
                 values: "sm · lg",
@@ -413,11 +417,11 @@ export default function GameComponentsPage() {
                 values: "disabled?",
                 notes: "3D lean towards the pointer, 8°, flat at rest",
               },
-              { name: "Pop", values: "delay?", notes: "motion pop-in for titles and actions" },
               {
-                name: "PageTransition",
-                values: "children",
-                notes: "Fade up per screen, from a route template",
+                name: "Reveal",
+                values: "variant: fade · land, delay?, as?, onShown?",
+                notes:
+                  "Shows content on mount; text fades in place, land for cards. Delays from beats() and stagger()",
               },
             ]}
           />

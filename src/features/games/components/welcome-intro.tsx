@@ -10,7 +10,7 @@ import { CountChip } from "@/shared/components/game/count-chip";
 import { GameAvatar } from "@/shared/components/game/game-avatar";
 import { GameButton } from "@/shared/components/game/game-button";
 import { gameCn } from "@/shared/components/game/game-cn";
-import { EXIT_EASE, GAME_EASE } from "@/shared/components/game/game-motion";
+import { beats, TRANSITION } from "@/shared/components/game/game-motion";
 import { gameToast } from "@/shared/components/game/game-toaster";
 import { Stepper } from "@/shared/components/game/stepper";
 import { Sticker } from "@/shared/components/game/sticker";
@@ -30,14 +30,20 @@ const ROUND = "size-13 px-0";
 /** 1 when moving forward, -1 when going back: every slide mirrors on the way back. */
 const Direction = createContext(1);
 
+/** Arrivals wait for the leaving view, so the two never cross. */
+const AFTER_LEAVE_S = TRANSITION.exit.duration;
+const DEAL_AT = beats(2);
+const COLLECT_FLIP_AT = beats(3);
+const TITLE_AT = beats(1);
+
 const WELCOME_MOTION: Variants = {
   enter: (direction: number) => ({ opacity: 0, y: direction < 0 ? -32 : 24 }),
   center: (direction: number) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, delay: direction < 0 ? 0.3 : 0, ease: GAME_EASE },
+    transition: { ...TRANSITION.arrive, delay: direction < 0 ? AFTER_LEAVE_S : 0 },
   }),
-  exit: { opacity: 0, y: -32, transition: { duration: 0.3, ease: EXIT_EASE } },
+  exit: { opacity: 0, y: -32, transition: TRANSITION.exit },
 };
 
 // Reads `custom` from its AnimatePresence: a leaving child no longer gets new props, only that.
@@ -45,7 +51,7 @@ const ART_MOTION: Variants = {
   exit: (direction: number) => ({
     opacity: 0,
     x: -64 * direction,
-    transition: { duration: 0.3, ease: EXIT_EASE },
+    transition: TRANSITION.exit,
   }),
 };
 
@@ -65,7 +71,7 @@ function Dealt({ children, order = 0, onDealt }: DealtProps) {
       className="flex-none"
       initial={{ opacity: 0, x: 96 * direction }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.6, delay: 0.25 + order * 0.12, ease: GAME_EASE }}
+      transition={{ ...TRANSITION.travel, delay: DEAL_AT + beats(order) }}
       onAnimationComplete={onDealt}
     >
       {children}
@@ -114,14 +120,14 @@ function CollectArt({ person }: { person: StickerPerson }) {
             mode={mode}
             size="lg"
             tilt={false}
-            flipDelay={0.4}
+            flipDelay={COLLECT_FLIP_AT}
             onFlipped={() => setLanded(true)}
           />
         </Dealt>
         <motion.div
           initial={false}
           animate={landed ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
-          transition={{ duration: 0.35, ease: GAME_EASE }}
+          transition={TRANSITION.enter}
         >
           <CountChip variant="yellow" size="sm">
             +1 sticker
@@ -136,10 +142,10 @@ function CluesArt() {
   return (
     <Row fit={FIT_THREE}>
       <Dealt order={0}>
-        <ClueCard state="open" size="lg" label="Clue 1" text="I sit with the Strategy team." />
+        <ClueCard state="up" size="lg" label="Clue 1" text="I sit with the Strategy team." />
       </Dealt>
       <Dealt order={1}>
-        <ClueCard state="new" size="lg" label="Clue 2" text="Ask me about my sourdough." />
+        <ClueCard state="up" size="lg" label="Clue 2" text="Ask me about my sourdough." />
       </Dealt>
       <Dealt order={2}>
         <ClueCard state="down" size="lg" label="Clue 3" />
@@ -251,8 +257,8 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
           <motion.div
             key={step > 0 ? "tour" : "welcome"}
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1, transition: { duration: 0.5, delay: 0.3, ease: GAME_EASE } }}
-            exit={{ opacity: 0, transition: { duration: 0.3, ease: EXIT_EASE } }}
+            animate={{ opacity: 1, transition: { ...TRANSITION.arrive, delay: AFTER_LEAVE_S } }}
+            exit={{ opacity: 0, transition: TRANSITION.exit }}
           >
             {preview ? <GameAvatar name={firstName} color="#FF97AB" /> : <AccountButton />}
           </motion.div>
@@ -297,16 +303,16 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
             className="col-span-full row-span-3 row-start-2 grid grid-rows-subgrid md:row-span-3 md:row-start-1 md:grid-cols-subgrid"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.3, ease: EXIT_EASE } }}
-            transition={{ duration: 0.5, delay: 0.3, ease: GAME_EASE }}
+            exit={{ opacity: 0, transition: TRANSITION.exit }}
+            transition={{ ...TRANSITION.arrive, delay: AFTER_LEAVE_S }}
           >
             <InertWhenLeaving>
               <motion.div
                 className="relative mx-3 mt-4 flex h-88 items-center justify-center overflow-hidden rounded-modal md:col-start-2 md:row-span-3 md:row-start-1 md:m-3 md:h-auto"
                 initial={{ opacity: 0, x: 80, backgroundColor: current?.stage }}
                 animate={{ opacity: 1, x: 0, backgroundColor: current?.stage }}
-                exit={{ opacity: 0, x: 80, transition: { duration: 0.35, ease: EXIT_EASE } }}
-                transition={{ duration: 0.7, delay: 0.3, ease: GAME_EASE }}
+                exit={{ opacity: 0, x: 80, transition: TRANSITION.exit }}
+                transition={{ ...TRANSITION.travel, delay: AFTER_LEAVE_S }}
                 aria-hidden
               >
                 <Direction value={direction}>
@@ -336,8 +342,8 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
                     className="flex max-w-120 flex-col gap-4"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    exit={{ opacity: 0, transition: { duration: 0.2, ease: EXIT_EASE } }}
-                    transition={{ duration: 0.45, delay: 0.1, ease: GAME_EASE }}
+                    exit={{ opacity: 0, transition: TRANSITION.exitFast }}
+                    transition={{ ...TRANSITION.arrive, delay: TITLE_AT }}
                   >
                     <h1
                       ref={focusHeading}

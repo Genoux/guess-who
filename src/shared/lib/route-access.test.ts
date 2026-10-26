@@ -12,6 +12,7 @@ describe("isPublicPath", () => {
     "/dev/components",
     "/dev/welcome",
     "/dev/album",
+    "/dev/mission",
   ])("lets %s through without a session", (path) => {
     expect(isPublicPath(path)).toBe(true);
   });
