@@ -1,5 +1,5 @@
 import { cva, type VariantProps } from "class-variance-authority";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { gameCn } from "./game-cn";
 
 const countChipVariants = cva(
@@ -22,17 +22,24 @@ const countChipVariants = cva(
   },
 );
 
-type CountChipProps = VariantProps<typeof countChipVariants> & {
-  children: ReactNode;
-  /** Team or status dot before the text (a CSS color from data). */
-  dotColor?: string;
-  className?: string;
-};
+type CountChipProps = Omit<ComponentProps<"span">, "children"> &
+  VariantProps<typeof countChipVariants> & {
+    children: ReactNode;
+    /** Team or status dot before the text (a CSS color from data). */
+    dotColor?: string;
+  };
 
 /** Small pill for counts and status: "5 / 20", "No. 21 · Talent", "8 days left". */
-export function CountChip({ variant, size, children, dotColor, className }: CountChipProps) {
+export function CountChip({
+  variant,
+  size,
+  children,
+  dotColor,
+  className,
+  ...props
+}: CountChipProps) {
   return (
-    <span className={gameCn(countChipVariants({ variant, size }), className)}>
+    <span className={gameCn(countChipVariants({ variant, size }), className)} {...props}>
       {dotColor ? (
         <span
           aria-hidden

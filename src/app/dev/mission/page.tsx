@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MissionClues } from "@/features/games/components/mission-clues";
-import { HERO_DEALT_S, MissionHero } from "@/features/games/components/mission-hero";
+import { HERO_DEALT_S, MissionBrief } from "@/features/games/components/mission-hero";
 import type { MissionClue } from "@/features/games/queries/get-player-mission";
 import { welcomerClue } from "@/shared/components/game/fixtures";
 import { GameShell } from "@/shared/components/game/game-shell";
@@ -29,8 +29,8 @@ export default function MissionPreviewPage() {
 
   return (
     <GameShell>
-      <GameStage className="max-w-280 gap-20">
-        <MissionHero />
+      <GameStage className="max-w-280 gap-12">
+        <MissionBrief />
         <MissionClues clues={clues} delay={HERO_DEALT_S} />
       </GameStage>
     </GameShell>

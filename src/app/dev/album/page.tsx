@@ -74,7 +74,7 @@ export default function AlbumPreviewPage() {
 
   return (
     <GameShell>
-      <GameStage className="max-w-280">
+      <GameStage className="max-w-280 px-2 sm:px-4 md:px-8">
         <AlbumBoard
           teams={teams}
           stickers={stickers}

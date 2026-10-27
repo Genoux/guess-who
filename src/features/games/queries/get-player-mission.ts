@@ -1,6 +1,7 @@
 import "server-only";
 import { clueCardState, clueUnlocksIn, MISSING_CLUE_TEXT } from "../lib/game-clues";
 import { loadPlayerBoard, type PlayerNav, toPlayerNav } from "../server/load-player-board";
+import { type GameOutcome, toGameOutcome } from "../server/to-game-outcome";
 
 export type MissionClue = {
   number: number;
@@ -13,7 +14,7 @@ export type MissionClue = {
 
 export type PlayerMission = {
   nav: PlayerNav;
-  active: boolean;
+  outcome: GameOutcome;
   clues: MissionClue[];
 };
 
@@ -22,7 +23,7 @@ export async function getPlayerMission(): Promise<PlayerMission | null> {
   if (!board) return null;
   return {
     nav: toPlayerNav(board),
-    active: board.game.status === "active",
+    outcome: toGameOutcome(board),
     clues: board.clues.map((clue) => {
       const state = clueCardState(clue, board.lastReadClue);
       return {

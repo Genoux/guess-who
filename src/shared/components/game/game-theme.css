@@ -6,6 +6,9 @@
  * declared in game-fonts.css, which GameShell imports.
  */
 @theme {
+  /* The narrowest the app lays out at: below it the page scrolls sideways. */
+  --container-app-min: 20rem;
+
   /* Colors */
   --color-game-bg: #f7f7f3;
   --color-game-surface: #ffffff;
@@ -59,9 +62,9 @@
   --text-button-sm--line-height: 20px;
   --text-small: 13px;
   --text-small--line-height: 18px;
-  --text-caption: 11px;
-  --text-caption--line-height: 14px;
-  --text-caption--letter-spacing: 0.06em;
+  --text-caption: 13px;
+  --text-caption--line-height: 18px;
+  --text-caption--letter-spacing: 0.03em;
   --text-meta: 10px;
   --text-meta--line-height: 14px;
   --text-meta--letter-spacing: 0.06em;
@@ -120,4 +123,53 @@
   --transition-duration-base: 320ms;
   --transition-duration-slow: 500ms;
   --transition-duration-slower: 640ms;
+}
+
+/* A swap of game screens (GameShell's ViewTransition): one dissolve, old into new. */
+::view-transition-group(.game-page),
+::view-transition-old(.game-page),
+::view-transition-new(.game-page) {
+  animation-duration: var(--transition-duration-base);
+  animation-timing-function: var(--ease-game);
+}
+
+/* The overlay would swallow clicks while it plays; let them reach the live page. */
+::view-transition {
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-name: none;
+  }
+}
+
+/* A full-screen moment: the bar on top, the content centered in the space under it, so the gaps
+   above and below the content match on screen. Too tall for the screen, it scrolls. */
+@utility screen-center {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-items: start;
+
+  & > :nth-child(2) {
+    align-self: center;
+  }
+}
+
+/* The 176px album card zoomed, whole, to the width of its container (an `@container`), so a grid
+   column narrower or wider than the card never squishes it. tan(atan2(a, b)) is a / b as a plain
+   number: calc() cannot divide one length by another outside Chrome 140+. */
+@utility zoom-fit {
+  zoom: tan(atan2(100cqi, 176px));
+}
+
+/* The open card: the 176px album card zoomed to the large card's 300px (1.7), one step less where
+   a phone is too narrow for it (176 * 1.7 + 32px of gutter = 331px). */
+@utility zoom-open {
+  zoom: 1.7;
+  @media (width < 331px) {
+    zoom: 1.6;
+  }
 }

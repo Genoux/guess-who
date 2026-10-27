@@ -36,6 +36,11 @@ export function buildGameClues(
   });
 }
 
+/** A clue is out on its release time, and every clue is out once the game is over. */
+export function isClueOut(releaseAt: Date, game: Pick<Game, "status">, now: Date): boolean {
+  return releaseAt <= now || game.status !== "active";
+}
+
 type ClueProgress = { number: number; released: boolean };
 
 /** Face down until released, yellow until the player opened it, white after. */

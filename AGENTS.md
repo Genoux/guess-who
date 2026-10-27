@@ -183,10 +183,20 @@ Never commit, push or open a PR unless explicitly asked.
   Clue 1 is generated from the welcomer's team; clues 2 to 4 are the welcomer's rows.
 - Player pages read through `loadPlayerBoard()` and the view shapers; never pass a raw `games`,
   `people` or `collections` row to a client component.
+- Every player screen fills the viewport and centers its content vertically: `GameStage` always does it,
+  there is no opt-in.
 - `bun run db:seed:demo` builds a playable dev game (see the script header for the flags).
+- Full-screen moments (card overlays, the reveal, the collect page) use the `screen-center` utility:
+  a top bar with "The Album" logo lined up with `GameTopNav`'s, then the content centered on the
+  screen itself. Actions sit centered under the content; no divider lines.
 - Motion timing is shared from `src/shared/components/game/game-motion.ts` (durations, eases, `beats()`,
   `stagger()`, transitions) and content enters through `Reveal`; a feature's own choreography lives in a
   `*-motion.ts` file. `game-motion.test.ts` fails on inline timing literals and on CSS tokens that drift.
+- Tooltips, player screens included, use `Tooltip` from `@inbeat/ui/components/tooltip` (text goes in
+  `content`; `TooltipProvider` is mounted in the root layout). The trigger component must forward its
+  props and ref, or the tooltip never opens.
+- Player-facing copy stays short and plain: one line telling the player what to do, no cute or
+  wordy phrasing.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

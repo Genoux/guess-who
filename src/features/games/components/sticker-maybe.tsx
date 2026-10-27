@@ -13,7 +13,7 @@ export function StickerMaybe({ target }: { target: CollectTarget }) {
   const [, startTransition] = useTransition();
 
   if (target.ruled) {
-    return <p className="text-button-sm text-game-muted">Not your welcomer</p>;
+    return null;
   }
 
   const toggle = (on: boolean) => {

@@ -15,6 +15,7 @@ const gameButtonVariants = cva(
         link: "rounded-sm text-game-muted underline underline-offset-3 hover:text-game-ink focus-visible:outline-offset-3",
       },
       size: {
+        lg: "h-15 gap-3 px-9 text-lead",
         default: "h-13 gap-2.5 px-7 text-base",
         sm: "h-11 gap-2 px-5.5 text-button-sm",
       },

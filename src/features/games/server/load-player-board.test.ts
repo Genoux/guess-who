@@ -50,7 +50,7 @@ const people = [
   person("ghost", { hidden: true }),
 ];
 
-const game = (status: Game["status"]): Game => ({
+const game = (status: Game["status"], revealSeenAt: Date | null = null): Game => ({
   id: "game_1",
   playerPersonId: "player",
   playerEmail: "player@example.com",
@@ -58,7 +58,9 @@ const game = (status: Game["status"]): Game => ({
   startDate: "2026-11-02",
   status,
   foundAt: status === "found" ? new Date("2026-11-07T15:00:00Z") : null,
+  foundWithClues: status === "found" ? 1 : null,
   introSeenAt: null,
+  revealSeenAt,
   lastReadClue: 1,
   createdBy: null,
   createdAt: new Date(),
@@ -85,13 +87,13 @@ const clue = (number: number, text: string): Clue => ({
   updatedAt: new Date(),
 });
 
-const setUp = (status: Game["status"]) => {
+const setUp = (status: Game["status"], revealSeenAt: Date | null = null) => {
   mocks.getViewerPerson.mockResolvedValue({
     userId: "user_player",
     role: "member",
     person: player,
   });
-  mocks.findLatestPlayerGame.mockResolvedValue(game(status));
+  mocks.findLatestPlayerGame.mockResolvedValue(game(status, revealSeenAt));
   mocks.findPersonById.mockResolvedValue(welcomer);
   mocks.listAlbumPeople.mockResolvedValue(people);
   mocks.listTeams.mockResolvedValue([
@@ -174,11 +176,12 @@ describe("loadPlayerBoard while the game is active", () => {
   });
 
   it.each(["found", "revealed"] as const)(
-    "marks the nav over once the game is %s",
+    "marks the nav over, with no new clue dot, once the game is %s",
     async (status) => {
       setUp(status);
       const board = await loadPlayerBoard();
-      expect(board && toPlayerNav(board).over).toBe(true);
+      expect(board?.newClue).toBeNull();
+      expect(board && toPlayerNav(board)).toMatchObject({ over: true, hasNewClue: false });
     },
   );
 
@@ -196,18 +199,32 @@ describe("loadPlayerBoard while the game is active", () => {
 });
 
 describe("loadPlayerBoard once the game is over", () => {
-  it("stamps the welcomer found and opens their card", async () => {
-    setUp("found");
+  it("opens the found welcomer's card without a badge once the reveal was seen", async () => {
+    setUp("found", new Date());
     const board = await loadPlayerBoard();
     expect(board?.game.welcomerPersonId).toBe("welcomer");
-    expect(board?.welcomer).toMatchObject({ id: "welcomer", mode: "found", collected: false });
+    expect(board?.welcomer).toMatchObject({ id: "welcomer", mode: "collected", collected: false });
     expect(board?.welcomer?.person.fact).toBe("welcomer secret fact");
   });
 
   it("opens the revealed welcomer without counting them as collected", async () => {
-    setUp("revealed");
+    setUp("revealed", new Date());
     const board = await loadPlayerBoard();
     expect(board?.welcomer?.mode).toBe("collected");
+    expect(board?.stickers.find((s) => s.id === "welcomer")?.mode).toBe("collected");
     expect(board?.collectedCount).toBe(2);
   });
+
+  it.each(["found", "revealed"] as const)(
+    "keeps the %s welcomer locked in the album until the reveal was seen",
+    async (status) => {
+      setUp(status);
+      const board = await loadPlayerBoard();
+      const albumSticker = board?.stickers.find((s) => s.id === "welcomer");
+      expect(albumSticker?.mode).toBe("locked");
+      expect(JSON.stringify(board?.stickers)).not.toContain("welcomer secret fact");
+      expect(board?.welcomer).toMatchObject({ id: "welcomer", mode: "collected" });
+      expect(board?.welcomer?.person.fact).toBe("welcomer secret fact");
+    },
+  );
 });

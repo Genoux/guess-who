@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { stickerModeFor } from "./sticker-mode";
 
-const base = { locked: false, ruled: false, shortlisted: false, welcomer: null };
+const base = { locked: false, ruled: false, shortlisted: false, over: false };
 
 describe("stickerModeFor", () => {
   it("keeps uncollected stickers locked, even on the maybe list", () => {
@@ -21,11 +21,12 @@ describe("stickerModeFor", () => {
     expect(stickerModeFor({ ...base, ruled: true, shortlisted: true })).toBe("ruled");
   });
 
-  it("stamps the welcomer found once the player found them", () => {
-    expect(stickerModeFor({ ...base, welcomer: "found", shortlisted: true })).toBe("found");
+  it("drops the maybe and not-them badges once the game is over", () => {
+    expect(stickerModeFor({ ...base, over: true, shortlisted: true })).toBe("collected");
+    expect(stickerModeFor({ ...base, over: true, ruled: true })).toBe("collected");
   });
 
-  it("opens the revealed welcomer without the found stamp", () => {
-    expect(stickerModeFor({ ...base, locked: true, welcomer: "revealed" })).toBe("collected");
+  it("keeps uncollected stickers locked once the game is over", () => {
+    expect(stickerModeFor({ ...base, over: true, locked: true })).toBe("locked");
   });
 });

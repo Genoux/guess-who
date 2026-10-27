@@ -57,11 +57,6 @@ export function GameModal({
                 exit={{ opacity: 0, x: "-50%", y: "-48%" }}
                 transition={TRANSITION.enter}
               >
-                {stage ? (
-                  <div className="flex w-full justify-center rounded-stage bg-game-sidebar px-4 py-8">
-                    {stage}
-                  </div>
-                ) : null}
                 <div className="flex flex-col items-center gap-1.5">
                   <Dialog.Title className="font-game-serif text-hero-md">{title}</Dialog.Title>
                   {description ? (

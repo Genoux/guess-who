@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DEV_SCENARIO_IDS } from "./lib/dev-state";
 
 export const NOTE_MAX = 1000;
 export const CLUE_MAX = 160;
@@ -23,6 +24,8 @@ export const markClueReadSchema = z.object({
 
 export const markIntroSeenSchema = z.object({});
 
+export const markRevealSeenSchema = z.object({});
+
 export const writeClueSchema = z.object({
   number: z.union([z.literal(2), z.literal(3), z.literal(4)]),
   text: z
@@ -32,14 +35,4 @@ export const writeClueSchema = z.object({
     .max(CLUE_MAX, `Keep it under ${CLUE_MAX} characters.`),
 });
 
-export const devStateSchema = z.object({
-  role: z.enum(["member", "admin"]),
-  view: z.enum(["new-hire", "welcomer", "teammate"]),
-  outcome: z.enum(["active", "found", "revealed"]),
-  day: z.number().int().min(1).max(14),
-  cluesWritten: z.number().int().min(0).max(3),
-  cluesRead: z.number().int().min(0).max(4),
-  album: z.enum(["empty", "started"]),
-  introSeen: z.boolean(),
-  card: z.enum(["empty", "filled"]),
-});
+export const devStateSchema = z.object({ scenario: z.enum(DEV_SCENARIO_IDS) });

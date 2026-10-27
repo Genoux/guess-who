@@ -100,18 +100,21 @@ export const loadPlayerBoard = cache(async (): Promise<PlayerBoard | null> => {
       .map((row) => toCollectionView(row, game, viewer.personId))
       .map((view) => [view.personId, view.notebook?.note ?? null] as const),
   );
-  // Once the game is over the welcomer's sticker opens, but it never counts as collected.
-  const unlocked = new Set(notebook.keys());
-  if (gameView.welcomerPersonId) unlocked.add(gameView.welcomerPersonId);
+  // The welcomer's album sticker opens only once the reveal was watched, so no page gives it away
+  // first; the outcome below carries their card for the reveal itself. It never counts as collected.
+  const collectedIds = new Set(notebook.keys());
+  const albumUnlocked = new Set(collectedIds);
+  if (gameView.welcomerPersonId && gameView.revealSeenAt) {
+    albumUnlocked.add(gameView.welcomerPersonId);
+  }
   const ruled = new Set(guessRows.filter((guess) => !guess.correct).map((guess) => guess.personId));
   const shortlisted = new Set(shortlistedIds);
 
-  const toBoardSticker = (candidate: Person): BoardSticker => {
+  const toBoardSticker = (candidate: Person, unlocked = albumUnlocked): BoardSticker => {
     const view = toStickerView(candidate, {
       personId: viewer.personId,
       collectedPersonIds: unlocked,
     });
-    const isWelcomer = gameView.welcomerPersonId === candidate.id;
     const team = candidate.teamId ? teamById.get(candidate.teamId) : undefined;
     return {
       id: candidate.id,
@@ -123,7 +126,7 @@ export const loadPlayerBoard = cache(async (): Promise<PlayerBoard | null> => {
         locked: view.locked,
         ruled: ruled.has(candidate.id),
         shortlisted: shortlisted.has(candidate.id),
-        welcomer: isWelcomer ? (gameView.status === "found" ? "found" : "revealed") : null,
+        over: gameView.status !== "active",
       }),
       collected: notebook.has(candidate.id),
       shortlisted: shortlisted.has(candidate.id),
@@ -133,11 +136,12 @@ export const loadPlayerBoard = cache(async (): Promise<PlayerBoard | null> => {
   };
   const stickers = people
     .filter((candidate) => isInAlbum(candidate, person.id))
-    .map(toBoardSticker);
-  // The welcomer, only once the game view reveals them (found or revealed).
+    .map((candidate) => toBoardSticker(candidate));
+  // The welcomer, only once the game view reveals them (found or revealed), face up whether or
+  // not the album's own sticker is still locked.
   const revealedWelcomer =
     gameView.welcomerPersonId && welcomer?.id === gameView.welcomerPersonId
-      ? (stickers.find((sticker) => sticker.id === welcomer.id) ?? toBoardSticker(welcomer))
+      ? toBoardSticker(welcomer, new Set([...collectedIds, welcomer.id]))
       : null;
 
   // Clue 1 is the welcomer's team; toClueView keeps it hidden until it lands.
@@ -165,7 +169,8 @@ export const loadPlayerBoard = cache(async (): Promise<PlayerBoard | null> => {
     stickers,
     welcomer: revealedWelcomer,
     clues,
-    newClue: newestUnreadClue(clues, game.lastReadClue),
+    // The end opens every clue at once; none of them landed, so nothing is new.
+    newClue: game.status === "active" ? newestUnreadClue(clues, game.lastReadClue) : null,
     collectedCount: stickers.filter((sticker) => sticker.collected).length,
   };
 });

@@ -21,3 +21,6 @@ npm-debug.log*
 # Storybook
 storybook-static/
 *storybook.log
+
+# per-machine agent hook state
+.cursor/hooks/state/

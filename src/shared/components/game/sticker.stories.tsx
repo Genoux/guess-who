@@ -3,7 +3,7 @@ import { ana, noor } from "./fixtures";
 import { Sticker } from "./sticker";
 import type { StickerMode, StickerSize } from "./sticker-view";
 
-const MODES: StickerMode[] = ["locked", "collected", "maybe", "ruled", "found"];
+const MODES: StickerMode[] = ["locked", "collected", "maybe", "ruled"];
 const SIZES: StickerSize[] = ["sm", "lg"];
 
 const meta = {
@@ -28,10 +28,9 @@ export const Locked: Story = { args: { mode: "locked" } };
 export const Collected: Story = { args: { mode: "collected" } };
 export const Maybe: Story = { args: { mode: "maybe" } };
 export const Ruled: Story = { args: { mode: "ruled", person: ana } };
-export const Found: Story = { args: { mode: "found", person: ana } };
 
 export const WithPhoto: Story = { args: { person: ana } };
-export const Large: Story = { args: { size: "lg", mode: "found", person: ana } };
+export const Large: Story = { args: { size: "lg", mode: "collected", person: ana } };
 export const HandStuck: Story = { args: { rot: -3, tilt: false } };
 
 export const Gallery: Story = {

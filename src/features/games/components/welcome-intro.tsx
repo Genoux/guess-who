@@ -3,10 +3,10 @@
 import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
 import { AnimatePresence, motion, useIsPresent, type Variants } from "motion/react";
 import { useRouter } from "next/navigation";
-import { createContext, type ReactNode, use, useEffect, useState, useTransition } from "react";
+import { createContext, type ReactNode, use, useRef, useState, useTransition } from "react";
 import { AccountButton } from "@/shared/components/account-button";
-import { ClueCard } from "@/shared/components/game/clue-card";
 import { CountChip } from "@/shared/components/game/count-chip";
+import { Flip } from "@/shared/components/game/flip";
 import { GameAvatar } from "@/shared/components/game/game-avatar";
 import { GameButton } from "@/shared/components/game/game-button";
 import { gameCn } from "@/shared/components/game/game-cn";
@@ -16,8 +16,11 @@ import { Stepper } from "@/shared/components/game/stepper";
 import { Sticker } from "@/shared/components/game/sticker";
 import type { StickerMode, StickerPerson } from "@/shared/components/game/sticker-view";
 import { ROUTES } from "@/shared/config/routes";
+import { celebrate, originFromElement } from "@/shared/lib/celebrate";
 import { markIntroSeen } from "../actions/mark-intro-seen";
 import { TUTORIAL_ALBUM, TUTORIAL_WELCOMER } from "../lib/tutorial-cast";
+import { IncognitoCard } from "./incognito-card";
+import { ClueReveal } from "./mission-clues";
 
 type WelcomeIntroProps = {
   firstName: string;
@@ -34,6 +37,8 @@ const Direction = createContext(1);
 const AFTER_LEAVE_S = TRANSITION.exit.duration;
 const DEAL_AT = beats(2);
 const COLLECT_FLIP_AT = beats(3);
+/** After the ruled-out stamp has landed on the card beside it. */
+const WIN_FLIP_AT = beats(2);
 const TITLE_AT = beats(1);
 
 const WELCOME_MOTION: Variants = {
@@ -89,22 +94,22 @@ function InertWhenLeaving({ children }: { children: ReactNode }) {
   );
 }
 
-// Cards only ever scale down, never up: scaling a card up blurs its edges.
-// Fit for large cards side by side, per stage width: two stickers (624px) or three clues (1008px).
-const FIT_TWO = "scale-[0.5] sm:scale-75 md:scale-[0.62] lg:scale-[0.85] xl:scale-100";
-const FIT_THREE =
-  "scale-[0.34] sm:scale-[0.55] md:scale-[0.42] lg:scale-[0.56] xl:scale-[0.72] 2xl:scale-[0.85]";
-
-function Row({ children, fit }: { children: ReactNode; fit: string }) {
+// Cards only ever scale down, never up: scaling a card up blurs its edges. The fit is per stage
+// width, for two large stickers (624px) or three mission-size clues (648px).
+function Row({ children }: { children: ReactNode }) {
   return (
-    <div className={gameCn("flex origin-center items-center justify-center gap-6", fit)}>
+    <div className="flex origin-center items-center justify-center gap-6 [zoom:0.4] sm:[zoom:0.75] md:[zoom:1] md:scale-[0.62] lg:scale-[0.85] xl:scale-100">
       {children}
     </div>
   );
 }
 
 function Single({ children }: { children: ReactNode }) {
-  return <div className="origin-center scale-[0.66] md:scale-[0.8] xl:scale-100">{children}</div>;
+  return (
+    <div className="origin-center [zoom:0.66] md:[zoom:1] md:scale-[0.8] xl:scale-100">
+      {children}
+    </div>
+  );
 }
 
 /** The card arrives locked, turns to collected after a beat, and the +1 lands with it. */
@@ -138,47 +143,60 @@ function CollectArt({ person }: { person: StickerPerson }) {
   );
 }
 
+/** The mission page's clue cards: two read, the third face down with its Reveal button. */
 function CluesArt() {
   return (
-    <Row fit={FIT_THREE}>
+    <Row>
       <Dealt order={0}>
-        <ClueCard state="up" size="lg" label="Clue 1" text="I sit with the Strategy team." />
+        <ClueReveal number={1} text="I sit with the Strategy team." open className="w-50" />
       </Dealt>
       <Dealt order={1}>
-        <ClueCard state="up" size="lg" label="Clue 2" text="Ask me about my sourdough." />
+        <ClueReveal number={2} text="Ask me about my sourdough." open className="w-50" />
       </Dealt>
       <Dealt order={2}>
-        <ClueCard state="down" size="lg" label="Clue 3" />
+        <ClueReveal
+          number={3}
+          text="I’ve been here for three years."
+          open={false}
+          className="w-50"
+        />
       </Dealt>
     </Row>
   );
 }
 
-/** A wrong guess greys out first, then the welcomer's card takes the found stamp. */
+/** A wrong guess rules a card out, then the face-down welcomer turns over, found. */
 function WinArt() {
   const [wrong, setWrong] = useState<StickerMode>("collected");
+  const [revealed, setRevealed] = useState(false);
   const [welcomer, setWelcomer] = useState<StickerMode>("collected");
+  const welcomerRef = useRef<HTMLDivElement>(null);
   const wrongGuess = TUTORIAL_ALBUM[0] ?? TUTORIAL_WELCOMER;
 
-  useEffect(() => {
-    if (wrong !== "ruled") return;
-    const stamp = setTimeout(() => setWelcomer("found"), 1000);
-    return () => clearTimeout(stamp);
-  }, [wrong]);
-
   return (
-    <Row fit={FIT_TWO}>
+    <Row>
       <Dealt order={0} onDealt={() => setWrong("ruled")}>
         <Sticker person={wrongGuess} mode={wrong} size="lg" tilt={false} />
       </Dealt>
-      <Dealt order={1}>
-        <Sticker
-          person={TUTORIAL_WELCOMER}
-          mode={welcomer}
-          size="lg"
-          tilt={false}
-          celebratePalette="dark"
-        />
+      <Dealt order={1} onDealt={() => setRevealed(true)}>
+        <div ref={welcomerRef}>
+          <Flip
+            className="h-106 w-75"
+            flipped={revealed}
+            delay={WIN_FLIP_AT}
+            onFlipped={() => {
+              setWelcomer("welcomer");
+              if (welcomerRef.current) {
+                void celebrate(originFromElement(welcomerRef.current), {
+                  kind: "found",
+                  palette: "dark",
+                });
+              }
+            }}
+            front={<IncognitoCard />}
+            back={<Sticker person={TUTORIAL_WELCOMER} mode={welcomer} size="lg" tilt={false} />}
+          />
+        </div>
       </Dealt>
     </Row>
   );
@@ -233,7 +251,8 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
     },
     {
       art: <WinArt />,
-      stage: "#191910",
+      // --color-game-muted, not ink: the ruled-out stamp is ink and would vanish on it.
+      stage: "#5C5C55",
       title: "Find your welcomer.",
       lead: "Guess when you think you know. A wrong guess rules that person out, and if time runs out, we’ll reveal them.",
     },
@@ -336,25 +355,39 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
                   cumulative
                   className="mb-8 justify-start"
                 />
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={step}
-                    className="flex max-w-120 flex-col gap-4"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0, transition: TRANSITION.exitFast }}
-                    transition={{ ...TRANSITION.arrive, delay: TITLE_AT }}
-                  >
-                    <h1
-                      ref={focusHeading}
-                      tabIndex={-1}
-                      className="text-balance font-game-serif text-hero-md outline-none 2xl:text-hero"
-                    >
-                      {current?.title}
-                    </h1>
-                    <p className="text-pretty text-game-muted text-lead">{current?.lead}</p>
-                  </motion.div>
-                </AnimatePresence>
+                {/* Every step's copy shares one cell, so the block keeps the tallest step's height
+                    and the centered dots never move. */}
+                <div className="grid max-w-120">
+                  {tour.map((item, index) => {
+                    const shown = index === step - 1;
+                    return (
+                      <motion.div
+                        key={item.title}
+                        className="col-start-1 row-start-1 flex flex-col gap-4"
+                        inert={!shown}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: shown ? 1 : 0 }}
+                        transition={
+                          shown
+                            ? {
+                                ...TRANSITION.arrive,
+                                delay: TRANSITION.exitFast.duration + TITLE_AT,
+                              }
+                            : TRANSITION.exitFast
+                        }
+                      >
+                        <h1
+                          ref={shown ? focusHeading : undefined}
+                          tabIndex={-1}
+                          className="text-balance font-game-serif text-hero-md outline-none 2xl:text-hero"
+                        >
+                          {item.title}
+                        </h1>
+                        <p className="text-pretty text-game-muted text-lead">{item.lead}</p>
+                      </motion.div>
+                    );
+                  })}
+                </div>
               </main>
 
               <footer className="flex items-center justify-between gap-4 px-6 pb-8 md:col-start-1 md:row-start-3 md:px-12 md:pb-10">

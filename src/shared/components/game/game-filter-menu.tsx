@@ -50,6 +50,7 @@ export function GameFilterMenu<Value extends string>({
         <DropdownMenu.Content
           align="end"
           sideOffset={8}
+          collisionPadding={16}
           className="z-50 flex min-w-52 flex-col gap-0.5 rounded-game-lg bg-game-surface p-1.5 font-game-sans text-game-ink shadow-pop"
         >
           <DropdownMenu.RadioGroup

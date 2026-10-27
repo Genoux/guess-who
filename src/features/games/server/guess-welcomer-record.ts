@@ -37,7 +37,13 @@ export async function guessWelcomerRecord({
       if (correct) {
         const [found] = await tx
           .update(games)
-          .set({ status: "found", foundAt: now })
+          .set({
+            status: "found",
+            foundAt: now,
+            foundWithClues: games.lastReadClue,
+            // The in-place celebration on the guessed card is the reveal.
+            revealSeenAt: now,
+          })
           .where(and(eq(games.id, game.id), eq(games.status, "active")))
           .returning({ id: games.id });
         if (!found) throw new AppError("conflict", "game is not active");

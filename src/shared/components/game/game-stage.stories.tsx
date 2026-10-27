@@ -29,5 +29,4 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
-export const Centered: Story = { args: { middle: true } };
 export const AsDiv: Story = { args: { as: "div" } };

@@ -3,7 +3,7 @@ import { ArrowRightIcon } from "lucide-react";
 import { GameButton } from "./game-button";
 
 const VARIANTS = ["cta", "yellow", "light", "on-dark", "link"] as const;
-const SIZES = ["default", "sm"] as const;
+const SIZES = ["lg", "default", "sm"] as const;
 
 const meta = {
   title: "Game/Controls/GameButton",
@@ -29,6 +29,7 @@ export const OnDark: Story = {
   globals: { backgrounds: { value: "ink" } },
 };
 export const Link: Story = { args: { variant: "link", children: "Not sure yet" } };
+export const Large: Story = { args: { size: "lg" } };
 export const Small: Story = { args: { size: "sm" } };
 export const Disabled: Story = { args: { disabled: true } };
 export const WithIcon: Story = {

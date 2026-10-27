@@ -45,6 +45,18 @@ describe("getStickerView", () => {
     expect(getStickerView({ ...noor, city: null }, "collected", "lg").subtitle).toBe("Creative");
   });
 
+  it("stamps a found sticker as found, open", () => {
+    const view = getStickerView(noor, "found", "sm");
+    expect(view.open).toBe(true);
+    expect(view.stamp).toBe("found");
+  });
+
+  it("stamps the tour's welcomer as welcomer, open", () => {
+    const view = getStickerView(noor, "welcomer", "lg");
+    expect(view.open).toBe(true);
+    expect(view.stamp).toBe("welcomer");
+  });
+
   it("keeps the team on a ruled out sticker; the badge says not them", () => {
     const view = getStickerView(noor, "ruled", "sm");
     expect(view.open).toBe(true);
@@ -52,15 +64,14 @@ describe("getStickerView", () => {
     expect(view.subtitle).toBe("Creative");
   });
 
-  it("maps maybe and found to their stamps", () => {
+  it("maps maybe to its stamp", () => {
     expect(getStickerView(noor, "maybe", "sm").stamp).toBe("maybe");
-    expect(getStickerView(noor, "found", "sm").stamp).toBe("found");
     expect(getStickerView(noor, "collected", "sm").stamp).toBeNull();
   });
 
   it("shows the fact block on large open stickers", () => {
-    expect(getStickerView(noor, "found", "lg").showMore).toBe(true);
-    expect(getStickerView(noor, "found", "sm").showMore).toBe(false);
+    expect(getStickerView(noor, "collected", "lg").showMore).toBe(true);
+    expect(getStickerView(noor, "collected", "sm").showMore).toBe(false);
   });
 
   it("builds initials and picks a readable tone for the fallback", () => {
@@ -78,11 +89,6 @@ describe("stickerCelebration", () => {
   it("celebrates an unlock", () => {
     expect(stickerCelebration("locked", "collected")).toBe("unlock");
     expect(stickerCelebration("locked", "maybe")).toBe("unlock");
-  });
-
-  it("celebrates finding the welcomer from any mode", () => {
-    expect(stickerCelebration("maybe", "found")).toBe("found");
-    expect(stickerCelebration("locked", "found")).toBe("found");
   });
 
   it("stays quiet otherwise", () => {

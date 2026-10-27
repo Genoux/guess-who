@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AlbumBanner } from "@/features/games/components/album-banner";
 import { AlbumBoard } from "@/features/games/components/album-board";
+import { AlbumCover } from "@/features/games/components/album-cover";
 import { PlayerTopNav } from "@/features/games/components/player-top-nav";
 import { ProgressSlots } from "@/features/games/components/progress-slots";
 import { parseStickerFilter, STICKER_FILTER_PARAM } from "@/features/games/lib/sticker-filter";
@@ -20,32 +21,35 @@ export default async function AlbumPage(props: PageProps<"/play">) {
   return (
     <GameShell>
       <PlayerTopNav nav={album.nav} current="album" />
-      <GameStage className="max-w-360">
-        <div className="flex flex-col items-center gap-5">
-          <h1 className="font-game-serif text-hero">Your album</h1>
-          <ProgressSlots collected={album.nav.collectedCount} total={album.nav.total} />
-        </div>
-        {album.outcome ? (
-          <AlbumBanner
-            href={ROUTES.playFound}
-            eyebrow={album.outcome.found ? "Mission complete" : "Day 14 · Time’s up"}
-            title={`It was ${album.outcome.welcomerFirstName}.`}
-            cta="See them"
-          />
-        ) : album.newClue ? (
-          <AlbumBanner
-            href={ROUTES.playMission}
-            eyebrow="New clue"
-            title={`Clue ${album.newClue.number} just landed.`}
-            cta="Open it"
-          />
-        ) : null}
+      <GameStage className="max-w-360 px-2 sm:px-4 md:px-8">
+        <AlbumCover>
+          <div className="flex flex-col items-center gap-5">
+            <h1 className="font-game-serif text-hero">Your album</h1>
+            <ProgressSlots collected={album.nav.collectedCount} total={album.nav.total} />
+          </div>
+          {album.outcome.over ? (
+            <AlbumBanner
+              href={ROUTES.playMission}
+              eyebrow={album.outcome.found ? "Mission complete" : "Day 14 · Time’s up"}
+              title="See who your welcomer is."
+              cta="Reveal"
+            />
+          ) : album.newClue ? (
+            <AlbumBanner
+              href={ROUTES.playMission}
+              eyebrow="New clue"
+              title={`Clue ${album.newClue.number} just landed.`}
+              cta="Open it"
+            />
+          ) : null}
+        </AlbumCover>
         {album.stickers.length > 0 ? (
           <AlbumBoard
             teams={album.teams}
             stickers={album.stickers}
             active={album.active}
             collectedCount={album.nav.collectedCount}
+            outcome={album.outcome}
             initialStatus={parseStickerFilter(query[STICKER_FILTER_PARAM])}
           />
         ) : (

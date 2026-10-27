@@ -128,7 +128,7 @@ export function WelcomerFlow({ desk }: { desk: WelcomerDesk }) {
           <span className="font-game-serif text-logo">The Album</span>
           <AccountButton />
         </div>
-        <GameStage middle className="gap-8 pt-0">
+        <GameStage className="gap-8 pt-0">
           <Reveal variant="land">
             <Sticker person={desk.player} mode="locked" rot={-3} celebrateChanges={false} />
           </Reveal>
@@ -156,7 +156,7 @@ export function WelcomerFlow({ desk }: { desk: WelcomerDesk }) {
     return (
       <GameShell>
         {header}
-        <GameStage middle className="gap-8 pt-4">
+        <GameStage className="gap-8 pt-4">
           <Stepper
             count={desk.clues.length}
             current={index + 1}
@@ -203,7 +203,7 @@ export function WelcomerFlow({ desk }: { desk: WelcomerDesk }) {
   return (
     <GameShell>
       {header}
-      <GameStage middle className="gap-9 pt-4">
+      <GameStage className="gap-9 pt-4">
         <ul aria-label="Your clues" className="flex flex-wrap justify-center gap-5">
           {desk.clues.map((written, i) => (
             <Reveal key={written.number} as="li" delay={stagger(i, desk.clues.length)}>
@@ -223,7 +223,7 @@ export function WelcomerFlow({ desk }: { desk: WelcomerDesk }) {
           <p className="text-game-muted text-lead">
             {desk.status === "active"
               ? `We’ll send them for you, and tell you the moment ${desk.playerFirstName} finds you.`
-              : `${desk.playerFirstName} knows it was you.`}
+              : `${desk.playerFirstName} knows it was you`}
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-4">

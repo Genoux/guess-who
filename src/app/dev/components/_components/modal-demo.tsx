@@ -18,7 +18,7 @@ export function ModalDemo() {
 
   return (
     <>
-      <GameButton size="sm" onClick={openModal}>
+      <GameButton size="lg" onClick={openModal}>
         Guess Jonah
       </GameButton>
       <GameModal

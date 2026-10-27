@@ -29,7 +29,7 @@ export default async function CardPage() {
           end={<GameAvatar name={card.name} color={team?.color ?? "var(--color-game-hover)"} />}
         />
       )}
-      <GameStage middle>
+      <GameStage>
         <CardEditor card={card} />
       </GameStage>
     </GameShell>

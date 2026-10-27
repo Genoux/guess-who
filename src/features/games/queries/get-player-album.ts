@@ -1,6 +1,7 @@
 import "server-only";
 import { clueDay } from "../lib/game-clues";
 import { loadPlayerBoard, type PlayerNav, toPlayerNav } from "../server/load-player-board";
+import { type GameOutcome, toGameOutcome } from "../server/to-game-outcome";
 import { type StickerDetail, toStickerDetail } from "../server/to-sticker-detail";
 
 export type AlbumSticker = StickerDetail & { teamId: string | null };
@@ -10,8 +11,7 @@ export type PlayerAlbum = {
   active: boolean;
   introSeen: boolean;
   newClue: { number: number; day: number } | null;
-  /** Set once the game is over: who the welcomer was. */
-  outcome: { welcomerFirstName: string; found: boolean } | null;
+  outcome: GameOutcome;
   teams: { id: string; name: string; count: number }[];
   stickers: AlbumSticker[];
 };
@@ -19,9 +19,6 @@ export type PlayerAlbum = {
 export async function getPlayerAlbum(): Promise<PlayerAlbum | null> {
   const board = await loadPlayerBoard();
   if (!board) return null;
-  const welcomer = board.game.welcomerPersonId
-    ? board.stickers.find((sticker) => sticker.id === board.game.welcomerPersonId)
-    : undefined;
 
   return {
     nav: toPlayerNav(board),
@@ -30,10 +27,7 @@ export async function getPlayerAlbum(): Promise<PlayerAlbum | null> {
     newClue: board.newClue
       ? { number: board.newClue.number, day: clueDay(board.newClue.number) }
       : null,
-    outcome:
-      board.game.status === "active"
-        ? null
-        : { welcomerFirstName: welcomer?.firstName ?? "", found: board.game.status === "found" },
+    outcome: toGameOutcome(board),
     teams: board.teams.map(({ id, name, count }) => ({ id, name, count })),
     stickers: board.stickers.map((sticker) => ({
       ...toStickerDetail(sticker),

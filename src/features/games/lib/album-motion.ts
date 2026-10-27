@@ -1,3 +1,5 @@
+import { DURATION, EASE, TRANSITION } from "@/shared/components/game/game-motion";
+
 // Opening: the card flies (FLIGHT_S) while the backdrop and its text fade in together.
 // Closing: the card flies back at once while they fade out.
 const BACKDROP_FADE_S = 0.2;
@@ -15,5 +17,24 @@ export const CUT = { duration: 0 };
 // still accelerates, where an ease-out or a spring starts at full speed and reads as flat.
 export const FLIGHT = { duration: FLIGHT_S, ease: [0.45, 0, 0.1, 1] } as const;
 
-/** The open card is the album's small card zoomed to the large card's size (300 / 176). */
-export const OPEN_SCALE = 1.7;
+// The Reveal tap: the words fade, the face-down card slides to the middle of the screen and turns,
+// holds there under the confetti, then slides back up to its place and the words come in. Both
+// slides ease in and out alike, so the trip back reads as one smooth move, not a settle.
+const REVEAL_SLIDE = { duration: DURATION.slower, ease: [0.65, 0, 0.35, 1] } as const;
+export const REVEAL_WORDS = TRANSITION.fade;
+export const REVEAL_TO_MIDDLE = { ...REVEAL_SLIDE, delay: REVEAL_WORDS.duration };
+export const REVEAL_HOLD_S = 2;
+export const REVEAL_BACK = { ...REVEAL_SLIDE, delay: REVEAL_HOLD_S };
+
+// A right guess, in the modal: the card dips then pops, and at the pop's peak the stamp slams, the
+// confetti bursts and the result text comes in.
+const FOUND_POP_S = DURATION.slow;
+const FOUND_POP_PEAK = 0.65;
+export const FOUND_POP = { scale: [1, 0.97, 1.06, 1] };
+export const FOUND_POP_TRANSITION = {
+  duration: FOUND_POP_S,
+  delay: DURATION.base,
+  times: [0, 0.25, FOUND_POP_PEAK, 1],
+  ease: EASE.game,
+};
+export const FOUND_STAMP_AT_MS = (DURATION.base + FOUND_POP_S * FOUND_POP_PEAK) * 1000;

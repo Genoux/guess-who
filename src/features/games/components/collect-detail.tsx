@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import type { ElementType, ReactNode } from "react";
+import { type ElementType, type ReactNode, useState } from "react";
 import { CardDetail, CardDetailFacts } from "@/shared/components/game/card-detail";
 import { CloseButton } from "@/shared/components/game/close-button";
 import { Sticker } from "@/shared/components/game/sticker";
 import { ROUTES } from "@/shared/config/routes";
-import { OPEN_SCALE } from "../lib/album-motion";
 import type { CollectTarget } from "../queries/get-collect-target";
 import { StickerGuess } from "./sticker-guess";
 import { StickerMaybe } from "./sticker-maybe";
@@ -18,10 +17,11 @@ type CollectBarProps = {
   onClose?: () => void;
 };
 
-/** The collected count and the close control above a collect detail. */
+/** The logo and the close control above a collect detail. */
 export function CollectBar({ onClose }: CollectBarProps) {
   return (
-    <div className="flex items-center justify-end w-full">
+    <div className="flex w-full items-center justify-between">
+      <span className="font-game-serif text-heading md:text-logo">The Album</span>
       {onClose ? (
         <CloseButton tone="soft" label="Back to album" onClick={onClose} />
       ) : (
@@ -46,7 +46,7 @@ type CollectDetailProps = {
 
 // The album's own small card, zoomed: the same card in the grid and open, so the open card never
 // prints the fact the panel already shows.
-const zoomed = (card: ReactNode) => <div style={{ zoom: OPEN_SCALE }}>{card}</div>;
+const zoomed = (card: ReactNode) => <div className="zoom-open">{card}</div>;
 const keep = (node: ReactNode) => node;
 
 /**
@@ -61,6 +61,9 @@ export function CollectDetail({
   wrapContent = keep,
 }: CollectDetailProps) {
   const { person } = target;
+  // Local, so the refresh the guess triggers (the game goes inactive) cannot unmount the modal
+  // that is still showing the result.
+  const [found, setFound] = useState(false);
 
   return (
     <CardDetail
@@ -84,12 +87,13 @@ export function CollectDetail({
         </div>,
       )}
       footer={
-        target.active && target.collected
+        found || (target.active && target.collected)
           ? wrapContent(
               // Not gated on `ruled`: the guess keeps its "Not X." moment open after the card is
-              // ruled out, and the rule hides once the button is gone.
-              <div className="hidden justify-end border-game-border border-t pt-6 has-[button]:flex">
-                <StickerGuess target={target} />
+              // ruled out, and CardDetail hides the row once the button is gone. Kept while `found`
+              // so the modal outlives the refresh that ends the game.
+              <div className="flex justify-center">
+                <StickerGuess target={target} onFound={() => setFound(true)} />
               </div>,
             )
           : null

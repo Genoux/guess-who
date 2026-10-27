@@ -24,5 +24,9 @@ export const guessWelcomer = action({
     logger.info("welcomer guessed", { gameId: player.game.id, correct: result.correct });
     return ok(result);
   },
-  revalidate: () => [ROUTES.play, ROUTES.playMission, ROUTES.playFound],
+  revalidate: ({ personId }) => [
+    `${ROUTES.playCollect}/${personId}`,
+    ROUTES.play,
+    ROUTES.playMission,
+  ],
 });

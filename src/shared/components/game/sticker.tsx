@@ -69,7 +69,7 @@ const subtitleVariants = cva("max-w-full truncate text-game-muted", {
   },
 });
 
-const infoVariants = cva("flex min-w-0 flex-none flex-col text-left", {
+const infoVariants = cva("flex min-w-0 flex-none flex-col text-left gap-1", {
   variants: {
     size: { sm: "px-1 pb-0.5", lg: "px-1.5 pb-1" },
   },
@@ -152,10 +152,11 @@ export function Sticker({
   className,
 }: StickerProps) {
   const view = getStickerView(person, mode, size);
+  const edge = mode === "found" || mode === "welcomer" ? "found" : "ink";
   const rootRef = useRef<HTMLDivElement>(null);
   const previousMode = useRef(mode);
-  // The celebration a mode change earned, spent when its moment lands: the turn or the stamp.
-  const pendingCelebration = useRef<"unlock" | "found" | null>(null);
+  // The celebration a mode change earned, spent when its moment lands: the turn.
+  const pendingCelebration = useRef<"unlock" | null>(null);
   // A picture that fails to load (expired, blocked) falls back to the initials.
   const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
   const photoUrl = person.photoUrl && person.photoUrl !== failedPhoto ? person.photoUrl : null;
@@ -166,18 +167,21 @@ export function Sticker({
     pendingCelebration.current = celebrateChanges ? kind : null;
   }, [mode, celebrateChanges]);
 
-  const celebrateIf = (kind: "unlock" | "found") => {
-    if (pendingCelebration.current !== kind) return;
+  const celebrateUnlock = () => {
+    if (pendingCelebration.current !== "unlock") return;
     pendingCelebration.current = null;
     if (rootRef.current) {
-      void celebrate(originFromElement(rootRef.current), { kind, palette: celebratePalette });
+      void celebrate(originFromElement(rootRef.current), {
+        kind: "unlock",
+        palette: celebratePalette,
+      });
     }
   };
 
   const front = (
     <>
-      <CardBacking size={size} />
-      <div className={gameCn(faceVariants({ size }), cardSurfaceVariants({ size }))}>
+      <CardBacking size={size} edge={edge} />
+      <div className={gameCn(faceVariants({ size }), cardSurfaceVariants({ size, edge }))}>
         <div
           className={gameCn(
             artVariants({ size }),
@@ -188,14 +192,6 @@ export function Sticker({
         >
           <div className="flex items-center justify-between gap-2">
             <span className="font-game-mono text-caption uppercase">Ask me about</span>
-            <span
-              className={gameCn(
-                "inline-flex flex-none items-center justify-center rounded-full bg-game-surface text-game-ink",
-                size === "lg" ? "size-7.5" : "size-5.5",
-              )}
-            >
-              <PlusIcon aria-hidden className="size-3.5" strokeWidth={2.25} />
-            </span>
           </div>
           <span
             className={gameCn(
@@ -213,8 +209,8 @@ export function Sticker({
 
   const back = (
     <>
-      <CardBacking size={size} />
-      <div className={gameCn(faceVariants({ size }), cardSurfaceVariants({ size }))}>
+      <CardBacking size={size} edge={edge} />
+      <div className={gameCn(faceVariants({ size }), cardSurfaceVariants({ size, edge }))}>
         <div
           className={gameCn(
             artVariants({ size }),
@@ -276,19 +272,14 @@ export function Sticker({
             front={front}
             back={back}
             onFlipped={() => {
-              celebrateIf("unlock");
+              celebrateUnlock();
               if (view.open) onFlipped?.();
             }}
           />
           {/* A badge already on the card shows as is; only one added while it is on screen stamps in. */}
           <AnimatePresence initial={false}>
             {view.stamp ? (
-              <StickerStampMark
-                key={view.stamp}
-                stamp={view.stamp}
-                size={size}
-                onLanded={() => celebrateIf("found")}
-              />
+              <StickerStampMark key={view.stamp} stamp={view.stamp} size={size} />
             ) : null}
           </AnimatePresence>
         </div>

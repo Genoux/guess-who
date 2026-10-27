@@ -1,62 +1,61 @@
 "use client";
 
 import { cva } from "class-variance-authority";
-import { XIcon } from "lucide-react";
+import { type LucideIcon, PartyPopperIcon, XIcon } from "lucide-react";
 import { motion } from "motion/react";
 import { TRANSITION } from "./game-motion";
 import type { StickerSize, StickerStamp } from "./sticker-view";
 
-const stampVariants = cva("pointer-events-none absolute z-3 flex items-center justify-center", {
-  variants: {
-    stamp: {
-      maybe:
-        "rounded-full border-2 border-game-card-edge bg-game-shortlist font-game-mono text-game-ink uppercase tracking-caption",
-      ruled: "rounded-full border-2 border-game-card-edge bg-game-ink text-white",
-      found:
-        "top-[30%] left-1/2 whitespace-nowrap rounded-game-md bg-game-found font-game-serif text-white",
+// A label taped across the card's top edge, so it never covers the face. `translate` centers it;
+// motion owns `transform` for the stamp-in, so the two do not fight.
+const stampVariants = cva(
+  "pointer-events-none absolute top-0 left-1/2 z-3 flex -translate-x-1/2 -translate-y-1/2 items-center whitespace-nowrap rounded-sm border-2 font-game-serif",
+  {
+    variants: {
+      stamp: {
+        maybe: "border-game-ink bg-game-shortlist text-game-ink",
+        ruled: "border-game-ink bg-game-ink text-white",
+        found: "border-game-ink bg-game-found text-white",
+        welcomer: "border-game-found bg-game-found text-white",
+      },
+      size: {
+        sm: "gap-1 px-2.5 py-1 text-button-sm [&_svg]:size-3",
+        lg: "gap-1.5 px-3.5 py-1.5 text-heading [&_svg]:size-4",
+      },
     },
-    size: { sm: "", lg: "" },
   },
-  compoundVariants: [
-    { stamp: "maybe", size: "sm", className: "-top-3 -right-3 size-14 text-meta" },
-    { stamp: "maybe", size: "lg", className: "-top-4 -right-4 size-20 text-small" },
-    // Not-them sits where maybe does: corner badges mark a pick, the centred stamp only the find.
-    { stamp: "ruled", size: "sm", className: "-top-3 -right-3 size-14 [&_svg]:size-6" },
-    { stamp: "ruled", size: "lg", className: "-top-4 -right-4 size-20 [&_svg]:size-8" },
-    { stamp: "found", size: "sm", className: "px-4 py-2 text-stamp" },
-    { stamp: "found", size: "lg", className: "px-5 py-2.5 text-stamp-lg" },
-  ],
-});
+);
 
-const STAMP_ROTATION: Record<StickerStamp, number> = { maybe: 12, ruled: 0, found: -8 };
+const STAMP_ROTATION = -3;
+
+const STAMP_CONTENT: Record<StickerStamp, { Icon: LucideIcon | null; label: string }> = {
+  maybe: { Icon: null, label: "Maybe" },
+  ruled: { Icon: XIcon, label: "Ruled out" },
+  found: { Icon: PartyPopperIcon, label: "Found!" },
+  welcomer: { Icon: PartyPopperIcon, label: "Welcomer" },
+};
 
 /**
- * The maybe, not-them and found marks stamped on a sticker. Reduced motion comes from the
+ * The maybe, ruled-out and found marks stamped on a sticker. Reduced motion comes from the
  * MotionConfig in GameShell, so `initial` is the same on the server and the client.
  */
 type StickerStampMarkProps = {
   stamp: StickerStamp;
   size: StickerSize;
-  /** Runs once the stamp has hit the card (and after it leaves; callers guard for that). */
-  onLanded?: () => void;
 };
 
-export function StickerStampMark({ stamp, size, onLanded }: StickerStampMarkProps) {
-  const centred = stamp === "found";
+export function StickerStampMark({ stamp, size }: StickerStampMarkProps) {
+  const { Icon, label } = STAMP_CONTENT[stamp];
   return (
     <motion.span
       className={stampVariants({ stamp, size })}
-      style={{ x: centred ? "-50%" : 0, rotate: STAMP_ROTATION[stamp] }}
+      style={{ rotate: STAMP_ROTATION }}
       initial={{ opacity: 0, scale: 1.7 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9, transition: TRANSITION.clear }}
       transition={TRANSITION.stamp}
-      onAnimationComplete={onLanded}
-      {...(stamp === "ruled" ? { role: "img", "aria-label": "Not them" } : {})}
     >
-      {stamp === "maybe" ? "Maybe" : null}
-      {stamp === "ruled" ? <XIcon aria-hidden strokeWidth={2.5} /> : null}
-      {stamp === "found" ? "Welcomer" : null}
+      {label}
     </motion.span>
   );
 }

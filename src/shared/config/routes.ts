@@ -7,7 +7,6 @@ export const ROUTES = {
   playWelcome: "/play/welcome",
   playCollect: "/play/collect",
   playMission: "/play/mission",
-  playFound: "/play/found",
   welcomer: "/welcomer",
   card: "/card",
   notOnTheList: "/not-on-the-list",

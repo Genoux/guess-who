@@ -1,5 +1,7 @@
 "use client";
 
+import { Tooltip } from "@inbeat/ui/components/tooltip";
+import { InfoIcon } from "lucide-react";
 import { type ReactNode, useState, useTransition } from "react";
 import { CardDetailLabel } from "@/shared/components/game/card-detail";
 import { GameButton } from "@/shared/components/game/game-button";
@@ -10,9 +12,7 @@ import { type AutosaveStatus, useNoteAutosave } from "../hooks/use-note-autosave
 import type { CollectTarget } from "../queries/get-collect-target";
 import { collectStickerSchema, NOTE_MAX } from "../schemas";
 
-const PRIVATE = "Only you see this";
-const STATUS_LINE: Record<AutosaveStatus, string> = {
-  idle: PRIVATE,
+const STATUS_LINE: Partial<Record<AutosaveStatus, string>> = {
   saving: "Saving…",
   saved: "Saved",
 };
@@ -22,7 +22,13 @@ type NotesProps = { target: CollectTarget };
 function NotesBlock({ children }: { children: ReactNode }) {
   return (
     <div className="flex w-full flex-col gap-2.5">
-      <CardDetailLabel>Your notes</CardDetailLabel>
+      <div className="flex items-center gap-2 w-fit">
+        <CardDetailLabel className="w-fit">Your notes</CardDetailLabel>
+        <Tooltip content="Only you see this" side="top">
+          <InfoIcon className="w-4 h-4" />
+        </Tooltip>
+      </div>
+
       {children}
     </div>
   );
@@ -43,7 +49,8 @@ function CollectNote({ target }: NotesProps) {
     setError(undefined);
     startTransition(async () => {
       const result = await collectSticker(parsed.data);
-      gameToast(result.ok ? `${target.firstName} is in your album` : result.error);
+      if (result.ok) gameToast(`New sticker unlocked: ${target.firstName}`, { tone: "unlock" });
+      else gameToast(result.error);
     });
   };
 
@@ -65,7 +72,6 @@ function CollectNote({ target }: NotesProps) {
           value={note}
           maxLength={NOTE_MAX}
           error={error}
-          help={PRIVATE}
           onChange={(event) => setNote(event.target.value)}
         />
       </NotesBlock>

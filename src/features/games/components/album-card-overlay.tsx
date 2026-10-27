@@ -3,7 +3,6 @@
 import { motion, useIsPresent } from "motion/react";
 import { Dialog } from "radix-ui";
 import { useState } from "react";
-import { OPEN_SCALE } from "../lib/album-motion";
 import type { CollectTarget } from "../queries/get-collect-target";
 import { CardOverlay, OVERLAY_FADE, OverlayCard } from "./card-overlay";
 import { CollectBar, CollectDetail } from "./collect-detail";
@@ -53,13 +52,14 @@ function OverlayBody({ target, flightId, rotation, onClose }: OverlayBodyProps) 
   return (
     <>
       <motion.div
-        className="flex flex-none items-center justify-between px-4 py-5 md:px-10 [&>*]:pointer-events-auto"
+        // Same bar as FoundReveal's, so the logo lines up with GameTopNav's under it.
+        className="flex items-center justify-between px-4 pt-1 pb-2.5 md:h-18 md:px-10 md:py-0 [&>*]:pointer-events-auto"
         {...OVERLAY_FADE}
       >
         <CollectBar target={target} onClose={onClose} />
       </motion.div>
 
-      <div className="m-auto w-full px-4 pt-2 pb-16 md:px-10">
+      <div className="w-full px-4 py-8 md:px-10 flex items-center justify-center">
         <CollectDetail
           target={target}
           headingAs={Dialog.Title}
@@ -68,7 +68,7 @@ function OverlayBody({ target, flightId, rotation, onClose }: OverlayBodyProps) 
             <OverlayCard
               flightId={flightId}
               rotation={rotation}
-              scale={OPEN_SCALE}
+              zoomClass="zoom-open"
               onLanded={() => setLanded(true)}
             >
               {card}

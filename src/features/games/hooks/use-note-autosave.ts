@@ -5,7 +5,7 @@ import { gameToast } from "@/shared/components/game/game-toaster";
 import { saveNote } from "../actions/save-note";
 import { saveNoteSchema } from "../schemas";
 
-export type AutosaveStatus = "idle" | "saving" | "saved";
+export type AutosaveStatus = "saving" | "saved";
 
 const DEBOUNCE_MS = 800;
 
@@ -15,7 +15,7 @@ const DEBOUNCE_MS = 800;
  * waits silently while typing and only reports its error on blur.
  */
 export function useNoteAutosave(personId: string, saved: string) {
-  const [status, setStatus] = useState<AutosaveStatus>("idle");
+  const [status, setStatus] = useState<AutosaveStatus>();
   const [error, setError] = useState<string>();
   const lastSaved = useRef(saved);
   const draft = useRef<string | null>(null);
@@ -40,7 +40,7 @@ export function useNoteAutosave(personId: string, saved: string) {
       if (!result.ok) {
         lastSaved.current = previous;
         draft.current ??= note;
-        setStatus("idle");
+        setStatus(undefined);
         gameToast(result.error);
         return;
       }

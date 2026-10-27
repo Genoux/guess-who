@@ -22,6 +22,7 @@ export type SeedDemoGameOptions = {
   outcome?: "active" | "found" | "revealed";
   /** Skip the welcome intro. */
   introSeen?: boolean;
+  revealSeen?: boolean;
   /** Clues 2 to 4 written, in order; all three for a --player game, none for --as-welcomer. */
   cluesWritten?: number;
 };
@@ -208,6 +209,7 @@ export async function seedDemoGame(
     lastReadClue = 0,
     outcome = "active",
     introSeen = false,
+    revealSeen = false,
     cluesWritten = player ? 3 : 0,
   }: SeedDemoGameOptions,
 ): Promise<{ removed: number; startDate: string }> {
@@ -351,7 +353,9 @@ export async function seedDemoGame(
       startDate,
       status: outcome,
       foundAt: outcome === "found" ? now : null,
+      foundWithClues: outcome === "found" ? lastReadClue : null,
       introSeenAt: introSeen ? now : null,
+      revealSeenAt: revealSeen || outcome === "found" ? now : null,
       lastReadClue,
     })
     .returning({ id: schema.games.id });

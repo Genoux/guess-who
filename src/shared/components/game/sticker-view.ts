@@ -1,7 +1,8 @@
 import { getInitials } from "@inbeat/ui/lib/initials";
 import { readableOn } from "@/shared/lib/contrast";
 
-export type StickerMode = "locked" | "collected" | "maybe" | "ruled" | "found";
+/** `welcomer` is the welcome tour's found card; the game itself stamps `found`. */
+export type StickerMode = "locked" | "collected" | "maybe" | "ruled" | "found" | "welcomer";
 export type StickerSize = "sm" | "lg";
 
 /**
@@ -24,7 +25,7 @@ export type StickerPerson = {
   photoUrl?: string | null;
 };
 
-export type StickerStamp = "maybe" | "ruled" | "found";
+export type StickerStamp = Exclude<StickerMode, "locked" | "collected">;
 
 export type StickerView = {
   /** The collected face is showing (every mode but locked). */
@@ -55,7 +56,7 @@ export function getStickerView(
 
   return {
     open,
-    stamp: mode === "maybe" || mode === "ruled" || mode === "found" ? mode : null,
+    stamp: mode === "locked" || mode === "collected" ? null : mode,
     subtitle: teamLine,
     showMore: open && size === "lg",
     initials: getInitials(person.name, "?"),
@@ -63,13 +64,9 @@ export function getStickerView(
   };
 }
 
-/** Which celebration a mode change earns: unlocking a sticker, or finding the welcomer. */
-export function stickerCelebration(
-  previous: StickerMode,
-  next: StickerMode,
-): "unlock" | "found" | null {
+/** Which celebration a mode change earns: unlocking a sticker. */
+export function stickerCelebration(previous: StickerMode, next: StickerMode): "unlock" | null {
   if (previous === next) return null;
-  if (next === "found") return "found";
   if (previous === "locked") return "unlock";
   return null;
 }

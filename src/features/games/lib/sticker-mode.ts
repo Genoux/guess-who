@@ -7,8 +7,8 @@ type StickerModeInput = {
   ruled: boolean;
   /** On the player's maybe list. */
   shortlisted: boolean;
-  /** This is the welcomer and the game is over: found by the player, or revealed on day 14. */
-  welcomer: "found" | "revealed" | null;
+  /** The game is over: the album is plain, with no maybe or not-them badges. */
+  over: boolean;
 };
 
 /** How a sticker shows in the player's album. */
@@ -16,11 +16,10 @@ export function stickerModeFor({
   locked,
   ruled,
   shortlisted,
-  welcomer,
+  over,
 }: StickerModeInput): StickerMode {
-  if (welcomer === "found") return "found";
-  if (welcomer === "revealed") return "collected";
   if (locked) return "locked";
+  if (over) return "collected";
   if (ruled) return "ruled";
   return shortlisted ? "maybe" : "collected";
 }

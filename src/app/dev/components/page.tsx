@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const MODES: StickerMode[] = ["locked", "collected", "maybe", "ruled", "found"];
+const MODES: StickerMode[] = ["locked", "collected", "maybe", "ruled"];
 const HREF = "/dev/components";
 
 /** Catalogue of the game UI kit, for local dev and previews only; 404 everywhere else. */
@@ -71,8 +71,8 @@ export default function GameComponentsPage() {
             <Example code={`size="lg" mode="collected"`}>
               <Sticker person={noor} size="lg" mode="collected" />
             </Example>
-            <Example code={`size="lg" mode="found" (photo)`}>
-              <Sticker person={ana} size="lg" mode="found" />
+            <Example code={`size="lg" mode="collected" (photo)`}>
+              <Sticker person={ana} size="lg" mode="collected" />
             </Example>
           </div>
           <div className="flex flex-wrap items-start gap-x-6 gap-y-8">
@@ -193,6 +193,9 @@ export default function GameComponentsPage() {
             <Example code={`variant="light"`}>
               <GameButton variant="light">Back to album</GameButton>
             </Example>
+            <Example code={`size="lg"`}>
+              <GameButton size="lg">Guess who</GameButton>
+            </Example>
             <Example code={`size="sm"`}>
               <GameButton size="sm">Guess Ana</GameButton>
             </Example>
@@ -218,7 +221,7 @@ export default function GameComponentsPage() {
           </div>
           <div className="flex flex-wrap items-center gap-x-7 gap-y-8 rounded-stage bg-game-ink p-6">
             <Example code={`variant="on-dark"`} onDark>
-              <GameButton variant="on-dark">Make my card</GameButton>
+              <GameButton variant="on-dark">My card</GameButton>
             </Example>
             <Example code={`variant="yellow"`} onDark>
               <GameButton variant="yellow">Write my clues</GameButton>
@@ -387,8 +390,8 @@ export default function GameComponentsPage() {
               },
               {
                 name: "gameToast",
-                values: "message, { duration?, id? }",
-                notes: "Ink pill at the bottom; GameShell mounts its toaster",
+                values: "message, { tone?: ink · unlock, duration?, id? }",
+                notes: "Pill at the top, yellow for an unlock; GameShell mounts its toaster",
               },
               {
                 name: "GameModal",
@@ -439,7 +442,7 @@ export default function GameComponentsPage() {
                 values: "tone: default · ink · found",
                 notes: "Fonts, background and the game toaster",
               },
-              { name: "GameStage", values: "middle?, as?", notes: "The centered column" },
+              { name: "GameStage", values: "as?", notes: "The full-screen centered column" },
               { name: "GameBook", values: "as?", notes: "White page for the album and forms" },
             ]}
           />

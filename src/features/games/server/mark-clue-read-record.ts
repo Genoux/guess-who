@@ -3,21 +3,22 @@ import { AppError } from "@inbeat/core/errors";
 import { eq, sql } from "drizzle-orm";
 import { games } from "@/db/schema";
 import { db } from "@/shared/lib/db";
+import { isClueOut } from "../lib/game-clues";
 import { type ClueNumber, clueReleaseAt } from "../lib/game-schedule";
 import type { Game } from "../types";
 import { assertCanPlay } from "./assert-can-play";
 
 type MarkClueReadInput = {
-  game: Pick<Game, "id" | "playerPersonId" | "startDate">;
+  game: Pick<Game, "id" | "playerPersonId" | "startDate" | "status">;
   viewerPersonId: string;
   number: ClueNumber;
   now: Date;
 };
 
-/** The player opened a released clue; clues land in order, so the highest one read is enough. */
+/** The player opened a clue that is out; clues land in order, so the highest one read is enough. */
 export async function markClueReadRecord({ game, viewerPersonId, number, now }: MarkClueReadInput) {
   assertCanPlay(game, viewerPersonId);
-  if (clueReleaseAt(game.startDate, number) > now) {
+  if (!isClueOut(clueReleaseAt(game.startDate, number), game, now)) {
     throw new AppError("conflict", "clue not released yet");
   }
   await db

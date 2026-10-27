@@ -1,8 +1,9 @@
-import Link from "next/link";
+"use client";
+
+import { Tooltip } from "@inbeat/ui/components/tooltip";
 import { AccountButton } from "@/shared/components/account-button";
 import { CountChip } from "@/shared/components/game/count-chip";
 import { GameTopNav } from "@/shared/components/game/game-top-nav";
-import { IconButton } from "@/shared/components/game/icon-button";
 import { PillTabs } from "@/shared/components/game/pill-tabs";
 import { ROUTES } from "@/shared/config/routes";
 import type { PlayerNav } from "../server/load-player-board";
@@ -32,19 +33,12 @@ export function PlayerTopNav({ nav, current }: PlayerTopNavProps) {
       tabs={<PillTabs tabs={nav.over ? [album, mission, card] : [album, mission]} />}
       end={
         <>
-          <IconButton
-            asChild
-            label="How it works"
-            icon={<span className="font-medium text-small">?</span>}
-            tone="outline"
-            size="xs"
-          >
-            <Link href={ROUTES.playWelcome} />
-          </IconButton>
-          <CountChip>
-            <span className="sr-only">Stickers collected: </span>
-            {nav.collectedCount} / {nav.total}
-          </CountChip>
+          <Tooltip content="Stickers collected" side="bottom">
+            <CountChip>
+              <span className="sr-only">Stickers collected: </span>
+              {nav.collectedCount} / {nav.total}
+            </CountChip>
+          </Tooltip>
           <AccountButton />
         </>
       }

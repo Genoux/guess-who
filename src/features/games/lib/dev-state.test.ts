@@ -1,105 +1,126 @@
 import { describe, expect, it } from "vitest";
 import {
-  DEV_STATE_DEFAULT,
-  type DevState,
-  devFieldEnabled,
-  devOptionDisabled,
-  normalizeDevState,
-  releasedClueCount,
-  seedDay,
+  DEV_SCENARIO_IDS,
+  DEV_SCENARIOS,
+  type DevGame,
+  type DevScenarioId,
+  devScenarioSteps,
 } from "./dev-state";
+import { clueDay } from "./game-clues";
+import { CLUE_NUMBERS, GAME_DAYS } from "./game-schedule";
 
-const state = (overrides: Partial<DevState>): DevState => ({ ...DEV_STATE_DEFAULT, ...overrides });
+const scenarios = DEV_SCENARIO_IDS.map((id) => ({ id, ...DEV_SCENARIOS[id] }));
+const games = scenarios.flatMap(({ id, game }) => (game ? [{ id, game }] : []));
 
-describe("releasedClueCount", () => {
-  it("counts the clues out by a game day", () => {
-    expect([1, 2, 3, 5, 6, 11, 12, 14].map(releasedClueCount)).toEqual([0, 0, 1, 1, 2, 3, 4, 4]);
-  });
-});
+const cluesOut = (game: DevGame) =>
+  game.outcome === "revealed"
+    ? CLUE_NUMBERS.length
+    : CLUE_NUMBERS.filter((number) => clueDay(number) < game.day).length;
 
-describe("seedDay", () => {
-  it("plays the chosen day, and day 15 once the game was revealed", () => {
-    expect(seedDay(state({ day: 7 }))).toBe(7);
-    expect(seedDay(state({ outcome: "revealed", day: 7 }))).toBe(15);
-  });
-});
-
-describe("devFieldEnabled", () => {
-  it("offers a teammate only their card", () => {
-    const teammate = state({ view: "teammate" });
-    expect(devFieldEnabled(teammate, "card")).toBe(true);
-    for (const field of ["outcome", "day", "cluesWritten", "cluesRead", "album", "introSeen"]) {
-      expect(devFieldEnabled(teammate, field as keyof DevState)).toBe(false);
+describe("DEV_SCENARIOS", () => {
+  it("never seeds a day where a clue or the reveal lands at 09:00, so any hour looks the same", () => {
+    const boundaries = [...CLUE_NUMBERS.map(clueDay), GAME_DAYS];
+    for (const { game } of games) {
+      if (game.outcome === "revealed") {
+        expect(game.day).toBe(GAME_DAYS + 1);
+      } else {
+        expect(game.day).toBeGreaterThanOrEqual(1);
+        expect(game.day).toBeLessThan(GAME_DAYS);
+        expect(boundaries).not.toContain(game.day);
+      }
     }
   });
 
-  it("offers a welcomer the game, the clues they wrote and their card, not the player's progress", () => {
-    const welcomer = state({ view: "welcomer" });
-    expect(devFieldEnabled(welcomer, "outcome")).toBe(true);
-    expect(devFieldEnabled(welcomer, "cluesWritten")).toBe(true);
-    expect(devFieldEnabled(welcomer, "card")).toBe(true);
-    expect(devFieldEnabled(welcomer, "cluesRead")).toBe(false);
-    expect(devFieldEnabled(welcomer, "album")).toBe(false);
+  it("never reads a clue that is not out yet", () => {
+    for (const { game } of games) {
+      expect(game.lastReadClue).toBeLessThanOrEqual(cluesOut(game));
+    }
   });
 
-  it("keeps a new hire mid-game off their card and lets them make it once the game ends", () => {
-    expect(devFieldEnabled(state({ view: "new-hire", outcome: "active" }), "card")).toBe(false);
-    expect(devFieldEnabled(state({ view: "new-hire", outcome: "found" }), "card")).toBe(true);
-  });
-
-  it("fixes the day once the game is revealed", () => {
-    expect(devFieldEnabled(state({ outcome: "revealed" }), "day")).toBe(false);
-    expect(devFieldEnabled(state({ outcome: "found" }), "day")).toBe(true);
-  });
-
-  it("shows the welcome intro only to a new hire mid-game", () => {
-    expect(devFieldEnabled(state({ outcome: "active" }), "introSeen")).toBe(true);
-    expect(devFieldEnabled(state({ outcome: "found" }), "introSeen")).toBe(false);
-  });
-
-  it("always offers the role and the view", () => {
-    expect(devFieldEnabled(state({ view: "teammate" }), "role")).toBe(true);
-    expect(devFieldEnabled(state({ view: "teammate" }), "view")).toBe(true);
-  });
-});
-
-describe("devOptionDisabled", () => {
-  it("never lets the player read a clue that is not out yet", () => {
-    const daySeven = state({ day: 7 });
-    expect([0, 1, 2, 3, 4].map((read) => devOptionDisabled(daySeven, "cluesRead", read))).toEqual([
-      false,
-      false,
-      false,
-      true,
-      true,
-    ]);
-    expect(devOptionDisabled(state({ outcome: "revealed", day: 1 }), "cluesRead", 4)).toBe(false);
+  it("writes between none and all three of the welcomer's clues", () => {
+    for (const { game } of games) {
+      expect(game.cluesWritten).toBeGreaterThanOrEqual(0);
+      expect(game.cluesWritten).toBeLessThanOrEqual(3);
+    }
   });
 
   it("never finds the welcomer with an empty album", () => {
-    expect(devOptionDisabled(state({ outcome: "found" }), "album", "empty")).toBe(true);
-    expect(devOptionDisabled(state({ outcome: "active" }), "album", "empty")).toBe(false);
+    for (const { game } of games.filter(({ game }) => game.as === "player")) {
+      if (game.outcome === "found") expect(game.fresh).toBe(false);
+    }
+  });
+
+  it("leaves the intro unseen only on a new hire's game in play", () => {
+    for (const { game } of games.filter(({ game }) => !game.introSeen)) {
+      expect(game).toMatchObject({ as: "player", outcome: "active" });
+    }
+  });
+
+  it("keeps a new hire's own card empty and fills the welcomer's", () => {
+    for (const { game, cardFilled } of scenarios) {
+      if (game?.as === "player") expect(cardFilled).toBe(false);
+      if (game?.as === "welcomer") expect(cardFilled).toBe(true);
+    }
+  });
+
+  it("never seeds the same state twice", () => {
+    const seeds = scenarios.map(({ game, cardFilled }) => JSON.stringify({ game, cardFilled }));
+    expect(new Set(seeds).size).toBe(seeds.length);
+  });
+
+  it("gives each scenario its own path, and a state either all stages or one scenario", () => {
+    const paths = scenarios.map(({ role, state, stage }) => [role, state, stage].join("/"));
+    expect(new Set(paths).size).toBe(paths.length);
+    for (const { role, state } of scenarios) {
+      const siblings = scenarios.filter((other) => other.role === role && other.state === state);
+      expect(siblings.length === 1 || siblings.every(({ stage }) => stage)).toBe(true);
+    }
+  });
+
+  it("lands each person where they play, welcome or edit their card", () => {
+    for (const { role, game, landing } of scenarios) {
+      if (game?.as === "player") expect(role).toBe("New hire");
+      if (game?.as === "player") expect(landing).toMatch(/^\/play/);
+      if (game?.as === "welcomer") expect(role).toBe("Teammate");
+      if (game?.as === "welcomer") expect(landing).toBe("/welcomer");
+      if (!game) expect(landing).toBe("/card");
+    }
   });
 });
 
-describe("normalizeDevState", () => {
-  it("drops clues read back to the clues out on the new day", () => {
-    expect(normalizeDevState(state({ day: 4, cluesRead: 3 })).cluesRead).toBe(1);
+describe("devScenarioSteps", () => {
+  const labelsOf = (id: DevScenarioId) =>
+    devScenarioSteps(id).map(({ step, value, options }) => ({
+      step,
+      value,
+      options: options.map(({ label }) => label),
+    }));
+
+  it("walks a playing day through role, state and stage", () => {
+    expect(labelsOf("playing-day-7")).toEqual([
+      { step: "role", value: "New hire", options: ["New hire", "Teammate"] },
+      {
+        step: "state",
+        value: "Playing",
+        options: ["Welcome tour", "Playing", "Found", "Time’s up"],
+      },
+      {
+        step: "stage",
+        value: "Day 7",
+        options: ["Day 2", "Day 4", "Day 7", "Day 10", "Day 13", "Skipped clues"],
+      },
+    ]);
   });
 
-  it("starts the album and marks the intro seen once the welcomer is found", () => {
-    expect(
-      normalizeDevState(state({ outcome: "found", album: "empty", introSeen: false })),
-    ).toMatchObject({ album: "started", introSeen: true });
+  it("stops at the state when it has no stages", () => {
+    expect(devScenarioSteps("found").map(({ step }) => step)).toEqual(["role", "state"]);
   });
 
-  it("marks the intro seen once the game was revealed", () => {
-    expect(normalizeDevState(state({ outcome: "revealed", introSeen: false })).introSeen).toBe(
-      true,
+  it("leads each pill to the first scenario that matches it", () => {
+    const [role, state] = devScenarioSteps("found");
+    expect(role?.options.find(({ label }) => label === "Teammate")?.id).toBe(
+      "teammate-first-visit",
     );
-  });
-
-  it("leaves a valid state as it is", () => {
-    expect(normalizeDevState(DEV_STATE_DEFAULT)).toEqual(DEV_STATE_DEFAULT);
+    expect(state?.options.find(({ label }) => label === "Playing")?.id).toBe("playing-day-2");
   });
 });

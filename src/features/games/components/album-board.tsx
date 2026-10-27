@@ -14,6 +14,7 @@ import { FLIGHT } from "../lib/album-motion";
 import { matchesStickerFilter, STICKER_FILTERS, type StickerFilter } from "../lib/sticker-filter";
 import { restingRotation } from "../lib/sticker-rotation";
 import type { AlbumSticker } from "../queries/get-player-album";
+import type { GameOutcome } from "../server/to-game-outcome";
 import { AlbumCardOverlay } from "./album-card-overlay";
 
 const EVERYONE = "all";
@@ -26,6 +27,8 @@ type AlbumBoardProps = {
   /** Locked stickers open while the game is on. */
   active: boolean;
   collectedCount: number;
+  /** Where the find's numbers come from once a guess ends the game; absent where there is no game. */
+  outcome?: GameOutcome;
   /** The status filter a link opened the album with. */
   initialStatus?: StickerFilter;
 };
@@ -42,6 +45,7 @@ export function AlbumBoard({
   stickers,
   active,
   collectedCount,
+  outcome,
   initialStatus = "all",
 }: AlbumBoardProps) {
   const [team, setTeam] = useState(EVERYONE);
@@ -73,7 +77,7 @@ export function AlbumBoard({
     sticker.mode === "locked" ? 0 : restingRotation(albumIndexById.get(sticker.id) ?? 0);
   const openSticker = stickers.find((sticker) => sticker.id === cardId);
 
-  // A link to a card that is not in the album clears itself, so the URL does not keep a card Back
+  // A card a refresh dropped from the album closes itself, so the URL does not keep a card Back
   // would step through.
   const deadCard = cardId !== null && openSticker === undefined;
   useEffect(() => {
@@ -90,12 +94,22 @@ export function AlbumBoard({
   }
 
   return (
-    <GameBook className="px-6 pt-8 pb-10">
-      {/* On wider screens the toolbar shares the grid's centred tracks, so the pills start at the
-          first card and the menu ends at the last one. */}
-      <div className="flex w-full flex-col gap-8 md:grid md:grid-cols-[repeat(auto-fill,176px)] md:justify-center md:gap-x-8">
-        <div className="flex w-full flex-wrap items-center justify-between gap-3 md:col-span-full">
-          <div role="toolbar" aria-label="Teams" className="flex flex-wrap gap-1.5">
+    // Positioned so it slides over the AlbumCover above it.
+    <GameBook className="relative px-2 pt-6 pb-10 sm:px-6 sm:pt-8">
+      <div className="flex w-full flex-col gap-8">
+        <div className="flex w-full items-center justify-between gap-3 md:flex-wrap">
+          {/* A phone has no room for a row of team pills: the team is a menu like the status. */}
+          <GameFilterMenu
+            label="Team"
+            value={team}
+            options={teamFilters.map(({ id, name, count }) => ({ value: id, label: name, count }))}
+            onValueChange={(next) => {
+              setTeam(next);
+              setFiltered(true);
+            }}
+            className="md:hidden"
+          />
+          <div role="toolbar" aria-label="Teams" className="hidden flex-wrap gap-1.5 md:flex">
             {teamFilters.map((filter) => {
               const on = filter.id === team;
               return (
@@ -108,7 +122,7 @@ export function AlbumBoard({
                     setFiltered(true);
                   }}
                   className={gameCn(
-                    "inline-flex h-10 cursor-pointer items-center gap-2 rounded-full px-4 text-button-sm outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2",
+                    "inline-flex h-10 flex-none cursor-pointer items-center gap-2 rounded-full px-4 text-button-sm outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2",
                     on
                       ? "bg-game-ink text-white"
                       : "bg-game-surface text-game-ink shadow-edge hover:bg-game-sidebar",
@@ -135,7 +149,7 @@ export function AlbumBoard({
           {shown.length === 0 ? (
             <motion.p
               key={`${grid}/empty`}
-              className="py-16 text-center text-game-muted md:col-span-full"
+              className="py-16 text-center text-game-muted"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0, transition: TRANSITION.clear }}
@@ -145,7 +159,9 @@ export function AlbumBoard({
           ) : (
             <motion.ul
               key={grid}
-              className="relative grid w-full grid-cols-[repeat(auto-fill,176px)] justify-center gap-8 md:col-span-full md:grid-cols-subgrid"
+              // The columns fill the page edge to edge, never fewer than two, and each card zooms
+              // whole to its column (zoom-fit), so the toolbar's ends line up with the grid's.
+              className="relative grid w-full grid-cols-[repeat(auto-fill,minmax(min(160px,calc(50%-6px)),1fr))] gap-3 md:grid-cols-[repeat(auto-fill,minmax(176px,1fr))] md:gap-8"
               // A click on a fading card would open it under the next grid's flight ids, with no flight.
               exit={{
                 opacity: 0,
@@ -157,7 +173,9 @@ export function AlbumBoard({
                 const rotation = rotationOf(sticker);
                 const returning = sticker.id === returningId;
                 const card = (
-                  <Sticker person={sticker.person} mode={sticker.mode} celebrateChanges={false} />
+                  <div className="zoom-fit">
+                    <Sticker person={sticker.person} mode={sticker.mode} celebrateChanges={false} />
+                  </div>
                 );
                 return (
                   <motion.li
@@ -165,7 +183,7 @@ export function AlbumBoard({
                     initial={filtered ? { opacity: 0 } : false}
                     animate={{ opacity: 1 }}
                     transition={{ ...TRANSITION.deal, delay: stagger(index, shown.length) }}
-                    className="relative"
+                    className="@container relative"
                     style={returning ? { zIndex: 60 } : undefined}
                   >
                     {sticker.id === openId ? (
@@ -219,7 +237,16 @@ export function AlbumBoard({
 
       <AlbumCardOverlay
         target={
-          openSticker ? { ...openSticker, active, collectedCount, total: stickers.length } : null
+          openSticker
+            ? {
+                ...openSticker,
+                active,
+                collectedCount,
+                total: stickers.length,
+                foundOnDay: outcome?.over ? outcome.foundOnDay : null,
+                cluesUsed: outcome?.over ? outcome.cluesUsed : null,
+              }
+            : null
         }
         flightId={openSticker ? flightIdOf(openSticker.id) : ""}
         rotation={openSticker ? rotationOf(openSticker) : 0}
