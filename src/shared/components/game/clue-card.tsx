@@ -12,8 +12,8 @@ type ClueCardProps = {
   size?: "sm" | "lg";
   /** Caption: which clue it is, "Clue 2". Never the day: timing goes in the footer as a countdown. */
   label: string;
-  /** The clue itself; ignored while the card is face down. */
-  text?: string;
+  /** The clue itself, or the field the welcomer writes it in; ignored while the card is face down. */
+  text?: ReactNode;
   /** Small line: "From your welcomer" at the bottom of a face-up card, "In 3 days" under a face-down one. */
   footer?: ReactNode;
   /** Hand-placed angle in degrees. */
@@ -95,7 +95,12 @@ export function ClueCard({
       ) : (
         <div className={faceClassName}>
           <span className="font-game-mono text-caption uppercase">{label}</span>
-          <span className={gameCn("font-game-serif", size === "lg" ? "text-clue-lg" : "text-clue")}>
+          <span
+            className={gameCn(
+              "min-h-0 flex-1 font-game-serif",
+              size === "lg" ? "text-clue-lg" : "text-clue",
+            )}
+          >
             {text}
           </span>
           {footer ? <span className="mt-auto text-small">{footer}</span> : null}

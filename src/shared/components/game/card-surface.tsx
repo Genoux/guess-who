@@ -9,8 +9,11 @@ type CardEdge = "ink" | "found";
 
 const EDGE_FILL: Record<CardEdge, string> = { ink: "bg-game-card-edge", found: "bg-game-found" };
 
-/** The card look every sticker and clue shares: the ink edge and the corner. */
-export const cardSurfaceVariants = cva("border-2", {
+/**
+ * The card look every sticker and clue shares: the ink edge and the corner. A wrapper that zooms
+ * or scales cards sets `--card-edge` to 2px divided by its factor, so the edge still lands at 2px.
+ */
+export const cardSurfaceVariants = cva("border-[length:var(--card-edge,2px)]", {
   variants: {
     size: RADIUS,
     edge: { ink: "border-game-card-edge", found: "border-game-found" },

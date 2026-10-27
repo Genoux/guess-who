@@ -9,6 +9,7 @@ const PUBLIC_SECTIONS = [
   ROUTES.devWelcome,
   ROUTES.devAlbum,
   ROUTES.devMission,
+  ROUTES.devWelcomer,
 ];
 const PUBLIC_PATHS = ["/api/health", "/robots.txt"];
 

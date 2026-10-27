@@ -46,7 +46,7 @@ export function GameModal({
             >
               <motion.div
                 className={gameCn(
-                  "fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-32px)] w-120 max-w-[calc(100%-32px)] flex-col items-center gap-6 overflow-y-auto rounded-modal bg-game-surface p-8 text-center font-game-sans text-game-ink outline-none",
+                  "fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-32px)] w-120 max-w-[calc(100%-32px)] flex-col items-center gap-6 overflow-y-auto overflow-x-hidden rounded-modal bg-game-surface p-8 text-center font-game-sans text-game-ink outline-none",
                   className,
                 )}
                 initial={{ opacity: 0, x: "-50%", y: "-46%" }}

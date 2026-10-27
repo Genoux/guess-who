@@ -18,6 +18,8 @@ const gameButtonVariants = cva(
         lg: "h-15 gap-3 px-9 text-lead",
         default: "h-13 gap-2.5 px-7 text-base",
         sm: "h-11 gap-2 px-5.5 text-button-sm",
+        /** Icon only, e.g. a wizard's back and next arrows. */
+        round: "size-13 [&_svg]:size-5",
       },
     },
     compoundVariants: [
