@@ -82,12 +82,8 @@
           "name": "clues_game_id_games_id_fk",
           "tableFrom": "clues",
           "tableTo": "games",
-          "columnsFrom": [
-            "game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["game_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -196,12 +192,8 @@
           "name": "collections_game_id_games_id_fk",
           "tableFrom": "collections",
           "tableTo": "games",
-          "columnsFrom": [
-            "game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["game_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -209,12 +201,8 @@
           "name": "collections_person_id_people_id_fk",
           "tableFrom": "collections",
           "tableTo": "people",
-          "columnsFrom": [
-            "person_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["person_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -382,12 +370,8 @@
           "name": "games_player_person_id_people_id_fk",
           "tableFrom": "games",
           "tableTo": "people",
-          "columnsFrom": [
-            "player_person_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["player_person_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -395,12 +379,8 @@
           "name": "games_welcomer_person_id_people_id_fk",
           "tableFrom": "games",
           "tableTo": "people",
-          "columnsFrom": [
-            "welcomer_person_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["welcomer_person_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -408,12 +388,8 @@
           "name": "games_created_by_people_id_fk",
           "tableFrom": "games",
           "tableTo": "people",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -504,12 +480,8 @@
           "name": "guesses_game_id_games_id_fk",
           "tableFrom": "guesses",
           "tableTo": "games",
-          "columnsFrom": [
-            "game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["game_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -517,12 +489,8 @@
           "name": "guesses_person_id_people_id_fk",
           "tableFrom": "guesses",
           "tableTo": "people",
-          "columnsFrom": [
-            "person_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["person_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -792,12 +760,8 @@
           "name": "people_team_id_teams_id_fk",
           "tableFrom": "people",
           "tableTo": "teams",
-          "columnsFrom": [
-            "team_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["team_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -882,12 +846,8 @@
           "name": "shortlists_game_id_games_id_fk",
           "tableFrom": "shortlists",
           "tableTo": "games",
-          "columnsFrom": [
-            "game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["game_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -895,12 +855,8 @@
           "name": "shortlists_person_id_people_id_fk",
           "tableFrom": "shortlists",
           "tableTo": "people",
-          "columnsFrom": [
-            "person_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["person_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -991,20 +947,12 @@
     "public.game_status": {
       "name": "game_status",
       "schema": "public",
-      "values": [
-        "active",
-        "found",
-        "revealed"
-      ]
+      "values": ["active", "found", "revealed"]
     },
     "public.notification_status": {
       "name": "notification_status",
       "schema": "public",
-      "values": [
-        "pending",
-        "sent",
-        "failed"
-      ]
+      "values": ["pending", "sent", "failed"]
     }
   },
   "schemas": {},

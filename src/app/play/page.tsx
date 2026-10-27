@@ -24,7 +24,9 @@ function endingBanner({ found, revealSeen, welcomer }: EndedOutcome) {
 
 export const metadata: Metadata = { title: "Your album" };
 
-export default async function AlbumPage(props: PageProps<"/play">) {
+export default async function AlbumPage(props: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const [album, query] = await Promise.all([getPlayerAlbum(), props.searchParams]);
   if (!album) redirect(ROUTES.card);
   if (album.active && !album.introSeen) redirect(ROUTES.playWelcome);

@@ -52,7 +52,9 @@ const isEnding = (value: unknown): value is keyof typeof ENDINGS =>
  * The mission page on day 7 with sample clues, for local dev and previews only. `?ending=times-up`
  * or `?ending=found` shows the finished mission instead, the day 14 reveal included.
  */
-export default async function MissionPreviewPage(props: PageProps<"/dev/mission">) {
+export default async function MissionPreviewPage(props: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   if (!isCatalogueEnabled({ nodeEnv: env.NODE_ENV, vercelEnv: env.NEXT_PUBLIC_VERCEL_ENV })) {
     notFound();
   }

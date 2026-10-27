@@ -98,7 +98,7 @@ function EditNote({ target }: NotesProps) {
         value={note}
         maxLength={NOTE_MAX}
         error={autosave.error}
-        help={STATUS_LINE[autosave.status]}
+        help={autosave.status && STATUS_LINE[autosave.status]}
         onChange={(event) => {
           setNote(event.target.value);
           autosave.change(event.target.value);
