@@ -8,7 +8,7 @@ type FoundEmphasis = "found" | "ink";
  * "3 days, with 2 clues" with the numbers highlighted so they read first: orange on the page, ink
  * on the reveal, where orange is the background. Null until the find's numbers are known.
  */
-export function foundStats(
+function foundStats(
   day: number | null,
   clues: number | null,
   emphasis: FoundEmphasis = "found",

@@ -14,6 +14,21 @@ export type GameOutcome =
       revealSeen: boolean;
     };
 
+/** The numbers of a find: the game day it happened on and how many clues were out. */
+export function toFoundStats({
+  startDate,
+  foundAt,
+  foundWithClues,
+}: {
+  startDate: string;
+  foundAt: Date;
+  foundWithClues: number | null;
+}) {
+  return { foundOnDay: gameDay(startDate, foundAt), cluesUsed: foundWithClues };
+}
+
+export type FoundStats = ReturnType<typeof toFoundStats>;
+
 /** How the player's game ended; `over: false` while it is still on. */
 export function toGameOutcome({
   game,
@@ -22,13 +37,16 @@ export function toGameOutcome({
 }: Pick<PlayerBoard, "game" | "welcomer" | "startDate">): GameOutcome {
   if (game.status === "active" || !welcomer) return { over: false };
 
-  const foundAt = game.status === "found" ? game.foundAt : null;
+  const { foundAt } = game;
+  const stats =
+    game.status === "found" && foundAt
+      ? toFoundStats({ startDate, foundAt, foundWithClues: game.foundWithClues })
+      : { foundOnDay: null, cluesUsed: null };
   return {
     over: true,
     found: game.status === "found",
     welcomer: { firstName: welcomer.firstName, person: welcomer.person, mode: welcomer.mode },
-    foundOnDay: foundAt ? gameDay(startDate, foundAt) : null,
-    cluesUsed: game.status === "found" ? game.foundWithClues : null,
+    ...stats,
     revealSeen: game.revealSeenAt !== null,
   };
 }

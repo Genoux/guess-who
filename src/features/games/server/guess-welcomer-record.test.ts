@@ -17,6 +17,7 @@ const game = {
   playerPersonId: "player",
   welcomerPersonId: "welcomer",
   status: "active" as const,
+  startDate: "2026-11-02",
 };
 const now = new Date("2026-11-07T15:00:00Z");
 const guess = (personId: string) =>
@@ -25,14 +26,18 @@ const statements = () => sentStatements(client).map((statement) => statement.sql
 
 beforeEach(() => {
   client.query.mockReset();
-  client.query.mockResolvedValue({ rows: [["game_1"]] });
+  client.query.mockResolvedValue({ rows: [[2]] });
   records.hasCollected.mockResolvedValue(true);
   records.hasGuessed.mockResolvedValue(false);
 });
 
 describe("guessWelcomerRecord", () => {
-  it("ends the game as found on the right guess", async () => {
-    await expect(guess("welcomer")).resolves.toEqual({ correct: true });
+  it("ends the game as found on the right guess, with the day and the clues it took", async () => {
+    await expect(guess("welcomer")).resolves.toEqual({
+      correct: true,
+      foundOnDay: 6,
+      cluesUsed: 2,
+    });
     const sql = statements();
     expect(sql[0]).toBe("begin");
     expect(sql[1]).toMatch(/insert into guesses/);

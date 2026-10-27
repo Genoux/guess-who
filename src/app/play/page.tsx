@@ -5,11 +5,22 @@ import { AlbumBoard } from "@/features/games/components/album-board";
 import { AlbumCover } from "@/features/games/components/album-cover";
 import { PlayerTopNav } from "@/features/games/components/player-top-nav";
 import { ProgressSlots } from "@/features/games/components/progress-slots";
+import { endingEyebrow } from "@/features/games/lib/ending-eyebrow";
 import { parseStickerFilter, STICKER_FILTER_PARAM } from "@/features/games/lib/sticker-filter";
 import { getPlayerAlbum } from "@/features/games/queries/get-player-album";
+import type { GameOutcome } from "@/features/games/server/to-game-outcome";
 import { GameShell } from "@/shared/components/game/game-shell";
 import { GameStage } from "@/shared/components/game/game-stage";
 import { ROUTES } from "@/shared/config/routes";
+
+type EndedOutcome = Extract<GameOutcome, { over: true }>;
+
+function endingBanner({ found, revealSeen, welcomer }: EndedOutcome) {
+  const eyebrow = endingEyebrow({ found, revealSeen });
+  if (!revealSeen) return { eyebrow, title: "Who was your welcomer?", cta: "Reveal" };
+  const verb = found ? "You found" : "It was";
+  return { eyebrow, title: `${verb} ${welcomer.firstName}.`, cta: "See mission" };
+}
 
 export const metadata: Metadata = { title: "Your album" };
 
@@ -28,12 +39,7 @@ export default async function AlbumPage(props: PageProps<"/play">) {
             <ProgressSlots collected={album.nav.collectedCount} total={album.nav.total} />
           </div>
           {album.outcome.over ? (
-            <AlbumBanner
-              href={ROUTES.playMission}
-              eyebrow={album.outcome.found ? "Mission complete" : "Day 14 · Time’s up"}
-              title="See who your welcomer is."
-              cta="Reveal"
-            />
+            <AlbumBanner href={ROUTES.playMission} {...endingBanner(album.outcome)} />
           ) : album.newClue ? (
             <AlbumBanner
               href={ROUTES.playMission}
@@ -49,7 +55,6 @@ export default async function AlbumPage(props: PageProps<"/play">) {
             stickers={album.stickers}
             active={album.active}
             collectedCount={album.nav.collectedCount}
-            outcome={album.outcome}
             initialStatus={parseStickerFilter(query[STICKER_FILTER_PARAM])}
           />
         ) : (

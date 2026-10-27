@@ -11,20 +11,17 @@ type GameModalProps = {
   onOpenChange: (open: boolean) => void;
   title: ReactNode;
   description?: ReactNode;
-  /** Shown on the grey stage above the title, usually a large Sticker. */
-  stage?: ReactNode;
   /** The actions row: GameButtons and links. */
   children?: ReactNode;
   className?: string;
 };
 
-/** Centered game dialog: a sticker on the stage, a big question and the actions. */
+/** Centered game dialog: a big question and the actions. */
 export function GameModal({
   open,
   onOpenChange,
   title,
   description,
-  stage,
   children,
   className,
 }: GameModalProps) {

@@ -14,7 +14,6 @@ import { FLIGHT } from "../lib/album-motion";
 import { matchesStickerFilter, STICKER_FILTERS, type StickerFilter } from "../lib/sticker-filter";
 import { restingRotation } from "../lib/sticker-rotation";
 import type { AlbumSticker } from "../queries/get-player-album";
-import type { GameOutcome } from "../server/to-game-outcome";
 import { AlbumCardOverlay } from "./album-card-overlay";
 
 const EVERYONE = "all";
@@ -27,8 +26,6 @@ type AlbumBoardProps = {
   /** Locked stickers open while the game is on. */
   active: boolean;
   collectedCount: number;
-  /** Where the find's numbers come from once a guess ends the game; absent where there is no game. */
-  outcome?: GameOutcome;
   /** The status filter a link opened the album with. */
   initialStatus?: StickerFilter;
 };
@@ -45,7 +42,6 @@ export function AlbumBoard({
   stickers,
   active,
   collectedCount,
-  outcome,
   initialStatus = "all",
 }: AlbumBoardProps) {
   const [team, setTeam] = useState(EVERYONE);
@@ -243,8 +239,6 @@ export function AlbumBoard({
                 active,
                 collectedCount,
                 total: stickers.length,
-                foundOnDay: outcome?.over ? outcome.foundOnDay : null,
-                cluesUsed: outcome?.over ? outcome.cluesUsed : null,
               }
             : null
         }

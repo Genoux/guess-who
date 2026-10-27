@@ -116,9 +116,10 @@ export default function GameComponentsPage() {
                 notes: "Confetti on unlock and on found",
               },
               {
-                name: "celebratePalette",
+                name: "backdrop",
                 values: "light · dark · found",
-                notes: "Star colors for the background: game bg, ink or orange",
+                notes:
+                  "What it sits on: game bg, ink or orange. Sets the star colors; on orange a found card keeps its ink edge",
               },
             ]}
           />

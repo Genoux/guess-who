@@ -24,27 +24,29 @@ type MissionCluesProps = {
 };
 
 /**
- * The four clues: two staggered columns on a phone, then a row. Only a turned-over clue lies at an angle and tilts on hover; a clue
- * not out yet and a released one waiting face down sit straight, the face-down one with a button
- * to turn it over where it sits.
+ * The four clues: one full-width column on a narrow phone, two staggered columns, then a row. Only
+ * a turned-over clue lies at an angle and tilts on hover; a clue not out yet and a released one
+ * waiting face down sit straight, the face-down one with a button to turn it over where it sits.
  */
 export function MissionClues({ clues, delay = 0 }: MissionCluesProps) {
   return (
-    // Every clue card is 200 × 260 at every width, never scaled. Four in a row once they fit
-    // (57rem), two staggered columns once two fit (28rem), else one column offset left and right.
+    // Each clue card is 200 × 260. Four in a row once they fit (57rem), two staggered columns once
+    // two fit (28rem), else one column where each card zooms whole to about the sticker's size.
     <ul
       aria-label="Clues"
-      className="grid grid-cols-[12.5rem] justify-center gap-x-4 gap-y-6 min-[28rem]:grid-cols-[repeat(2,12.5rem)] min-[28rem]:pb-12 min-[57rem]:grid-cols-[repeat(4,12.5rem)] min-[57rem]:pb-0 lg:gap-x-6"
+      className="grid w-full grid-cols-1 justify-center gap-x-4 gap-y-6 min-[28rem]:grid-cols-[repeat(2,12.5rem)] min-[28rem]:pb-12 min-[57rem]:grid-cols-[repeat(4,12.5rem)] min-[57rem]:pb-0 lg:gap-x-6"
     >
       {clues.map((clue, index) => (
         <Reveal
           key={clue.number}
           as="li"
           variant="fade"
-          className="flex justify-center max-[28rem]:odd:-translate-x-4 max-[28rem]:even:translate-x-4 min-[28rem]:max-[57rem]:even:translate-y-12"
+          className="flex justify-center min-[28rem]:max-[57rem]:even:translate-y-12"
           delay={delay + stagger(index, clues.length)}
         >
-          <MissionClueCard clue={clue} />
+          <div className="w-50 max-[28rem]:zoom-clue">
+            <MissionClueCard clue={clue} />
+          </div>
         </Reveal>
       ))}
     </ul>

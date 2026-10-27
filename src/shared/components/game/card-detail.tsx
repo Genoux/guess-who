@@ -5,7 +5,8 @@ type CardDetailProps = {
   card: ReactNode;
   /** Controls that act on the card itself, kept under it and apart from the panel. */
   cardFooter?: ReactNode;
-  panel: ReactNode;
+  /** Absent, the card stands alone in a single column. */
+  panel?: ReactNode;
   /** The decision on the whole card, across both columns; hidden while it holds no button. */
   footer?: ReactNode;
   className?: string;
@@ -24,9 +25,11 @@ export function CardDetail({ card, cardFooter, panel, footer, className }: CardD
         {card}
         {cardFooter}
       </div>
-      <div className="flex w-full min-w-0 max-w-md flex-col justify-self-center text-left md:max-w-none md:justify-self-stretch">
-        {panel}
-      </div>
+      {panel && (
+        <div className="flex w-full min-w-0 max-w-md flex-col justify-self-center text-left md:max-w-none md:justify-self-stretch">
+          {panel}
+        </div>
+      )}
       {/* The decision can unmount its own button (a guess that was just ruled out); an empty row
           would still take a grid gap and push the centered detail up. */}
       {footer && <div className="hidden w-full has-[button]:block md:col-span-2">{footer}</div>}

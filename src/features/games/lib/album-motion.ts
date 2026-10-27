@@ -1,4 +1,4 @@
-import { DURATION, EASE, TRANSITION } from "@/shared/components/game/game-motion";
+import { beats, DURATION, TRANSITION } from "@/shared/components/game/game-motion";
 
 // Opening: the card flies (FLIGHT_S) while the backdrop and its text fade in together.
 // Closing: the card flies back at once while they fade out.
@@ -23,18 +23,14 @@ export const FLIGHT = { duration: FLIGHT_S, ease: [0.45, 0, 0.1, 1] } as const;
 const REVEAL_SLIDE = { duration: DURATION.slower, ease: [0.65, 0, 0.35, 1] } as const;
 export const REVEAL_WORDS = TRANSITION.fade;
 export const REVEAL_TO_MIDDLE = { ...REVEAL_SLIDE, delay: REVEAL_WORDS.duration };
-export const REVEAL_HOLD_S = 2;
+const REVEAL_HOLD_S = 2;
 export const REVEAL_BACK = { ...REVEAL_SLIDE, delay: REVEAL_HOLD_S };
 
-// A right guess, in the modal: the card dips then pops, and at the pop's peak the stamp slams, the
-// confetti bursts and the result text comes in.
-const FOUND_POP_S = DURATION.slow;
-const FOUND_POP_PEAK = 0.65;
-export const FOUND_POP = { scale: [1, 0.97, 1.06, 1] };
-export const FOUND_POP_TRANSITION = {
-  duration: FOUND_POP_S,
-  delay: DURATION.base,
-  times: [0, 0.25, FOUND_POP_PEAK, 1],
-  ease: EASE.game,
-};
-export const FOUND_STAMP_AT_MS = (DURATION.base + FOUND_POP_S * FOUND_POP_PEAK) * 1000;
+// The beat between tapping "Yes, it's X" and the verdict: the answer waits at least this long,
+// however fast the server is.
+export const SUSPENSE_S = beats(8);
+
+// A right guess in place: the content clears once the guess modal has left (it leaves with
+// TRANSITION.enter), then the card slides to the middle with no words left to wait for.
+export const FOUND_CLEAR = { ...REVEAL_WORDS, delay: TRANSITION.enter.duration };
+export const FOUND_TO_MIDDLE = { ...REVEAL_TO_MIDDLE, delay: 0 };

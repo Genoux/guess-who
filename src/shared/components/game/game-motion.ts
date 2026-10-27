@@ -42,8 +42,5 @@ export const TRANSITION = {
   land: { duration: DURATION.slower, ease: EASE.land },
   flip: { duration: DURATION.slower, ease: EASE.flip },
   stamp: { duration: DURATION.fast, ease: EASE.stamp },
-  shake: { duration: DURATION.base, delay: BEAT_S },
   pulse: { duration: 1.6, ease: "easeInOut", repeat: Number.POSITIVE_INFINITY },
 } satisfies Record<string, Transition>;
-
-export const SHAKE_X = [0, -8, 8, -5, 5, 0];

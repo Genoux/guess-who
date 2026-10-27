@@ -1,10 +1,9 @@
 "use client";
 
 import { cva } from "class-variance-authority";
-import { PlusIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { type CelebratePalette, celebrate, originFromElement } from "@/shared/lib/celebrate";
+import { celebrate, originFromElement } from "@/shared/lib/celebrate";
 import { CardBacking, cardSurfaceVariants } from "./card-surface";
 import { Flip } from "./flip";
 import { gameCn } from "./game-cn";
@@ -29,8 +28,8 @@ export type StickerProps = {
   tilt?: boolean;
   /** Confetti when the sticker unlocks or turns found. */
   celebrateChanges?: boolean;
-  /** Confetti colors for the background the sticker sits on: light, ink (dark) or orange (found). */
-  celebratePalette?: CelebratePalette;
+  /** What the sticker sits on: the game background, ink or the orange of the found stage. */
+  backdrop?: "light" | "dark" | "found";
   /** Seconds to wait before a mode change turns the card, for a beat after it arrives. */
   flipDelay?: number;
   /** Runs once a turn to the collected face has landed. */
@@ -146,13 +145,14 @@ export function Sticker({
   rot = 0,
   tilt = true,
   celebrateChanges = true,
-  celebratePalette = "light",
+  backdrop = "light",
   flipDelay,
   onFlipped,
   className,
 }: StickerProps) {
   const view = getStickerView(person, mode, size);
-  const edge = mode === "found" || mode === "welcomer" ? "found" : "ink";
+  // Orange on orange would drop the edge and the shadow, so a card on the found stage keeps ink.
+  const edge = (mode === "found" || mode === "welcomer") && backdrop !== "found" ? "found" : "ink";
   const rootRef = useRef<HTMLDivElement>(null);
   const previousMode = useRef(mode);
   // The celebration a mode change earned, spent when its moment lands: the turn.
@@ -173,7 +173,7 @@ export function Sticker({
     if (rootRef.current) {
       void celebrate(originFromElement(rootRef.current), {
         kind: "unlock",
-        palette: celebratePalette,
+        palette: backdrop,
       });
     }
   };

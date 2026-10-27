@@ -1,10 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { useState } from "react";
 import { fn } from "storybook/test";
-import { jonah } from "./fixtures";
 import { GameButton } from "./game-button";
 import { GameModal } from "./game-modal";
-import { Sticker } from "./sticker";
 
 const meta = {
   title: "Game/Feedback/GameModal",
@@ -15,7 +13,6 @@ const meta = {
     onOpenChange: fn(),
     title: "Is it Jonah?",
     description: "If not, Jonah is out. You can keep guessing.",
-    stage: <Sticker person={jonah} size="lg" mode="maybe" />,
     children: (
       <>
         <GameButton>Yes, it’s Jonah</GameButton>
@@ -30,16 +27,15 @@ type Story = StoryObj<typeof meta>;
 
 export const Guess: Story = {};
 
-export const WithoutStage: Story = {
+export const Leave: Story = {
   args: {
-    stage: undefined,
     title: "Leave the game?",
     description: "Your album stays as it is.",
   },
 };
 
 export const WithoutDescription: Story = {
-  args: { description: undefined, stage: undefined, title: "Ready to reveal?" },
+  args: { description: undefined, title: "Ready to reveal?" },
 };
 
 export const Interactive: Story = {

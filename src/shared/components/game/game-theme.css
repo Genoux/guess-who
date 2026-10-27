@@ -165,6 +165,12 @@
   zoom: tan(atan2(100cqi, 176px));
 }
 
+/* A clue alone on a phone: the 200px clue card zoomed to 280px, a step under the 300px sticker
+   beside it. */
+@utility zoom-clue {
+  zoom: 1.4;
+}
+
 /* The open card: the 176px album card zoomed to the large card's 300px (1.7), one step less where
    a phone is too narrow for it (176 * 1.7 + 32px of gutter = 331px). */
 @utility zoom-open {
@@ -172,4 +178,9 @@
   @media (width < 331px) {
     zoom: 1.6;
   }
+}
+
+/* The reveal card, a tad under the open card. */
+@utility zoom-reveal {
+  zoom: 0.9;
 }

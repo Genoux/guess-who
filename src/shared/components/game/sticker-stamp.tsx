@@ -1,7 +1,6 @@
 "use client";
 
 import { cva } from "class-variance-authority";
-import { type LucideIcon, PartyPopperIcon, XIcon } from "lucide-react";
 import { motion } from "motion/react";
 import { TRANSITION } from "./game-motion";
 import type { StickerSize, StickerStamp } from "./sticker-view";
@@ -19,8 +18,8 @@ const stampVariants = cva(
         welcomer: "border-game-found bg-game-found text-white",
       },
       size: {
-        sm: "gap-1 px-2.5 py-1 text-button-sm [&_svg]:size-3",
-        lg: "gap-1.5 px-3.5 py-1.5 text-heading [&_svg]:size-4",
+        sm: "px-2.5 py-1 text-button-sm",
+        lg: "px-3.5 py-1.5 text-heading",
       },
     },
   },
@@ -28,11 +27,11 @@ const stampVariants = cva(
 
 const STAMP_ROTATION = -3;
 
-const STAMP_CONTENT: Record<StickerStamp, { Icon: LucideIcon | null; label: string }> = {
-  maybe: { Icon: null, label: "Maybe" },
-  ruled: { Icon: XIcon, label: "Ruled out" },
-  found: { Icon: PartyPopperIcon, label: "Found!" },
-  welcomer: { Icon: PartyPopperIcon, label: "Welcomer" },
+const STAMP_LABEL: Record<StickerStamp, string> = {
+  maybe: "Maybe",
+  ruled: "Ruled out",
+  found: "Found!",
+  welcomer: "Welcomer",
 };
 
 /**
@@ -45,7 +44,6 @@ type StickerStampMarkProps = {
 };
 
 export function StickerStampMark({ stamp, size }: StickerStampMarkProps) {
-  const { Icon, label } = STAMP_CONTENT[stamp];
   return (
     <motion.span
       className={stampVariants({ stamp, size })}
@@ -55,7 +53,7 @@ export function StickerStampMark({ stamp, size }: StickerStampMarkProps) {
       exit={{ opacity: 0, scale: 0.9, transition: TRANSITION.clear }}
       transition={TRANSITION.stamp}
     >
-      {label}
+      {STAMP_LABEL[stamp]}
     </motion.span>
   );
 }

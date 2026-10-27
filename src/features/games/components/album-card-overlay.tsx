@@ -3,7 +3,9 @@
 import { motion, useIsPresent } from "motion/react";
 import { Dialog } from "radix-ui";
 import { useState } from "react";
+import { useFoundSequence } from "../hooks/use-found-sequence";
 import type { CollectTarget } from "../queries/get-collect-target";
+import type { FoundStats } from "../server/to-game-outcome";
 import { CardOverlay, OVERLAY_FADE, OverlayCard } from "./card-overlay";
 import { CollectBar, CollectDetail } from "./collect-detail";
 
@@ -27,15 +29,29 @@ export function AlbumCardOverlay({
   onClose,
   onExited,
 }: AlbumCardOverlayProps) {
+  const [find, setFind] = useState<FoundStats | null>(null);
+  // Closed some other way, e.g. back: the next card opens as any other.
+  if (!target && find) setFind(null);
+
   return (
     <CardOverlay
       open={target !== null}
       returnFocusTo={`[data-card-id="${target?.id}"]`}
       onClose={onClose}
       onExited={onExited}
+      flooded={find !== null}
+      dismissible={find === null}
     >
       {target ? (
-        <OverlayBody target={target} flightId={flightId} rotation={rotation} onClose={onClose} />
+        <OverlayBody
+          key={target.id}
+          target={target}
+          find={find}
+          onFound={setFind}
+          flightId={flightId}
+          rotation={rotation}
+          onClose={onClose}
+        />
       ) : null}
     </CardOverlay>
   );
@@ -43,11 +59,14 @@ export function AlbumCardOverlay({
 
 type OverlayBodyProps = Pick<AlbumCardOverlayProps, "flightId" | "rotation" | "onClose"> & {
   target: CollectTarget;
+  find: FoundStats | null;
+  onFound: (stats: FoundStats) => void;
 };
 
-function OverlayBody({ target, flightId, rotation, onClose }: OverlayBodyProps) {
+function OverlayBody({ target, find, onFound, flightId, rotation, onClose }: OverlayBodyProps) {
   const isPresent = useIsPresent();
   const [landed, setLanded] = useState(false);
+  const sequence = useFoundSequence();
 
   return (
     <>
@@ -56,12 +75,20 @@ function OverlayBody({ target, flightId, rotation, onClose }: OverlayBodyProps) 
         className="flex items-center justify-between px-4 pt-1 pb-2.5 md:h-18 md:px-10 md:py-0 [&>*]:pointer-events-auto"
         {...OVERLAY_FADE}
       >
-        <CollectBar target={target} onClose={onClose} />
+        <CollectBar
+          onClose={onClose}
+          reveal={find ? (sequence.told ? "told" : "playing") : undefined}
+          tone={find ? "on-color" : "soft"}
+        />
       </motion.div>
 
       <div className="w-full px-4 py-8 md:px-10 flex items-center justify-center">
         <CollectDetail
           target={target}
+          find={find}
+          onFound={onFound}
+          sequence={sequence}
+          backdrop={find ? "found" : "light"}
           headingAs={Dialog.Title}
           tilt={landed && isPresent}
           wrapCard={(card) => (

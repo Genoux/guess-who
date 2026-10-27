@@ -14,7 +14,7 @@ const meta = {
   argTypes: {
     mode: { control: "inline-radio", options: MODES },
     size: { control: "inline-radio", options: SIZES },
-    celebratePalette: { control: "inline-radio", options: ["light", "dark", "found"] },
+    backdrop: { control: "inline-radio", options: ["light", "dark", "found"] },
     rot: { control: { type: "range", min: -6, max: 6, step: 1 } },
   },
 } satisfies Meta<typeof Sticker>;

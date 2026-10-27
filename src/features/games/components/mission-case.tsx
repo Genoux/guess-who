@@ -5,6 +5,7 @@ import { useState } from "react";
 import { gameCn } from "@/shared/components/game/game-cn";
 import { Sticker } from "@/shared/components/game/sticker";
 import { FLIGHT } from "../lib/album-motion";
+import { endingEyebrow } from "../lib/ending-eyebrow";
 import type { MissionClue } from "../queries/get-player-mission";
 import type { GameOutcome } from "../server/to-game-outcome";
 import { foundLead } from "./found-lead";
@@ -49,10 +50,11 @@ export function MissionCase({ outcome, clues }: MissionCaseProps) {
       inert={spoilerHidden}
     >
       <MissionHero
-        eyebrow={found ? "Mission complete" : "Day 14 · Time’s up"}
+        eyebrow={endingEyebrow(outcome)}
         title={
           <>
-            It was <span className="text-game-found">{welcomer.firstName}</span>
+            {found ? "You found" : "It was"}{" "}
+            <span className="text-game-found">{welcomer.firstName}</span>
           </>
         }
         card={

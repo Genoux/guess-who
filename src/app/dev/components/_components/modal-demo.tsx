@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { jonah } from "@/shared/components/game/fixtures";
 import { GameButton } from "@/shared/components/game/game-button";
 import { GameModal } from "@/shared/components/game/game-modal";
-import { Sticker } from "@/shared/components/game/sticker";
 
 /** The guess modal: answering "yes" for the wrong person rules them out. */
 export function ModalDemo() {
@@ -24,7 +22,6 @@ export function ModalDemo() {
       <GameModal
         open={open}
         onOpenChange={setOpen}
-        stage={<Sticker person={jonah} size="lg" mode={wrong ? "ruled" : "maybe"} />}
         title={wrong ? "Not Jonah." : "Is it Jonah?"}
         description={
           wrong

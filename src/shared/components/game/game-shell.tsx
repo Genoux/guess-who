@@ -2,6 +2,7 @@ import { type ReactNode, ViewTransition } from "react";
 import { gameCn } from "./game-cn";
 import { GameMotionConfig } from "./game-motion-config";
 import { GameToaster } from "./game-toaster";
+import { OverlayLayer } from "./overlay-layer";
 import "./game-fonts.css";
 
 type GameShellProps = {
@@ -30,7 +31,9 @@ export function GameShell({ children, tone = "default", className }: GameShellPr
           className,
         )}
       >
-        <GameMotionConfig>{children}</GameMotionConfig>
+        <GameMotionConfig>
+          <OverlayLayer>{children}</OverlayLayer>
+        </GameMotionConfig>
         <GameToaster />
       </div>
     </ViewTransition>
