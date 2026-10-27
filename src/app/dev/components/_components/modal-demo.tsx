@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { GameButton } from "@/shared/components/game/game-button";
 import { GameModal } from "@/shared/components/game/game-modal";
-import { Sticker } from "@/shared/components/game/sticker";
-import { jonah } from "../../_lib/fixtures";
 
 /** The guess modal: answering "yes" for the wrong person rules them out. */
 export function ModalDemo() {
@@ -18,13 +16,12 @@ export function ModalDemo() {
 
   return (
     <>
-      <GameButton size="sm" onClick={openModal}>
+      <GameButton size="lg" onClick={openModal}>
         Guess Jonah
       </GameButton>
       <GameModal
         open={open}
         onOpenChange={setOpen}
-        stage={<Sticker person={jonah} size="lg" mode={wrong ? "ruled" : "maybe"} />}
         title={wrong ? "Not Jonah." : "Is it Jonah?"}
         description={
           wrong

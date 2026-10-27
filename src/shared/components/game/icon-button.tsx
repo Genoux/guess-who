@@ -7,11 +7,12 @@ import { gameCn } from "./game-cn";
 import { GameTooltip } from "./game-tooltip";
 
 const iconButtonVariants = cva(
-  "inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2",
+  "inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full outline-none transition-colors duration-fast ease-game motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2",
   {
     variants: {
       tone: {
         light: "bg-game-sidebar text-game-ink hover:bg-game-hover",
+        soft: "bg-game-ink/6 text-game-ink hover:bg-game-ink/12",
         dark: "bg-game-ink-soft text-white hover:bg-game-ink-hover",
         "on-color": "bg-game-ink/12 text-game-ink hover:bg-game-ink/20",
         subtle: "text-game-muted hover:bg-game-sidebar hover:text-game-ink",

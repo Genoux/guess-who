@@ -1,39 +1,138 @@
+"use client";
+
+import { motion } from "motion/react";
+import { useRef, useState } from "react";
 import { ClueCard } from "@/shared/components/game/clue-card";
-import type { MissionClue, PlayerMission } from "../queries/get-player-mission";
+import { Flip } from "@/shared/components/game/flip";
+import { GameButton } from "@/shared/components/game/game-button";
+import { gameCn } from "@/shared/components/game/game-cn";
+import { stagger, TRANSITION } from "@/shared/components/game/game-motion";
+import { gameToast } from "@/shared/components/game/game-toaster";
+import { Reveal } from "@/shared/components/game/reveal";
+import { Tilt } from "@/shared/components/game/tilt";
+import { celebrate, originFromElement } from "@/shared/lib/celebrate";
+import { markClueRead } from "../actions/mark-clue-read";
+import { clueUnlockCopy } from "../lib/game-clues";
+import type { MissionClue } from "../queries/get-player-mission";
 
 const ROTATIONS = [-3, 1.5, -1, 2.5];
 
-function countdown(inDays: number): string {
-  if (inDays <= 0) return "Today";
-  if (inDays === 1) return "Tomorrow";
-  return `In ${inDays} days`;
-}
-
-/** The four clue cards: open, new or face down; the next one counts down to its release. */
-export function MissionClues({
-  clues,
-  nextClue,
-}: {
+type MissionCluesProps = {
   clues: MissionClue[];
-  nextClue: PlayerMission["nextClue"];
-}) {
+  /** Seconds before the first card deals in, after what comes above it. */
+  delay?: number;
+};
+
+/**
+ * The four clues: one full-width column on a narrow phone, two staggered columns, then a row. Only
+ * a turned-over clue lies at an angle and tilts on hover; a clue not out yet and a released one
+ * waiting face down sit straight, the face-down one with a button to turn it over where it sits.
+ */
+export function MissionClues({ clues, delay = 0 }: MissionCluesProps) {
   return (
-    <ul aria-label="Clues" className="flex flex-wrap justify-center gap-5">
+    // Each clue card is 200 × 260. Four in a row once they fit (57rem), two staggered columns once
+    // two fit (28rem), else one column where each card zooms whole to about the sticker's size.
+    <ul
+      aria-label="Clues"
+      className="grid w-full grid-cols-1 justify-center gap-x-4 gap-y-6 min-[28rem]:grid-cols-[repeat(2,12.5rem)] min-[28rem]:pb-12 min-[57rem]:grid-cols-[repeat(4,12.5rem)] min-[57rem]:pb-0 lg:gap-x-6"
+    >
       {clues.map((clue, index) => (
-        <li key={clue.number}>
-          <ClueCard
-            state={clue.state}
-            label={`Clue ${clue.number}`}
-            footer={
-              clue.state === "down" && nextClue?.number === clue.number
-                ? countdown(nextClue.inDays)
-                : undefined
-            }
-            text={clue.text ?? undefined}
-            rot={ROTATIONS[index]}
-          />
-        </li>
+        <Reveal
+          key={clue.number}
+          as="li"
+          variant="fade"
+          className="flex justify-center min-[28rem]:max-[57rem]:even:translate-y-12"
+          delay={delay + stagger(index, clues.length)}
+        >
+          <div className="w-50 max-[28rem]:zoom-clue">
+            <MissionClueCard clue={clue} />
+          </div>
+        </Reveal>
       ))}
     </ul>
+  );
+}
+
+function MissionClueCard({ clue }: { clue: MissionClue }) {
+  if (clue.state === "down") {
+    return (
+      <ClueCard
+        state="locked"
+        label={`Clue ${clue.number}`}
+        footer={clueUnlockCopy(clue.unlocksInDays ?? 0)}
+        className="w-full"
+      />
+    );
+  }
+
+  return (
+    <ClueReveal
+      number={clue.number}
+      text={clue.text ?? undefined}
+      open={clue.state === "open"}
+      onReveal={() =>
+        void markClueRead({ number: clue.number as 1 | 2 | 3 | 4 }).then((result) => {
+          if (!result.ok) gameToast(result.error);
+        })
+      }
+    />
+  );
+}
+
+type ClueRevealProps = {
+  number: number;
+  /** Unknown while face down: the server sends it once the clue is read. */
+  text?: string;
+  /** Already read, so it lies face up. */
+  open: boolean;
+  onReveal?: () => void;
+  className?: string;
+};
+
+/** A released clue: face down with a Reveal button, then at its angle, with confetti as it lands. */
+export function ClueReveal({ number, text, open, onReveal, className }: ClueRevealProps) {
+  const [revealed, setRevealed] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const label = `Clue ${number}`;
+  const faceUp = open || revealed;
+
+  return (
+    <Tilt className={gameCn("h-65 w-full", className)} disabled={!faceUp}>
+      <motion.div
+        ref={cardRef}
+        className="size-full"
+        initial={false}
+        animate={{ rotate: faceUp ? (ROTATIONS[number - 1] ?? 0) : 0 }}
+        transition={TRANSITION.arrive}
+      >
+        <Flip
+          className="size-full"
+          flipped={faceUp}
+          onFlipped={() => {
+            if (cardRef.current) void celebrate(originFromElement(cardRef.current));
+          }}
+          front={
+            <ClueCard
+              state="down"
+              label={label}
+              footer={
+                <GameButton
+                  size="sm"
+                  variant="yellow"
+                  onClick={() => {
+                    setRevealed(true);
+                    onReveal?.();
+                  }}
+                >
+                  Reveal
+                </GameButton>
+              }
+              className="size-full"
+            />
+          }
+          back={<ClueCard state="up" label={label} text={text} className="size-full" />}
+        />
+      </motion.div>
+    </Tilt>
   );
 }

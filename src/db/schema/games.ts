@@ -32,7 +32,11 @@ export const games = pgTable(
     foundAt: timestamp("found_at", { withTimezone: true }),
     // Player-only progress: when they finished the welcome intro, and the highest clue they opened.
     introSeenAt: timestamp("intro_seen_at", { withTimezone: true }),
+    // When the player first saw the welcomer reveal; set by the right guess or on the first open.
+    revealSeenAt: timestamp("reveal_seen_at", { withTimezone: true }),
     lastReadClue: smallint("last_read_clue").notNull().default(0),
+    // lastReadClue frozen at the find; it keeps rising once the game is over. Null unless found.
+    foundWithClues: smallint("found_with_clues"),
     // Null when an integration (Deel) creates the game instead of an admin.
     createdBy: uuid("created_by").references(() => people.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

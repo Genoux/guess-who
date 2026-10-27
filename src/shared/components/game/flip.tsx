@@ -1,9 +1,9 @@
 "use client";
 
 import { motion, useMotionValue, useTransform } from "motion/react";
-import type { ReactNode } from "react";
+import { type ReactNode, useRef } from "react";
 import { gameCn } from "./game-cn";
-import { FLIP_EASE } from "./game-motion";
+import { TRANSITION } from "./game-motion";
 
 type FlipProps = {
   /** Shows the back face; changing it turns the card. */
@@ -34,6 +34,23 @@ export function Flip({ flipped, front, back, delay = 0, onFlipped, className }: 
   const frontVisibility = useTransform(rotateY, (angle) => (angle < 90 ? "visible" : "hidden"));
   const backVisibility = useTransform(rotateY, (angle) => (angle < 90 ? "hidden" : "visible"));
   const backScaleX = useTransform(rotateY, (angle) => (atRest(angle) ? 1 : -1));
+  // Visibility keeps the hidden face out of the accessibility tree, but a nested Flip's faces set
+  // their own visibility and would paint through it; opacity hides the whole subtree for good.
+  const frontOpacity = useTransform(rotateY, (angle) => (angle < 90 ? 1 : 0));
+  const backOpacity = useTransform(rotateY, (angle) => (angle < 90 ? 0 : 1));
+  // Those nested visible faces still catch the pointer, so the hidden face would steal the hover.
+  // The shown face inherits rather than forcing `auto`, which would switch a nested Flip's face
+  // back on inside a hidden one.
+  const frontPointer = useTransform(rotateY, (angle) => (angle < 90 ? "inherit" : "none"));
+  const backPointer = useTransform(rotateY, (angle) => (angle < 90 ? "none" : "inherit"));
+  // Only a landed turn counts: motion 12.43 replays the mount animation after a StrictMode
+  // remount (its `initial={false}` guard skips `wasReset`), and that completes without a turn.
+  const restingFlipped = useRef(flipped);
+  const landed = () => {
+    if (restingFlipped.current === flipped) return;
+    restingFlipped.current = flipped;
+    onFlipped?.();
+  };
 
   return (
     <motion.div
@@ -41,21 +58,29 @@ export function Flip({ flipped, front, back, delay = 0, onFlipped, className }: 
       style={{ rotateY }}
       initial={false}
       animate={{ rotateY: flipped ? 180 : 0 }}
-      transition={{ duration: 0.64, delay, ease: FLIP_EASE }}
+      transition={{ ...TRANSITION.flip, delay }}
       transformTemplate={({ rotateY: value }) => {
         const degrees = toDegrees(value);
         if (atRest(degrees)) return "none";
         const lift = Math.sin((degrees * Math.PI) / 180) * LIFT_PX;
         return `perspective(800px) translateY(${-lift}px) rotateY(${degrees}deg)`;
       }}
-      onAnimationComplete={onFlipped}
+      onAnimationComplete={landed}
     >
-      <motion.div className="absolute inset-0" style={{ visibility: frontVisibility }}>
+      <motion.div
+        className="absolute inset-0"
+        style={{ visibility: frontVisibility, opacity: frontOpacity, pointerEvents: frontPointer }}
+      >
         {front}
       </motion.div>
       <motion.div
         className="absolute inset-0"
-        style={{ visibility: backVisibility, scaleX: backScaleX }}
+        style={{
+          visibility: backVisibility,
+          opacity: backOpacity,
+          scaleX: backScaleX,
+          pointerEvents: backPointer,
+        }}
       >
         {back}
       </motion.div>

@@ -1,7 +1,8 @@
 import { getInitials } from "@inbeat/ui/lib/initials";
 import { readableOn } from "@/shared/lib/contrast";
 
-export type StickerMode = "locked" | "collected" | "maybe" | "ruled" | "found";
+/** `welcomer` is the welcome tour's found card; the game itself stamps `found`. */
+export type StickerMode = "locked" | "collected" | "maybe" | "ruled" | "found" | "welcomer";
 export type StickerSize = "sm" | "lg";
 
 /**
@@ -16,21 +17,22 @@ export type StickerPerson = {
   color: string;
   /** Lighter team tint, behind the "Ask me about" line. */
   tint: string;
+  /** Text color on the tint; ink when unset. */
+  tintInk?: string;
   ask: string;
   city?: string | null;
   fact?: string | null;
   photoUrl?: string | null;
 };
 
-export type StickerStamp = "maybe" | "ruled" | "found";
+export type StickerStamp = Exclude<StickerMode, "locked" | "collected">;
 
 export type StickerView = {
   /** The collected face is showing (every mode but locked). */
   open: boolean;
   stamp: StickerStamp | null;
-  number: string;
-  lockedMeta: string;
-  openMeta: string;
+  /** The line under the name: the team, plus the city on an open large sticker. */
+  subtitle: string;
   /** The large sticker adds the fact and the ask line under the name. */
   showMore: boolean;
   initials: string;
@@ -47,30 +49,24 @@ export function getStickerView(
   mode: StickerMode,
   size: StickerSize,
 ): StickerView {
-  const number = formatStickerNumber(person.number);
-  const lockedMeta = `No. ${number} · ${person.team}`;
-  const wideMeta = [lockedMeta, size === "lg" ? person.city : null].filter(Boolean).join(" · ");
   const open = mode !== "locked";
+  const teamLine = [person.team, open && size === "lg" ? person.city : null]
+    .filter(Boolean)
+    .join(" · ");
 
   return {
     open,
-    stamp: mode === "maybe" || mode === "ruled" || mode === "found" ? mode : null,
-    number,
-    lockedMeta,
-    openMeta: mode === "ruled" ? `Not them · No. ${number}` : wideMeta,
+    stamp: mode === "locked" || mode === "collected" ? null : mode,
+    subtitle: teamLine,
     showMore: open && size === "lg",
     initials: getInitials(person.name, "?"),
     initialsTone: readableOn(person.color),
   };
 }
 
-/** Which celebration a mode change earns: unlocking a sticker, or finding the welcomer. */
-export function stickerCelebration(
-  previous: StickerMode,
-  next: StickerMode,
-): "unlock" | "found" | null {
+/** Which celebration a mode change earns: unlocking a sticker. */
+export function stickerCelebration(previous: StickerMode, next: StickerMode): "unlock" | null {
   if (previous === next) return null;
-  if (next === "found") return "found";
   if (previous === "locked") return "unlock";
   return null;
 }

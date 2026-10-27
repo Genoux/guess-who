@@ -1,13 +1,13 @@
 "use client";
 
 import { cva } from "class-variance-authority";
-import { PlusIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { type CelebratePalette, celebrate, originFromElement } from "@/shared/lib/celebrate";
-import { type CardShadow, cardSurfaceVariants } from "./card-surface";
+import { celebrate, originFromElement } from "@/shared/lib/celebrate";
+import { CardBacking, cardSurfaceVariants } from "./card-surface";
 import { Flip } from "./flip";
 import { gameCn } from "./game-cn";
+import { TRANSITION } from "./game-motion";
 import { StickerStampMark } from "./sticker-stamp";
 import {
   getStickerView,
@@ -28,8 +28,8 @@ export type StickerProps = {
   tilt?: boolean;
   /** Confetti when the sticker unlocks or turns found. */
   celebrateChanges?: boolean;
-  /** Confetti colors for the background the sticker sits on: light, ink (dark) or orange (found). */
-  celebratePalette?: CelebratePalette;
+  /** What the sticker sits on: the game background, ink or the orange of the found stage. */
+  backdrop?: "light" | "dark" | "found";
   /** Seconds to wait before a mode change turns the card, for a beat after it arrives. */
   flipDelay?: number;
   /** Runs once a turn to the collected face has landed. */
@@ -43,10 +43,10 @@ const stickerVariants = cva("relative flex-none text-left text-game-ink", {
   },
 });
 
-// A face never gets a filter or opacity of its own: the photo fades, the face does not.
+// Only loading fades the photo; ruled-out cards keep their normal appearance.
 const faceVariants = cva("absolute inset-0 flex flex-col bg-game-surface", {
   variants: {
-    size: { sm: "gap-2.5 p-2", lg: "gap-3 p-2.5" },
+    size: { sm: "gap-2 p-2", lg: "gap-3 p-2.5" },
   },
 });
 
@@ -59,43 +59,54 @@ const artVariants = cva("relative flex min-h-0 flex-1 overflow-hidden", {
 const nameVariants = cva("max-w-full truncate font-game-serif", {
   variants: {
     size: { sm: "text-name", lg: "text-name-lg" },
-    muted: { true: "text-game-muted", false: "" },
   },
 });
 
-const metaVariants = cva("max-w-full truncate font-game-mono uppercase text-game-muted", {
+const subtitleVariants = cva("max-w-full truncate text-game-muted", {
   variants: {
-    size: { sm: "text-meta", lg: "text-caption" },
+    size: { sm: "text-sm", lg: "text-base" },
   },
 });
 
-const infoVariants = cva("flex min-w-0 flex-none flex-col items-center text-center", {
+const infoVariants = cva("flex min-w-0 flex-none flex-col text-left gap-1", {
   variants: {
-    size: { sm: "gap-0.5 px-1 pb-0.5", lg: "gap-1 px-1.5 pb-1" },
+    size: { sm: "px-1 pb-0.5", lg: "px-1.5 pb-1" },
   },
 });
 
-const BACK_SHADOW: Record<StickerMode, CardShadow> = {
-  locked: "ink",
-  collected: "ink",
-  maybe: "maybe",
-  ruled: "none",
-  found: "found",
+type StickerInfoProps = {
+  name: string;
+  subtitle: string;
+  size: StickerSize;
 };
+
+function StickerInfo({ name, subtitle, size }: StickerInfoProps) {
+  return (
+    <div className={infoVariants({ size })}>
+      <span className={nameVariants({ size })}>{name}</span>
+      <span className={subtitleVariants({ size })}>{subtitle}</span>
+    </div>
+  );
+}
 
 type StickerPhotoProps = {
   url: string;
   name: string;
-  ruled: boolean;
   onError: () => void;
 };
 
 /** The profile picture over a muted placeholder that breathes until the picture has loaded. */
-function StickerPhoto({ url, name, ruled, onError }: StickerPhotoProps) {
+function StickerPhoto({ url, name, onError }: StickerPhotoProps) {
   const [loaded, setLoaded] = useState(false);
+  // A picture already in the cache shows at once, so a remounted sticker does not flash; only a
+  // picture that arrives later fades in.
+  const [fadeIn, setFadeIn] = useState(true);
   // A cached picture can finish before React attaches onLoad, so check it once it is in the page.
   const checkLoaded = useCallback((img: HTMLImageElement | null) => {
-    if (img?.complete && img.naturalWidth > 0) setLoaded(true);
+    if (img?.complete && img.naturalWidth > 0) {
+      setFadeIn(false);
+      setLoaded(true);
+    }
   }, []);
 
   return (
@@ -106,7 +117,7 @@ function StickerPhoto({ url, name, ruled, onError }: StickerPhotoProps) {
           className="absolute inset-0 bg-game-hover"
           initial={{ opacity: 1 }}
           animate={{ opacity: [1, 0.55, 1] }}
-          transition={{ duration: 1.6, ease: "easeInOut", repeat: Number.POSITIVE_INFINITY }}
+          transition={TRANSITION.pulse}
         />
       )}
       {/* biome-ignore lint/performance/noImgElement: profile pictures come from Clerk or storage at their own size, not optimised per request */}
@@ -117,9 +128,9 @@ function StickerPhoto({ url, name, ruled, onError }: StickerPhotoProps) {
         onLoad={() => setLoaded(true)}
         onError={onError}
         className={gameCn(
-          "absolute inset-0 size-full object-cover transition-opacity duration-300 ease-game",
-          loaded ? (ruled ? "opacity-30" : "opacity-100") : "opacity-0",
-          ruled && "grayscale",
+          "absolute inset-0 size-full object-cover",
+          fadeIn && "transition-opacity duration-base ease-game",
+          loaded ? "opacity-100" : "opacity-0",
         )}
       />
     </>
@@ -134,17 +145,18 @@ export function Sticker({
   rot = 0,
   tilt = true,
   celebrateChanges = true,
-  celebratePalette = "light",
+  backdrop = "light",
   flipDelay,
   onFlipped,
   className,
 }: StickerProps) {
   const view = getStickerView(person, mode, size);
+  // Orange on orange would drop the edge and the shadow, so a card on the found stage keeps ink.
+  const edge = (mode === "found" || mode === "welcomer") && backdrop !== "found" ? "found" : "ink";
   const rootRef = useRef<HTMLDivElement>(null);
   const previousMode = useRef(mode);
-  // The celebration a mode change earned, spent when its moment lands: the turn or the stamp.
-  const pendingCelebration = useRef<"unlock" | "found" | null>(null);
-  const ruled = mode === "ruled";
+  // The celebration a mode change earned, spent when its moment lands: the turn.
+  const pendingCelebration = useRef<"unlock" | null>(null);
   // A picture that fails to load (expired, blocked) falls back to the initials.
   const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
   const photoUrl = person.photoUrl && person.photoUrl !== failedPhoto ? person.photoUrl : null;
@@ -155,104 +167,95 @@ export function Sticker({
     pendingCelebration.current = celebrateChanges ? kind : null;
   }, [mode, celebrateChanges]);
 
-  const celebrateIf = (kind: "unlock" | "found") => {
-    if (pendingCelebration.current !== kind) return;
+  const celebrateUnlock = () => {
+    if (pendingCelebration.current !== "unlock") return;
     pendingCelebration.current = null;
     if (rootRef.current) {
-      void celebrate(originFromElement(rootRef.current), { kind, palette: celebratePalette });
+      void celebrate(originFromElement(rootRef.current), {
+        kind: "unlock",
+        palette: backdrop,
+      });
     }
   };
 
   const front = (
-    <div className={gameCn(faceVariants({ size }), cardSurfaceVariants({ size }))}>
-      <div
-        className={gameCn(
-          artVariants({ size }),
-          "flex-col justify-between gap-2",
-          size === "lg" ? "p-5" : "p-3",
-        )}
-        style={{ backgroundColor: person.tint }}
-      >
-        <div className="flex items-center justify-between gap-2">
-          <span className="font-game-mono text-caption uppercase">Ask me about</span>
+    <>
+      <CardBacking size={size} edge={edge} />
+      <div className={gameCn(faceVariants({ size }), cardSurfaceVariants({ size, edge }))}>
+        <div
+          className={gameCn(
+            artVariants({ size }),
+            "flex-col justify-between gap-2",
+            size === "lg" ? "p-5" : "p-3",
+          )}
+          style={{ backgroundColor: person.tint, color: person.tintInk }}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-game-mono text-caption uppercase">Ask me about</span>
+          </div>
           <span
             className={gameCn(
-              "inline-flex flex-none items-center justify-center rounded-full bg-game-surface",
-              size === "lg" ? "size-7.5" : "size-5.5",
+              "line-clamp-5 font-game-serif",
+              size === "lg" ? "text-name-lg" : "text-quote",
             )}
           >
-            <PlusIcon aria-hidden className="size-3.5" strokeWidth={2.25} />
+            {person.ask}
           </span>
         </div>
-        <span
-          className={gameCn(
-            "line-clamp-5 font-game-serif",
-            size === "lg" ? "text-name-lg" : "text-quote",
-          )}
-        >
-          {person.ask}
-        </span>
+        <StickerInfo name={person.name} subtitle={person.team} size={size} />
       </div>
-      <div className={infoVariants({ size })}>
-        <span className={nameVariants({ size, muted: false })}>{person.name}</span>
-        <span className={metaVariants({ size })}>{view.lockedMeta}</span>
-      </div>
-    </div>
+    </>
   );
 
   const back = (
-    <div
-      className={gameCn(
-        faceVariants({ size }),
-        cardSurfaceVariants({ size, shadow: BACK_SHADOW[mode] }),
-      )}
-    >
-      <div
-        className={gameCn(
-          artVariants({ size }),
-          "items-center justify-center",
-          (ruled || photoUrl) && "bg-game-hover",
-        )}
-        style={ruled || photoUrl ? undefined : { backgroundColor: person.color }}
-      >
-        {photoUrl ? (
-          <StickerPhoto
-            key={photoUrl}
-            url={photoUrl}
-            name={person.name}
-            ruled={ruled}
-            onError={() => setFailedPhoto(photoUrl)}
-          />
-        ) : (
-          <span
-            aria-hidden
-            className={gameCn(
-              "font-game-serif",
-              size === "lg" ? "text-mark-lg" : "text-mark",
-              ruled
-                ? "text-game-muted"
-                : view.initialsTone === "white"
-                  ? "text-white"
-                  : "text-game-ink",
-            )}
-          >
-            {view.initials}
-          </span>
-        )}
-      </div>
-      <div className={infoVariants({ size })}>
-        <span className={nameVariants({ size, muted: ruled })}>{person.name}</span>
-        <span className={metaVariants({ size })}>{view.openMeta}</span>
-      </div>
-      {view.showMore ? (
-        <div className="flex flex-none flex-col items-center gap-1.5 border-game-border border-t px-1.5 pt-3 pb-1 text-center">
-          {person.fact ? <p className="text-sm">{person.fact}</p> : null}
-          <span className="font-game-mono text-caption text-game-muted uppercase">
-            Ask me about · <span className="text-game-ink">{person.ask}</span>
-          </span>
+    <>
+      <CardBacking size={size} edge={edge} />
+      <div className={gameCn(faceVariants({ size }), cardSurfaceVariants({ size, edge }))}>
+        <div
+          className={gameCn(
+            artVariants({ size }),
+            "items-center justify-center",
+            photoUrl && "bg-game-hover",
+          )}
+          style={photoUrl ? undefined : { backgroundColor: person.color }}
+        >
+          {photoUrl ? (
+            <StickerPhoto
+              key={photoUrl}
+              url={photoUrl}
+              name={person.name}
+              onError={() => setFailedPhoto(photoUrl)}
+            />
+          ) : (
+            <span
+              aria-hidden
+              className={gameCn(
+                "font-game-serif",
+                size === "lg" ? "text-mark-lg" : "text-mark",
+                view.initialsTone === "white" ? "text-white" : "text-game-ink",
+              )}
+            >
+              {view.initials}
+            </span>
+          )}
         </div>
-      ) : null}
-    </div>
+        <StickerInfo name={person.name} subtitle={view.subtitle} size={size} />
+        {view.showMore ? (
+          <div className="flex flex-none flex-col items-start gap-3 border-game-border border-t px-1.5 pt-3 pb-1 text-left">
+            {/* The locked face already printed the ask; open, the fact is the new part. */}
+            {person.fact ? (
+              <p className="line-clamp-2 text-balance font-game-serif text-quote">{person.fact}</p>
+            ) : null}
+            <div className="flex flex-col gap-0.5">
+              <span className="font-game-mono text-caption text-game-muted uppercase">
+                Ask me about
+              </span>
+              <p className="line-clamp-1 text-game-muted text-sm">{person.ask}</p>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </>
   );
 
   return (
@@ -269,18 +272,14 @@ export function Sticker({
             front={front}
             back={back}
             onFlipped={() => {
-              celebrateIf("unlock");
+              celebrateUnlock();
               if (view.open) onFlipped?.();
             }}
           />
-          <AnimatePresence>
+          {/* A badge already on the card shows as is; only one added while it is on screen stamps in. */}
+          <AnimatePresence initial={false}>
             {view.stamp ? (
-              <StickerStampMark
-                key={view.stamp}
-                stamp={view.stamp}
-                size={size}
-                onLanded={() => celebrateIf("found")}
-              />
+              <StickerStampMark key={view.stamp} stamp={view.stamp} size={size} />
             ) : null}
           </AnimatePresence>
         </div>

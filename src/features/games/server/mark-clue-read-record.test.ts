@@ -7,7 +7,12 @@ vi.mock("@/shared/lib/db", async () => (await import("@/test/fake-db")).fakeDbMo
 
 import { markClueReadRecord } from "./mark-clue-read-record";
 
-const game = { id: "game_1", playerPersonId: "player", startDate: "2026-11-02" };
+const game = {
+  id: "game_1",
+  playerPersonId: "player",
+  startDate: "2026-11-02",
+  status: "active" as const,
+};
 // Clue 2 lands on day 6, 2026-11-07 at 09:00 Montréal (14:00 UTC).
 const afterClue2 = new Date("2026-11-07T14:00:00Z");
 
@@ -30,6 +35,12 @@ describe("markClueReadRecord", () => {
       markClueReadRecord({ game, viewerPersonId: "player", number: 3, now: afterClue2 }),
     ).rejects.toSatisfy((err) => isAppError(err, "conflict"));
     expect(client.query).not.toHaveBeenCalled();
+  });
+
+  it("opens a clue that has not landed once the game is over", async () => {
+    const ended = { ...game, status: "revealed" as const };
+    await markClueReadRecord({ game: ended, viewerPersonId: "player", number: 4, now: afterClue2 });
+    expect(client.query).toHaveBeenCalled();
   });
 
   it("forbids anyone but the player", async () => {

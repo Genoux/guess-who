@@ -36,6 +36,11 @@ export function buildGameClues(
   });
 }
 
+/** A clue is out on its release time, and every clue is out once the game is over. */
+export function isClueOut(releaseAt: Date, game: Pick<Game, "status">, now: Date): boolean {
+  return releaseAt <= now || game.status !== "active";
+}
+
 type ClueProgress = { number: number; released: boolean };
 
 /** Face down until released, yellow until the player opened it, white after. */
@@ -67,5 +72,16 @@ export function nextClue(
 ): { number: ClueNumber; inDays: number } | null {
   const number = CLUE_NUMBERS.find((n) => clueReleaseAt(startDate, n) > now);
   if (!number) return null;
-  return { number, inDays: Math.max(0, CLUE_DAYS[number] - gameDay(startDate, now)) };
+  return { number, inDays: clueUnlocksIn(number, startDate, now) };
+}
+
+/** Whole game days until a clue's day; 0 on the day itself, before or after 9:00. */
+export function clueUnlocksIn(number: number, startDate: string, now: Date): number {
+  return Math.max(0, clueDay(number) - gameDay(startDate, now));
+}
+
+export function clueUnlockCopy(inDays: number): string {
+  if (inDays <= 0) return "Unlocks today";
+  if (inDays === 1) return "Unlocks tomorrow";
+  return `Unlocks in ${inDays} days`;
 }

@@ -7,11 +7,11 @@ export const ROUTES = {
   playWelcome: "/play/welcome",
   playCollect: "/play/collect",
   playMission: "/play/mission",
-  playClue: "/play/clue",
-  playFound: "/play/found",
   welcomer: "/welcomer",
   card: "/card",
   notOnTheList: "/not-on-the-list",
   devComponents: "/dev/components",
   devWelcome: "/dev/welcome",
+  devAlbum: "/dev/album",
+  devMission: "/dev/mission",
 } as const;

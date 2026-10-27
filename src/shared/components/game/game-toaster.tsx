@@ -1,6 +1,7 @@
 "use client";
 
 import { type ExternalToast, Toaster, toast } from "sonner";
+import { gameCn } from "./game-cn";
 
 const GAME_TOASTER_ID = "game";
 
@@ -9,20 +10,34 @@ export function GameToaster() {
   return (
     <Toaster
       id={GAME_TOASTER_ID}
-      position="bottom-center"
-      offset={40}
-      mobileOffset={24}
+      position="top-center"
+      offset={24}
+      mobileOffset={{ top: "calc(env(safe-area-inset-top) + 16px)", left: 24, right: 24 }}
       visibleToasts={1}
       containerAriaLabel="Game notifications"
     />
   );
 }
 
-/** Shows the ink pill toast ("+1 sticker") at the bottom of the game screen. */
-export function gameToast(message: string, options?: Pick<ExternalToast, "duration" | "id">) {
+type GameToastTone = "ink" | "unlock";
+
+const TONE_CLASSES: Record<GameToastTone, string> = {
+  ink: "bg-game-ink text-white",
+  unlock: "bg-game-shortlist text-game-ink",
+};
+
+type GameToastOptions = Pick<ExternalToast, "duration" | "id"> & { tone?: GameToastTone };
+
+/** Shows a pill toast at the top of the game screen: ink by default, yellow for an unlock. */
+export function gameToast(message: string, { tone = "ink", ...options }: GameToastOptions = {}) {
   return toast.custom(
     () => (
-      <div className="mx-auto inline-flex h-12 items-center gap-2.5 whitespace-nowrap rounded-full bg-game-ink px-5 font-game-sans font-medium text-button-sm text-white">
+      <div
+        className={gameCn(
+          "mx-auto inline-flex h-12 items-center whitespace-nowrap rounded-full px-5 font-game-sans font-medium text-button-sm",
+          TONE_CLASSES[tone],
+        )}
+      >
         {message}
       </div>
     ),

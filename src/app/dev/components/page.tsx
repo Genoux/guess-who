@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { CloseButton } from "@/shared/components/game/close-button";
 import { ClueCard } from "@/shared/components/game/clue-card";
 import { CountChip } from "@/shared/components/game/count-chip";
+import { ana, jonah, noor, welcomerClue } from "@/shared/components/game/fixtures";
 import { GameAvatar } from "@/shared/components/game/game-avatar";
 import { GameButton } from "@/shared/components/game/game-button";
 import { GameField } from "@/shared/components/game/game-field";
@@ -15,8 +16,7 @@ import { Stepper } from "@/shared/components/game/stepper";
 import { Sticker } from "@/shared/components/game/sticker";
 import type { StickerMode } from "@/shared/components/game/sticker-view";
 import { env } from "@/shared/config/env";
-import { isCatalogueEnabled } from "../_lib/catalogue-access";
-import { ana, jonah, noor } from "../_lib/fixtures";
+import { isCatalogueEnabled } from "@/shared/lib/catalogue-access";
 import { CatalogueSection } from "./_components/catalogue-section";
 import { EffectsDemo } from "./_components/effects-demo";
 import { Example } from "./_components/example";
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const MODES: StickerMode[] = ["locked", "collected", "maybe", "ruled", "found"];
+const MODES: StickerMode[] = ["locked", "collected", "maybe", "ruled"];
 const HREF = "/dev/components";
 
 /** Catalogue of the game UI kit, for local dev and previews only; 404 everywhere else. */
@@ -71,8 +71,8 @@ export default function GameComponentsPage() {
             <Example code={`size="lg" mode="collected"`}>
               <Sticker person={noor} size="lg" mode="collected" />
             </Example>
-            <Example code={`size="lg" mode="found" (photo)`}>
-              <Sticker person={ana} size="lg" mode="found" />
+            <Example code={`size="lg" mode="collected" (photo)`}>
+              <Sticker person={ana} size="lg" mode="collected" />
             </Example>
           </div>
           <div className="flex flex-wrap items-start gap-x-6 gap-y-8">
@@ -116,9 +116,10 @@ export default function GameComponentsPage() {
                 notes: "Confetti on unlock and on found",
               },
               {
-                name: "celebratePalette",
+                name: "backdrop",
                 values: "light · dark · found",
-                notes: "Star colors for the background: game bg, ink or orange",
+                notes:
+                  "What it sits on: game bg, ink or orange. Sets the star colors; on orange a found card keeps its ink edge",
               },
             ]}
           />
@@ -127,30 +128,26 @@ export default function GameComponentsPage() {
         <CatalogueSection
           number="02"
           title="Clue card"
-          description="Face down until its day, yellow when new, white once read."
+          description="Locked until its day, face down until the player turns it over, then yellow."
         >
           <div className="flex flex-wrap items-start gap-x-6 gap-y-8">
+            <Example code={`state="locked"`}>
+              <ClueCard state="locked" label="Clue 3" footer="Unlocks in 3 days" />
+            </Example>
             <Example code={`state="down"`}>
-              <ClueCard state="down" label="Clue 3" footer="In 3 days" />
+              <ClueCard state="down" label="Clue 3" />
             </Example>
-            <Example code={`state="new"`}>
-              <ClueCard
-                state="new"
-                label="Clue 2"
-                text="Has never owned a car, and never plans to."
-              />
-            </Example>
-            <Example code={`state="open"`}>
-              <ClueCard state="open" label="Clue 1" text="Works in Creative." />
+            <Example code={`state="up"`}>
+              <ClueCard state="up" label="Clue 2" text={welcomerClue} />
             </Example>
           </div>
           <div className="flex flex-wrap items-start gap-x-6 gap-y-8">
-            <Example code={`size="lg" state="new" footer`}>
+            <Example code={`size="lg" state="up" footer`}>
               <ClueCard
-                state="new"
+                state="up"
                 size="lg"
                 label="Clue 2"
-                text="Has never owned a car, and never plans to."
+                text={welcomerClue}
                 footer="From your welcomer"
               />
             </Example>
@@ -160,7 +157,11 @@ export default function GameComponentsPage() {
           </div>
           <PropTable
             rows={[
-              { name: "state", values: "down · new · open", notes: "What the player has seen" },
+              {
+                name: "state",
+                values: "locked · down · up",
+                notes: "Released, then turned over by the player",
+              },
               {
                 name: "size",
                 values: "sm · lg",
@@ -185,13 +186,16 @@ export default function GameComponentsPage() {
         >
           <div className="flex flex-wrap items-center gap-x-7 gap-y-8">
             <Example code={`variant="cta"`}>
-              <GameButton>Stick it in</GameButton>
+              <GameButton>Collect sticker</GameButton>
             </Example>
             <Example code={`variant="yellow"`}>
-              <GameButton variant="yellow">Could be my welcomer</GameButton>
+              <GameButton variant="yellow">Try Jonah</GameButton>
             </Example>
             <Example code={`variant="light"`}>
               <GameButton variant="light">Back to album</GameButton>
+            </Example>
+            <Example code={`size="lg"`}>
+              <GameButton size="lg">Guess who</GameButton>
             </Example>
             <Example code={`size="sm"`}>
               <GameButton size="sm">Guess Ana</GameButton>
@@ -218,7 +222,7 @@ export default function GameComponentsPage() {
           </div>
           <div className="flex flex-wrap items-center gap-x-7 gap-y-8 rounded-stage bg-game-ink p-6">
             <Example code={`variant="on-dark"`} onDark>
-              <GameButton variant="on-dark">Make my card</GameButton>
+              <GameButton variant="on-dark">My card</GameButton>
             </Example>
             <Example code={`variant="yellow"`} onDark>
               <GameButton variant="yellow">Write my clues</GameButton>
@@ -387,8 +391,8 @@ export default function GameComponentsPage() {
               },
               {
                 name: "gameToast",
-                values: "message, { duration?, id? }",
-                notes: "Ink pill at the bottom; GameShell mounts its toaster",
+                values: "message, { tone?: ink · unlock, duration?, id? }",
+                notes: "Pill at the top, yellow for an unlock; GameShell mounts its toaster",
               },
               {
                 name: "GameModal",
@@ -412,12 +416,16 @@ export default function GameComponentsPage() {
                 values: "origin, { kind?, palette? }",
                 notes: "canvas-confetti, skipped for reduced motion",
               },
-              { name: "Tilt", values: "disabled?", notes: "react-parallax-tilt, 10°, scale 1.03" },
-              { name: "Pop", values: "delay?", notes: "motion pop-in for titles and actions" },
               {
-                name: "PageTransition",
-                values: "children",
-                notes: "Fade up per screen, from a route template",
+                name: "Tilt",
+                values: "disabled?",
+                notes: "3D lean towards the pointer, 8°, flat at rest",
+              },
+              {
+                name: "Reveal",
+                values: "variant: fade · land, delay?, as?, onShown?",
+                notes:
+                  "Shows content on mount; text fades in place, land for cards. Delays from beats() and stagger()",
               },
             ]}
           />
@@ -435,7 +443,7 @@ export default function GameComponentsPage() {
                 values: "tone: default · ink · found",
                 notes: "Fonts, background and the game toaster",
               },
-              { name: "GameStage", values: "middle?, as?", notes: "The centered column" },
+              { name: "GameStage", values: "as?", notes: "The full-screen centered column" },
               { name: "GameBook", values: "as?", notes: "White page for the album and forms" },
             ]}
           />

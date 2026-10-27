@@ -5,7 +5,7 @@ import { gameCn } from "./game-cn";
 type GameTopNavProps = {
   /** Where the logo goes; plain text when omitted. */
   logoHref?: string;
-  /** Up to two pill tabs, centered: pass a PillTabs. */
+  /** Up to three pill tabs, centered: pass a PillTabs. */
   tabs?: ReactNode;
   /** Right side: a CountChip and the AccountButton. */
   end?: ReactNode;
@@ -13,14 +13,14 @@ type GameTopNavProps = {
 };
 
 const logoClass =
-  "justify-self-start rounded-sm font-game-serif text-logo text-game-ink no-underline outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2";
+  "justify-self-start rounded-sm font-game-serif text-heading md:text-logo text-game-ink no-underline outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2";
 
-/** The game top bar: logo, up to two pill tabs and a count with the avatar. Nothing else. */
+/** The game top bar: logo, up to three pill tabs and a count with the avatar. Nothing else. */
 export function GameTopNav({ logoHref, tabs, end, className }: GameTopNavProps) {
   return (
     <header
       className={gameCn(
-        "grid flex-none grid-cols-[auto_1fr] items-center gap-4 border-game-border border-b bg-game-surface px-4 py-3 md:h-18 md:grid-cols-[1fr_auto_1fr] md:px-10 md:py-0",
+        "sticky top-0 z-40 grid flex-none grid-cols-[auto_1fr] items-center gap-x-4 gap-y-2 border-game-border border-b bg-game-surface px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-2 md:h-18 md:grid-cols-[1fr_auto_1fr] md:gap-4 md:px-10 md:pt-[env(safe-area-inset-top)] md:pb-0",
         className,
       )}
     >

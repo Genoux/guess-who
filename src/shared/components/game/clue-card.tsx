@@ -1,12 +1,13 @@
 import { cva } from "class-variance-authority";
+import { LockIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { cardSurfaceVariants } from "./card-surface";
+import { CardBacking, cardSurfaceVariants } from "./card-surface";
 import { gameCn } from "./game-cn";
 
-export type ClueCardState = "down" | "new" | "open";
+export type ClueCardState = "locked" | "down" | "up";
 
 type ClueCardProps = {
-  /** Face down until its day, yellow when new, white once read. */
+  /** Locked until its day, face down until the player turns it over, then yellow. */
   state: ClueCardState;
   size?: "sm" | "lg";
   /** Caption: which clue it is, "Clue 2". Never the day: timing goes in the footer as a countdown. */
@@ -20,28 +21,28 @@ type ClueCardProps = {
   className?: string;
 };
 
-const clueCardVariants = cva("flex flex-none flex-col text-left", {
+const clueSizeVariants = cva("relative flex-none text-left", {
+  variants: {
+    size: { sm: "h-65 w-50", lg: "h-105 w-80" },
+  },
+});
+
+const clueFaceVariants = cva("absolute inset-0 flex flex-col", {
   variants: {
     state: {
+      locked:
+        "items-center justify-center border-dashed border-game-muted bg-game-surface text-center text-game-ink",
       down: "items-center justify-center bg-game-ink text-center text-white",
-      new: "bg-game-shortlist text-game-ink",
-      open: "bg-game-surface text-game-ink",
+      up: "bg-game-shortlist text-game-ink",
     },
     size: {
-      sm: "h-65 w-50 gap-3 p-5",
-      lg: "h-105 w-80 gap-3 p-7",
+      sm: "gap-3 p-5",
+      lg: "gap-3 p-7",
     },
   },
 });
 
-/** A clue is a card like a sticker: same edge and corner, and the ink shadow once it is face up. */
-const clueClasses = (state: ClueCardState, size: "sm" | "lg", className?: string) =>
-  gameCn(
-    clueCardVariants({ state, size }),
-    cardSurfaceVariants({ size, shadow: state === "down" ? "none" : "ink" }),
-    className,
-  );
-
+/** A clue is a card like a sticker: same edge, corner and hover shadow. */
 export function ClueCard({
   state,
   size = "sm",
@@ -52,42 +53,54 @@ export function ClueCard({
   className,
 }: ClueCardProps) {
   const style = rot ? { transform: `rotate(${rot}deg)` } : undefined;
-
-  if (state === "down") {
-    return (
-      <div className={clueClasses(state, size, className)} style={style}>
-        <span
-          aria-hidden
-          className={gameCn(
-            "font-game-serif text-game-shortlist",
-            size === "lg" ? "text-mark-lg" : "text-mark",
-          )}
-        >
-          ?
-        </span>
-        <span className="font-game-mono text-caption text-game-border-strong uppercase">
-          <span className="sr-only">Clue face down, </span>
-          {label}
-        </span>
-        {footer ? <span className="text-game-shortlist text-small">{footer}</span> : null}
-      </div>
-    );
-  }
+  const faceClassName = gameCn(cardSurfaceVariants({ size }), clueFaceVariants({ state, size }));
 
   return (
-    <div className={clueClasses(state, size, className)} style={style}>
-      <span
-        className={gameCn(
-          "font-game-mono text-caption uppercase",
-          state === "new" ? "text-game-ink" : "text-game-muted",
-        )}
-      >
-        {label}
-      </span>
-      <span className={gameCn("font-game-serif", size === "lg" ? "text-clue-lg" : "text-clue")}>
-        {text}
-      </span>
-      {footer ? <span className="mt-auto text-small">{footer}</span> : null}
+    <div className={gameCn(clueSizeVariants({ size }), className)} style={style}>
+      {state === "locked" ? null : <CardBacking size={size} />}
+      {state === "locked" ? (
+        <div className={faceClassName}>
+          <span
+            aria-hidden
+            className={gameCn(
+              "flex items-center justify-center rounded-full border-2 border-game-muted border-dashed",
+              size === "lg" ? "size-20 [&_svg]:size-8" : "size-14 [&_svg]:size-6",
+            )}
+          >
+            <LockIcon strokeWidth={2} />
+          </span>
+          <span className="font-game-mono text-caption uppercase">
+            <span className="sr-only">Clue locked, </span>
+            {label}
+          </span>
+          {footer ? <span className="text-game-muted text-small">{footer}</span> : null}
+        </div>
+      ) : state === "down" ? (
+        <div className={faceClassName}>
+          <span
+            aria-hidden
+            className={gameCn(
+              "font-game-serif text-game-shortlist",
+              size === "lg" ? "text-mark-lg" : "text-mark",
+            )}
+          >
+            ?
+          </span>
+          <span className="font-game-mono text-caption text-game-border-strong uppercase">
+            <span className="sr-only">Clue face down, </span>
+            {label}
+          </span>
+          {footer ? <span className="text-game-shortlist text-small">{footer}</span> : null}
+        </div>
+      ) : (
+        <div className={faceClassName}>
+          <span className="font-game-mono text-caption uppercase">{label}</span>
+          <span className={gameCn("font-game-serif", size === "lg" ? "text-clue-lg" : "text-clue")}>
+            {text}
+          </span>
+          {footer ? <span className="mt-auto text-small">{footer}</span> : null}
+        </div>
+      )}
     </div>
   );
 }

@@ -6,24 +6,28 @@ import { db } from "@/shared/lib/db";
 import type { Game } from "../types";
 import { assertCanGuess } from "./assert-can-guess";
 import { hasCollected, hasGuessed } from "./game-records";
+import { type FoundStats, toFoundStats } from "./to-game-outcome";
 
 type GuessInput = {
-  game: Pick<Game, "id" | "playerPersonId" | "welcomerPersonId" | "status">;
+  game: Pick<Game, "id" | "playerPersonId" | "welcomerPersonId" | "status" | "startDate">;
   viewerPersonId: string;
   personId: string;
   now: Date;
 };
 
+type GuessResult = { correct: false } | ({ correct: true } & FoundStats);
+
 /**
- * "Is it X?" A right guess ends the game as found; a wrong one rules X out and takes them off
- * the maybe list. The answer is only right or wrong, never who the welcomer is.
+ * "Is it X?" A right guess ends the game as found and answers with the numbers of the find; a
+ * wrong one rules X out and takes them off the maybe list. The answer is only right or wrong,
+ * never who the welcomer is.
  */
 export async function guessWelcomerRecord({
   game,
   viewerPersonId,
   personId,
   now,
-}: GuessInput): Promise<{ correct: boolean }> {
+}: GuessInput): Promise<GuessResult> {
   const [collected, alreadyGuessed] = await Promise.all([
     hasCollected(game.id, personId),
     hasGuessed(game.id, personId),
@@ -32,24 +36,37 @@ export async function guessWelcomerRecord({
   const correct = personId === game.welcomerPersonId;
 
   try {
-    await db.transaction(async (tx) => {
+    return await db.transaction(async (tx): Promise<GuessResult> => {
       await tx.insert(guesses).values({ gameId: game.id, personId, correct });
       if (correct) {
         const [found] = await tx
           .update(games)
-          .set({ status: "found", foundAt: now })
+          .set({
+            status: "found",
+            foundAt: now,
+            foundWithClues: games.lastReadClue,
+            // The in-place celebration on the guessed card is the reveal.
+            revealSeenAt: now,
+          })
           .where(and(eq(games.id, game.id), eq(games.status, "active")))
-          .returning({ id: games.id });
+          .returning({ foundWithClues: games.foundWithClues });
         if (!found) throw new AppError("conflict", "game is not active");
-      } else {
-        await tx
-          .delete(shortlists)
-          .where(and(eq(shortlists.gameId, game.id), eq(shortlists.personId, personId)));
+        return {
+          correct: true,
+          ...toFoundStats({
+            startDate: game.startDate,
+            foundAt: now,
+            foundWithClues: found.foundWithClues,
+          }),
+        };
       }
+      await tx
+        .delete(shortlists)
+        .where(and(eq(shortlists.gameId, game.id), eq(shortlists.personId, personId)));
+      return { correct: false };
     });
   } catch (err) {
     if (isUniqueViolation(err)) throw new AppError("conflict", "person already guessed");
     throw err;
   }
-  return { correct };
 }

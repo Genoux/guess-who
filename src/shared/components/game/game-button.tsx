@@ -15,6 +15,7 @@ const gameButtonVariants = cva(
         link: "rounded-sm text-game-muted underline underline-offset-3 hover:text-game-ink focus-visible:outline-offset-3",
       },
       size: {
+        lg: "h-15 gap-3 px-9 text-lead",
         default: "h-13 gap-2.5 px-7 text-base",
         sm: "h-11 gap-2 px-5.5 text-button-sm",
       },
@@ -23,7 +24,7 @@ const gameButtonVariants = cva(
       {
         variant: ["cta", "yellow", "light", "on-dark"],
         className:
-          "rounded-full font-medium transition-[color,background-color,box-shadow] duration-160 ease-game focus-visible:outline-offset-3 motion-reduce:transition-none",
+          "rounded-full font-medium transition-[color,background-color,box-shadow] duration-fast ease-game focus-visible:outline-offset-3 motion-reduce:transition-none",
       },
       { variant: "link", className: "h-auto px-0 text-button-sm" },
     ],

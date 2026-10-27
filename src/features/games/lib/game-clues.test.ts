@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { Clue } from "../types";
-import { buildGameClues, clueCardState, clueDay, newestUnreadClue, nextClue } from "./game-clues";
+import {
+  buildGameClues,
+  clueCardState,
+  clueDay,
+  clueUnlockCopy,
+  clueUnlocksIn,
+  newestUnreadClue,
+  nextClue,
+} from "./game-clues";
 
 const game = { id: "game_1", startDate: "2026-11-02" };
 const row = (number: number, text: string | null, gameId = "game_1"): Clue => ({
@@ -90,5 +98,27 @@ describe("clueDay and nextClue", () => {
 
   it("returns null once clue 4 is out", () => {
     expect(nextClue(game.startDate, new Date("2026-11-13T15:00:00Z"))).toBeNull();
+  });
+});
+
+describe("clueUnlocksIn", () => {
+  it("counts the game days until a clue's day", () => {
+    const daySix = new Date("2026-11-07T15:00:00Z");
+    expect(clueUnlocksIn(3, game.startDate, daySix)).toBe(3);
+    expect(clueUnlocksIn(4, game.startDate, daySix)).toBe(6);
+  });
+
+  it("is 0 on the clue's own day, before it lands at 9:00", () => {
+    expect(clueUnlocksIn(3, game.startDate, new Date("2026-11-10T12:00:00Z"))).toBe(0);
+  });
+});
+
+describe("clueUnlockCopy", () => {
+  it("says when a locked clue opens, relative to today", () => {
+    expect([0, 1, 3].map(clueUnlockCopy)).toEqual([
+      "Unlocks today",
+      "Unlocks tomorrow",
+      "Unlocks in 3 days",
+    ]);
   });
 });

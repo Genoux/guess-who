@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { WelcomeIntro } from "@/features/games/components/welcome-intro";
 import { GameShell } from "@/shared/components/game/game-shell";
 import { env } from "@/shared/config/env";
-import { isCatalogueEnabled } from "../_lib/catalogue-access";
+import { isCatalogueEnabled } from "@/shared/lib/catalogue-access";
 
 export const metadata: Metadata = {
   title: "Welcome intro (dev)",

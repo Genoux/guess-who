@@ -4,27 +4,24 @@ import { AnimatePresence, motion } from "motion/react";
 import { Dialog } from "radix-ui";
 import type { ReactNode } from "react";
 import { gameCn } from "./game-cn";
-import { GAME_EASE } from "./game-motion";
+import { TRANSITION } from "./game-motion";
 
 type GameModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: ReactNode;
   description?: ReactNode;
-  /** Shown on the grey stage above the title, usually a large Sticker. */
-  stage?: ReactNode;
   /** The actions row: GameButtons and links. */
   children?: ReactNode;
   className?: string;
 };
 
-/** Centered game dialog: a sticker on the stage, a big question and the actions. */
+/** Centered game dialog: a big question and the actions. */
 export function GameModal({
   open,
   onOpenChange,
   title,
   description,
-  stage,
   children,
   className,
 }: GameModalProps) {
@@ -39,7 +36,7 @@ export function GameModal({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
+                transition={TRANSITION.fade}
               />
             </Dialog.Overlay>
             <Dialog.Content
@@ -55,13 +52,8 @@ export function GameModal({
                 initial={{ opacity: 0, x: "-50%", y: "-46%" }}
                 animate={{ opacity: 1, x: "-50%", y: "-50%" }}
                 exit={{ opacity: 0, x: "-50%", y: "-48%" }}
-                transition={{ duration: 0.32, ease: GAME_EASE }}
+                transition={TRANSITION.enter}
               >
-                {stage ? (
-                  <div className="flex w-full justify-center rounded-stage bg-game-sidebar px-4 py-8">
-                    {stage}
-                  </div>
-                ) : null}
                 <div className="flex flex-col items-center gap-1.5">
                   <Dialog.Title className="font-game-serif text-hero-md">{title}</Dialog.Title>
                   {description ? (
