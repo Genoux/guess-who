@@ -9,18 +9,26 @@ type GameTopNavProps = {
   tabs?: ReactNode;
   /** Right side: a CountChip and the AccountButton. */
   end?: ReactNode;
+  /** ink sits on an ink page, so the bar and the page read as one surface. */
+  tone?: "light" | "ink";
   className?: string;
 };
 
+const TONES = {
+  light: "border-game-border bg-game-surface text-game-ink",
+  ink: "border-transparent bg-game-ink text-white",
+} as const;
+
 const logoClass =
-  "justify-self-start rounded-sm font-game-serif text-heading md:text-logo text-game-ink no-underline outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2";
+  "justify-self-start rounded-sm font-game-serif text-heading md:text-logo no-underline outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2";
 
 /** The game top bar: logo, up to three pill tabs and a count with the avatar. Nothing else. */
-export function GameTopNav({ logoHref, tabs, end, className }: GameTopNavProps) {
+export function GameTopNav({ logoHref, tabs, end, tone = "light", className }: GameTopNavProps) {
   return (
     <header
       className={gameCn(
-        "sticky top-0 z-40 grid flex-none grid-cols-[auto_1fr] items-center gap-x-4 gap-y-2 border-game-border border-b bg-game-surface px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-2 md:h-18 md:grid-cols-[1fr_auto_1fr] md:gap-4 md:px-10 md:pt-[env(safe-area-inset-top)] md:pb-0",
+        "sticky top-0 z-40 grid flex-none grid-cols-[auto_1fr] items-center gap-x-4 gap-y-2 border-b px-4 transition-colors duration-slow ease-game motion-reduce:transition-none pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-2 md:h-18 md:grid-cols-[1fr_auto_1fr] md:gap-4 md:px-10 md:pt-[env(safe-area-inset-top)] md:pb-0",
+        TONES[tone],
         className,
       )}
     >
@@ -31,9 +39,13 @@ export function GameTopNav({ logoHref, tabs, end, className }: GameTopNavProps) 
       ) : (
         <span className={logoClass}>The Album</span>
       )}
-      <div className="col-span-full row-start-2 flex justify-center md:col-span-1 md:col-start-2 md:row-start-1">
-        {tabs}
-      </div>
+      {/* Only with tabs: an empty slot still takes the second row on mobile, and its row gap
+          pushes the logo and avatar above center. */}
+      {tabs ? (
+        <div className="col-span-full row-start-2 flex justify-center md:col-span-1 md:col-start-2 md:row-start-1">
+          {tabs}
+        </div>
+      ) : null}
       <div className="col-start-2 row-start-1 flex items-center gap-3 justify-self-end md:col-start-3">
         {end}
       </div>

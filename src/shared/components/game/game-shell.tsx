@@ -21,12 +21,14 @@ const TONES = {
 export function GameShell({ children, tone = "default", className }: GameShellProps) {
   // Every screen shares one name, so a navigation pairs the old screen with the new one and the
   // browser cross-fades them (.game-page in game-theme.css). default="none" keeps refreshes and
-  // in-page transitions still: only a swap of screens animates.
+  // in-page transitions still: only a swap of screens animates. overflow-clip cuts what a slide
+  // pushes past the edge, so no scrollbar flashes mid-animation; unlike hidden it is no scroll
+  // container, so the page still scrolls and the top bar stays sticky.
   return (
     <ViewTransition name="game-page" share="game-page" default="none">
       <div
         className={gameCn(
-          "relative flex min-h-dvh flex-col font-game-sans text-base",
+          "relative flex min-h-dvh flex-col overflow-clip font-game-sans text-base",
           TONES[tone],
           className,
         )}

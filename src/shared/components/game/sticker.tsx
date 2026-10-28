@@ -2,7 +2,7 @@
 
 import { cva } from "class-variance-authority";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { celebrate, originFromElement } from "@/shared/lib/celebrate";
 import { CardBacking, cardSurfaceVariants } from "./card-surface";
 import { Flip } from "./flip";
@@ -34,6 +34,8 @@ export type StickerProps = {
   flipDelay?: number;
   /** Runs once a turn to the collected face has landed. */
   onFlipped?: () => void;
+  /** Sits on the card's top-right corner and tilts and turns with it, e.g. an Edit button. */
+  corner?: ReactNode;
   className?: string;
 };
 
@@ -148,6 +150,7 @@ export function Sticker({
   backdrop = "light",
   flipDelay,
   onFlipped,
+  corner,
   className,
 }: StickerProps) {
   const view = getStickerView(person, mode, size);
@@ -282,6 +285,7 @@ export function Sticker({
               <StickerStampMark key={view.stamp} stamp={view.stamp} size={size} />
             ) : null}
           </AnimatePresence>
+          {corner ? <div className="absolute -top-4 -right-4">{corner}</div> : null}
         </div>
       </Tilt>
     </div>

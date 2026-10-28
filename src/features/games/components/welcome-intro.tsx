@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
-import { AnimatePresence, motion, useIsPresent, type Variants } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { createContext, type ReactNode, use, useRef, useState, useTransition } from "react";
 import { AccountButton } from "@/shared/components/account-button";
@@ -21,6 +21,7 @@ import { markIntroSeen } from "../actions/mark-intro-seen";
 import { TUTORIAL_ALBUM, TUTORIAL_WELCOMER } from "../lib/tutorial-cast";
 import { IncognitoCard } from "./incognito-card";
 import { ClueReveal } from "./mission-clues";
+import { AFTER_LEAVE_S, InertWhenLeaving, SLIDE_MOTION, STEP_MOTION } from "./step-motion";
 
 type WelcomeIntroProps = {
   firstName: string;
@@ -28,37 +29,14 @@ type WelcomeIntroProps = {
   preview?: boolean;
 };
 
-const ROUND = "size-13 px-0";
-
 /** 1 when moving forward, -1 when going back: every slide mirrors on the way back. */
 const Direction = createContext(1);
 
-/** Arrivals wait for the leaving view, so the two never cross. */
-const AFTER_LEAVE_S = TRANSITION.exit.duration;
 const DEAL_AT = beats(2);
 const COLLECT_FLIP_AT = beats(3);
 /** After the ruled-out stamp has landed on the card beside it. */
 const WIN_FLIP_AT = beats(2);
 const TITLE_AT = beats(1);
-
-const WELCOME_MOTION: Variants = {
-  enter: (direction: number) => ({ opacity: 0, y: direction < 0 ? -32 : 24 }),
-  center: (direction: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { ...TRANSITION.arrive, delay: direction < 0 ? AFTER_LEAVE_S : 0 },
-  }),
-  exit: { opacity: 0, y: -32, transition: TRANSITION.exit },
-};
-
-// Reads `custom` from its AnimatePresence: a leaving child no longer gets new props, only that.
-const ART_MOTION: Variants = {
-  exit: (direction: number) => ({
-    opacity: 0,
-    x: -64 * direction,
-    transition: TRANSITION.exit,
-  }),
-};
 
 type DealtProps = {
   children: ReactNode;
@@ -84,21 +62,11 @@ function Dealt({ children, order = 0, onDealt }: DealtProps) {
   );
 }
 
-/** Takes a leaving view out of focus and clicks while it fades, so a double click never fires twice. */
-function InertWhenLeaving({ children }: { children: ReactNode }) {
-  const isPresent = useIsPresent();
-  return (
-    <div className="contents" inert={!isPresent}>
-      {children}
-    </div>
-  );
-}
-
 // Cards only ever scale down, never up: scaling a card up blurs its edges. The fit is per stage
 // width, for two large stickers (624px) or three mission-size clues (648px).
 function Row({ children }: { children: ReactNode }) {
   return (
-    <div className="flex origin-center items-center justify-center gap-6 [zoom:0.4] sm:[zoom:0.75] md:[zoom:1] md:scale-[0.62] lg:scale-[0.85] xl:scale-100">
+    <div className="flex origin-center items-center justify-center gap-6 [--card-edge:5px] [zoom:0.4] sm:[--card-edge:calc(2px/0.75)] sm:[zoom:0.75] md:[--card-edge:calc(2px/0.62)] md:[zoom:1] md:scale-[0.62] lg:[--card-edge:calc(2px/0.85)] lg:scale-[0.85] xl:[--card-edge:2px] xl:scale-100">
       {children}
     </div>
   );
@@ -206,7 +174,7 @@ function WinArt() {
 export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) {
   // 0 is the welcome screen; 1 to tour.length are the tour steps.
   const [step, setStep] = useState(0);
-  const [direction, setDirection] = useState(1);
+  const [direction, setDirection] = useState(0);
   // The clicked button leaves with its view, so focus moves to the new heading; never on first load.
   const [navigated, setNavigated] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -292,7 +260,7 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
             key="welcome"
             className="col-span-full row-[2/-1] flex flex-col items-center justify-center px-6 text-center"
             custom={direction}
-            variants={WELCOME_MOTION}
+            variants={STEP_MOTION}
             initial="enter"
             animate="center"
             exit="exit"
@@ -339,7 +307,7 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
                     <motion.div
                       key={step}
                       className="flex items-center justify-center"
-                      variants={ART_MOTION}
+                      variants={SLIDE_MOTION}
                       exit="exit"
                     >
                       {current?.art}
@@ -393,19 +361,19 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
               <footer className="flex items-center justify-between gap-4 px-6 pb-8 md:col-start-1 md:row-start-3 md:px-12 md:pb-10">
                 <GameButton
                   variant="light"
-                  className={ROUND}
+                  size="round"
                   aria-label="Back"
                   onClick={() => goTo(step - 1)}
                 >
-                  <ArrowLeftIcon className="size-5" />
+                  <ArrowLeftIcon />
                 </GameButton>
                 {last ? (
                   <GameButton onClick={finish} disabled={pending}>
                     {preview ? "Replay" : "Open my album"}
                   </GameButton>
                 ) : (
-                  <GameButton className={ROUND} aria-label="Next" onClick={() => goTo(step + 1)}>
-                    <ArrowRightIcon className="size-5" />
+                  <GameButton size="round" aria-label="Next" onClick={() => goTo(step + 1)}>
+                    <ArrowRightIcon />
                   </GameButton>
                 )}
               </footer>

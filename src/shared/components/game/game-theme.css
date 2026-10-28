@@ -169,6 +169,7 @@
    beside it. */
 @utility zoom-clue {
   zoom: 1.4;
+  --card-edge: calc(2px / 1.4);
 }
 
 /* The open card: the 176px album card zoomed to the large card's 300px (1.7), one step less where

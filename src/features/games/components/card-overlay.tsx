@@ -104,7 +104,7 @@ export function CardOverlay({
                 }}
               >
                 <motion.div
-                  className="screen-center fixed inset-0 z-50 overflow-y-auto *:min-w-app-min pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] font-game-sans text-base text-game-ink outline-none"
+                  className="screen-center fixed inset-0 z-50 overflow-y-auto overflow-x-hidden *:min-w-app-min pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] font-game-sans text-base text-game-ink outline-none"
                   // The layer stays until the card, flown by its layoutId, has landed (at once under
                   // reduced motion, which has no flight); then it goes in one cut.
                   exit={{ opacity: 0, transition: { ...CUT, delay: landedAt } }}
