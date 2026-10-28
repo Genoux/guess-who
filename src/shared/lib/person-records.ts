@@ -2,6 +2,7 @@ import "server-only";
 import { errorChain, isUniqueViolation } from "@inbeat/core/errors";
 import { and, eq, isNull } from "drizzle-orm";
 import { games, type Person, people } from "@/db/schema";
+import type { VerifiedIdentity } from "./clerk-identity";
 import { db } from "./db";
 
 export async function findPersonByClerkUserId(clerkUserId: string): Promise<Person | undefined> {
@@ -24,11 +25,39 @@ export async function hasGameForPlayerEmail(email: string): Promise<boolean> {
 }
 
 /** Links an unclaimed row; returns nothing if another Clerk user claimed it first. */
-export async function claimPerson(personId: string, clerkUserId: string, imageUrl?: string | null) {
+export async function claimPerson(
+  personId: string,
+  clerkUserId: string,
+  syncedSessionId: string,
+  { imageUrl, slackUserId }: Pick<VerifiedIdentity, "imageUrl" | "slackUserId">,
+) {
   const [person] = await db
     .update(people)
-    .set(imageUrl ? { clerkUserId, imageUrl } : { clerkUserId })
+    .set({
+      clerkUserId,
+      syncedSessionId,
+      ...(imageUrl && { imageUrl }),
+      ...(slackUserId && { slackUserId }),
+    })
     .where(and(eq(people.id, personId), isNull(people.clerkUserId)))
+    .returning();
+  return person;
+}
+
+/** Records the session the row was read from; a photo or Slack id Clerk lacks is never cleared. */
+export async function refreshPersonIdentity(
+  personId: string,
+  syncedSessionId: string,
+  { imageUrl, slackUserId }: Pick<VerifiedIdentity, "imageUrl" | "slackUserId">,
+) {
+  const [person] = await db
+    .update(people)
+    .set({
+      syncedSessionId,
+      ...(imageUrl && { imageUrl }),
+      ...(slackUserId && { slackUserId }),
+    })
+    .where(eq(people.id, personId))
     .returning();
   return person;
 }
@@ -51,6 +80,8 @@ export async function insertPerson(values: {
   email: string;
   name: string;
   imageUrl?: string | null;
+  slackUserId?: string | null;
+  syncedSessionId?: string | null;
 }) {
   try {
     const [person] = await db

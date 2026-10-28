@@ -36,6 +36,20 @@
       "when": 1793031567736,
       "tag": "0004_reveal_seen_at",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793194869023,
+      "tag": "0005_add_people_slack_user_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793195935354,
+      "tag": "0006_add_people_synced_session_id",
+      "breakpoints": true
     }
   ]
 }

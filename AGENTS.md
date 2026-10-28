@@ -159,9 +159,11 @@ Never commit, push or open a PR unless explicitly asked.
 
 - Sentry is wired by the template but has no project yet: `NEXT_PUBLIC_SENTRY_DSN` stays empty until
   the owner creates one. Errors still get `ERR_xxxx` ids and logs.
-- Clerk runs on accountless development keys (written to `.env.local` by `clerk init`) until the
-  owner claims the app and adds Slack, the allowlist and the `metadata` session claim. Until the
-  claim exists every user resolves to `member`.
+- Only Clerk's development instance is set up. It signs in with Slack through a Slack app in the inBeat
+  workspace (custom credentials): Clerk's shared Slack app is refused there with
+  `invalid_team_for_non_distributed_app`. Still to do: the production instance, with its Redirect URL
+  added to the same Slack app. Roles need the `{"metadata": "{{user.public_metadata}}"}` session
+  claim and `{"role": "admin"}` in the user's public metadata; without them a user is `member`.
 - No cron yet (phase 6): clue visibility and the day-14 reveal are computed on read, and an
   expired active game is ended as `revealed` by the first player or welcomer request after it
   (`// shortcut:` in `finalize-expired-game-record.ts`). No notifications are sent.
@@ -177,6 +179,8 @@ Never commit, push or open a PR unless explicitly asked.
 - `getViewerPerson()` creates or links the viewer's `people` row on first request (Clerk user id,
   else verified primary email) and links unclaimed games whose `player_email` matches. A row
   already linked to another Clerk user is never moved; an admin clears `clerk_user_id` first.
+  Once per Clerk session (`synced_session_id`) it re-reads the Clerk user for the Slack user id and
+  the Slack photo, so a photo changed in Slack shows after the next sign-in.
 - Emails (`people.email`, `games.player_email`) are stored normalized with `normalizeEmail`.
 - The game runs on Montréal time (`America/Toronto`): day 1 is `games.start_date`, clues land at
   09:00 on days 3, 6, 9 and 12, the reveal at 09:00 on day 14 (`features/games/lib/game-schedule.ts`).

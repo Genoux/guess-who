@@ -17,6 +17,7 @@ export const metadata: Metadata = {
 const CARD: MyCard = {
   name: "Sam Rivera",
   stickerNumber: 12,
+  imageUrl: null,
   audience: "teammate",
   fields: { teamId: "", location: "", fact: "", ask: "" },
   teams: Object.entries(TEAMS).map(([name, colors], index) => ({
