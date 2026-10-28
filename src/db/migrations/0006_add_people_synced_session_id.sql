@@ -1,0 +1,1 @@
+ALTER TABLE "people" ADD COLUMN "synced_session_id" text;

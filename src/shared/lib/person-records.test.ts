@@ -20,6 +20,7 @@ import {
   hasGameForPlayerEmail,
   insertPerson,
   linkPersonToGamesByEmail,
+  refreshPersonIdentity,
 } from "./person-records";
 
 const sent = () => {
@@ -55,16 +56,72 @@ describe("person lookups", () => {
 });
 
 describe("claimPerson", () => {
-  it("only claims a row that has no Clerk user yet", async () => {
-    await expect(claimPerson("person_1", "user_1")).resolves.toBeUndefined();
+  it("only claims a row that has no Clerk user yet, writing no null over its photo or Slack id", async () => {
+    await expect(
+      claimPerson("person_1", "user_1", "session_1", { imageUrl: null, slackUserId: null }),
+    ).resolves.toBeUndefined();
     expect(sent().sql).toMatch(
-      /update people set clerk_user_id = \$1, updated_at = \$2 where \(people\.id = \$3 and people\.clerk_user_id is null\) returning/,
+      /update people set clerk_user_id = \$1, synced_session_id = \$2, updated_at = \$3 where \(people\.id = \$4 and people\.clerk_user_id is null\) returning/,
     );
-    expect(sent().params).toEqual(["user_1", expect.any(String), "person_1"]);
+    expect(sent().params).toEqual(["user_1", "session_1", expect.any(String), "person_1"]);
+  });
+});
+
+describe("claimPerson identity", () => {
+  it("stores the image and Slack user id", async () => {
+    await claimPerson("person_1", "user_1", "session_1", {
+      imageUrl: "https://img/maya",
+      slackUserId: "U123",
+    });
+    expect(sent().sql).toMatch(/update people set .*slack_user_id = \$\d/);
+    expect(sent().params).toEqual(expect.arrayContaining(["user_1", "https://img/maya", "U123"]));
+  });
+});
+
+describe("refreshPersonIdentity", () => {
+  it("sets the Slack user id and the photo", async () => {
+    await refreshPersonIdentity("person_1", "session_2", {
+      imageUrl: "https://img/maya",
+      slackUserId: "U123",
+    });
+    expect(sent().sql).toMatch(
+      /update people set image_url = \$1, slack_user_id = \$2, synced_session_id = \$3, updated_at = \$4 where people\.id = \$5 returning/,
+    );
+    expect(sent().params).toEqual([
+      "https://img/maya",
+      "U123",
+      "session_2",
+      expect.any(String),
+      "person_1",
+    ]);
+  });
+
+  it("never writes null over a stored photo or Slack id", async () => {
+    await refreshPersonIdentity("person_1", "session_2", { imageUrl: null, slackUserId: null });
+    expect(sent().sql).toMatch(/set synced_session_id = \$1, updated_at = \$2 where/);
+  });
+
+  it("keeps the stored photo when the identity has none", async () => {
+    await refreshPersonIdentity("person_1", "session_2", { imageUrl: null, slackUserId: "U123" });
+    expect(sent().sql).toMatch(
+      /set slack_user_id = \$1, synced_session_id = \$2, updated_at = \$3 where/,
+    );
   });
 });
 
 describe("insertPerson", () => {
+  it("stores the Slack user id", async () => {
+    await insertPerson({
+      clerkUserId: "user_1",
+      email: "maya@inbeat.agency",
+      name: "Maya",
+      slackUserId: "U123",
+      syncedSessionId: "session_1",
+    });
+    expect(sent().sql).toMatch(/insert into people .*slack_user_id.*synced_session_id/);
+    expect(sent().params).toEqual(expect.arrayContaining(["U123", "session_1"]));
+  });
+
   it("skips only an email conflict, so other unique violations throw", async () => {
     await expect(
       insertPerson({ clerkUserId: "user_1", email: "maya@inbeat.agency", name: "Maya" }),

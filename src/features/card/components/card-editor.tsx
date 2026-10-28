@@ -72,6 +72,7 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
     city: values.location.trim() || "Your city",
     fact: values.fact.trim() || "Your random fact.",
     ask: values.ask.trim() || "What to ask you about",
+    photoUrl: card.imageUrl,
   };
 
   const set = (field: keyof CardFields) => (event: { target: { value: string } }) => {

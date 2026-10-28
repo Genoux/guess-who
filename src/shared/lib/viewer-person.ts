@@ -16,6 +16,7 @@ import {
   hasGameForPlayerEmail,
   insertPerson,
   linkPersonToGamesByEmail,
+  refreshPersonIdentity,
 } from "./person-records";
 
 export type ViewerPerson = Viewer & { person: Person };
@@ -24,19 +25,39 @@ export type ViewerPerson = Viewer & { person: Person };
 export const getViewerPerson = cache(async (): Promise<ViewerPerson> => {
   const viewer = await authorizeMember();
   try {
-    return { ...viewer, person: await syncViewerPerson(viewer.userId) };
+    return { ...viewer, person: await syncViewerPerson(viewer.userId, viewer.sessionId) };
   } catch (err) {
     if (isAppError(err, "forbidden")) redirect(ROUTES.notOnTheList);
     throw err;
   }
 });
 
-/** Finds the viewer's row, or links or creates it on first sign-in. */
-export async function syncViewerPerson(clerkUserId: string): Promise<Person> {
-  return (await findPersonByClerkUserId(clerkUserId)) ?? (await linkOrCreatePerson(clerkUserId));
+/** Finds the viewer's row, re-reading Clerk once per session, or links or creates it on first sign-in. */
+export async function syncViewerPerson(clerkUserId: string, sessionId: string): Promise<Person> {
+  const person = await findPersonByClerkUserId(clerkUserId);
+  if (!person) return linkOrCreatePerson(clerkUserId, sessionId);
+  if (person.syncedSessionId === sessionId) return person;
+  return refreshFromClerk(person, clerkUserId, sessionId);
 }
 
-async function linkOrCreatePerson(clerkUserId: string): Promise<Person> {
+// Only the photo and Slack id are refreshed, so a failure (Clerk unreachable, the Slack id already
+// on another row) keeps the stored row rather than failing every page of the session.
+async function refreshFromClerk(
+  person: Person,
+  clerkUserId: string,
+  sessionId: string,
+): Promise<Person> {
+  try {
+    const { imageUrl, slackUserId } = await getVerifiedIdentity(clerkUserId);
+    return (await refreshPersonIdentity(person.id, sessionId, { imageUrl, slackUserId })) ?? person;
+  } catch (err) {
+    if (isAppError(err, "forbidden")) throw err;
+    logger.warn("person refresh failed", { personId: person.id, clerkUserId });
+    return person;
+  }
+}
+
+async function linkOrCreatePerson(clerkUserId: string, sessionId: string): Promise<Person> {
   const identity = await getVerifiedIdentity(clerkUserId);
   const existing = await findPersonByEmail(identity.email);
 
@@ -52,8 +73,8 @@ async function linkOrCreatePerson(clerkUserId: string): Promise<Person> {
   }
 
   const person = existing
-    ? await claimPerson(existing.id, clerkUserId, identity.imageUrl)
-    : await insertPerson({ clerkUserId, ...identity });
+    ? await claimPerson(existing.id, clerkUserId, sessionId, identity)
+    : await insertPerson({ clerkUserId, syncedSessionId: sessionId, ...identity });
   if (!person) {
     // A concurrent request for the same user won the claim or insert.
     const raced = await findPersonByClerkUserId(clerkUserId);

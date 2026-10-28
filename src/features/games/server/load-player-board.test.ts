@@ -32,6 +32,8 @@ const person = (id: string, overrides: Partial<Person> = {}): Person => ({
   ask: `${id} ask`,
   imageUrl: `https://img.clerk.com/${id}`,
   photoKey: `people/${id}.jpg`,
+  slackUserId: null,
+  syncedSessionId: null,
   stickerNumber: id.length,
   hidden: false,
   createdAt: new Date(),

@@ -18,6 +18,7 @@ export async function getMyCard(): Promise<MyCard> {
   return {
     name: person.name,
     stickerNumber: person.stickerNumber,
+    imageUrl: person.imageUrl,
     audience,
     fields: {
       teamId: person.teamId ?? "",

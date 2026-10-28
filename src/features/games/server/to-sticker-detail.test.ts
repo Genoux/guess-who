@@ -16,6 +16,8 @@ const person: Person = {
   ask: "Ask me about night trains",
   imageUrl: "https://img.clerk.com/teammate",
   photoKey: "people/teammate.jpg",
+  slackUserId: null,
+  syncedSessionId: null,
   stickerNumber: 7,
   hidden: false,
   createdAt: new Date(),

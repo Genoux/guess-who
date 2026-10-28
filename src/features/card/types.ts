@@ -8,6 +8,7 @@ export type CardFields = { teamId: string; location: string; fact: string; ask: 
 export type MyCard = {
   name: string;
   stickerNumber: number;
+  imageUrl: string | null;
   audience: CardAudience;
   fields: CardFields;
   teams: CardTeam[];

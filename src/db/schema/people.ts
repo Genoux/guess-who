@@ -24,6 +24,10 @@ export const people = pgTable(
     ask: text("ask"),
     // Profile picture from Clerk: the Slack photo for people who sign in with Slack.
     imageUrl: text("image_url"),
+    // Slack member id (U…) from the Slack sign-in, for addressing notifications.
+    slackUserId: text("slack_user_id"),
+    // The Clerk session the row was last read from; a new sign-in re-reads it.
+    syncedSessionId: text("synced_session_id"),
     photoKey: text("photo_key"),
     stickerNumber: integer("sticker_number").notNull().generatedByDefaultAsIdentity(),
     hidden: boolean("hidden").notNull().default(false),
@@ -35,6 +39,7 @@ export const people = pgTable(
   },
   (t) => [
     uniqueIndex("people_clerk_user_id_unique").on(t.clerkUserId),
+    uniqueIndex("people_slack_user_id_unique").on(t.slackUserId),
     uniqueIndex("people_email_unique").on(t.email),
     uniqueIndex("people_sticker_number_unique").on(t.stickerNumber),
     index("people_team_id_idx").on(t.teamId),
