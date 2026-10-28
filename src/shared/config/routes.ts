@@ -15,4 +15,5 @@ export const ROUTES = {
   devAlbum: "/dev/album",
   devMission: "/dev/mission",
   devWelcomer: "/dev/welcomer",
+  devCard: "/dev/card",
 } as const;

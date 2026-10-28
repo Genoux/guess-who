@@ -39,9 +39,13 @@ export function GameTopNav({ logoHref, tabs, end, tone = "light", className }: G
       ) : (
         <span className={logoClass}>The Album</span>
       )}
-      <div className="col-span-full row-start-2 flex justify-center md:col-span-1 md:col-start-2 md:row-start-1">
-        {tabs}
-      </div>
+      {/* Only with tabs: an empty slot still takes the second row on mobile, and its row gap
+          pushes the logo and avatar above center. */}
+      {tabs ? (
+        <div className="col-span-full row-start-2 flex justify-center md:col-span-1 md:col-start-2 md:row-start-1">
+          {tabs}
+        </div>
+      ) : null}
       <div className="col-start-2 row-start-1 flex items-center gap-3 justify-self-end md:col-start-3">
         {end}
       </div>

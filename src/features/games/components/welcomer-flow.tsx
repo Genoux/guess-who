@@ -49,13 +49,13 @@ const DONE_ROTATIONS = [-4, 2, -1, 4];
 const STEPS = ["intro", "write", "done"] as const;
 type Step = (typeof STEPS)[number];
 
-/** Picked, then one clue at a time, then the status of the game. Always opens on the pick. */
 type WelcomerFlowProps = {
   desk: WelcomerDesk;
   /** Dev preview: clues are not saved. */
   preview?: boolean;
 };
 
+/** Picked, then one clue at a time, then the status of the game. Always opens on the pick. */
 export function WelcomerFlow({ desk, preview = false }: WelcomerFlowProps) {
   const [step, setStep] = useState<Step>("intro");
   const [direction, setDirection] = useState(0);
@@ -63,10 +63,10 @@ export function WelcomerFlow({ desk, preview = false }: WelcomerFlowProps) {
   const [clueDirection, setClueDirection] = useState(1);
   const [index, setIndex] = useState(0);
   const [drafts, setDrafts] = useState(() => desk.clues.map((clue) => clue.text ?? ""));
-  const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
   const clue = desk.clues[index];
-  const canEdit = desk.status === "active" && desk.clues.some((c) => c.editable);
+  const over = desk.status !== "active";
+  const canEdit = !over && desk.clues.some((c) => c.editable);
   const cluesSet = !canEdit || desk.clues.every((c) => !c.editable || c.text);
 
   // Back from clue 1 returns where the writing started: the pick, or the clue view when editing.
@@ -86,7 +86,6 @@ export function WelcomerFlow({ desk, preview = false }: WelcomerFlowProps) {
 
   const goTo = (next: number) => {
     setClueDirection(next < index ? -1 : 1);
-    setError(undefined);
     setIndex(next);
   };
 
@@ -104,10 +103,7 @@ export function WelcomerFlow({ desk, preview = false }: WelcomerFlowProps) {
       return;
     }
     const parsed = writeClueSchema.safeParse({ number: clue.number, text: drafts[index] ?? "" });
-    if (!parsed.success) {
-      setError(parsed.error.issues.find((issue) => issue.path[0] === "text")?.message);
-      return;
-    }
+    if (!parsed.success) return;
     if (preview) {
       advance();
       return;
@@ -135,12 +131,14 @@ export function WelcomerFlow({ desk, preview = false }: WelcomerFlowProps) {
             tabIndex={-1}
             className="max-w-180 font-game-serif text-3xl sm:text-hero outline-none"
           >
-            You’re {desk.playerFirstName}’s secret welcomer.
+            {over ? "You were" : "You’re"} {desk.playerFirstName}’s secret welcomer.
           </h1>
           <p className="text-balance text-game-border-strong text-base sm:text-lead">
-            {cluesSet
-              ? "Your clues are set. Now wait to be found."
-              : "Leave three clues. Then wait to be found."}
+            {over
+              ? "The game is over."
+              : cluesSet
+                ? "Your clues are set. Now wait to be found."
+                : "Leave three clues. Then wait to be found."}
           </p>
         </div>
         {cluesSet ? (
@@ -164,6 +162,7 @@ export function WelcomerFlow({ desk, preview = false }: WelcomerFlowProps) {
       if (!clue) return null;
       const hint = HINTS[clue.number];
       const last = index === desk.clues.length - 1;
+      const blank = clue.editable && !drafts[index]?.trim();
       return (
         <GameStage className="gap-8 pt-4">
           <Stepper
@@ -180,7 +179,9 @@ export function WelcomerFlow({ desk, preview = false }: WelcomerFlowProps) {
             >
               {hint.heading}
             </h1>
-            <p className="max-w-130 text-balance text-game-muted text-base sm:text-lead">{hint.hint}</p>
+            <p className="max-w-130 text-balance text-game-muted text-base sm:text-lead">
+              {hint.hint}
+            </p>
           </Reveal>
           <AnimatePresence mode="wait" initial={false} custom={clueDirection}>
             <motion.div
@@ -198,7 +199,6 @@ export function WelcomerFlow({ desk, preview = false }: WelcomerFlowProps) {
                 value={drafts[index] ?? ""}
                 placeholder={hint.placeholder}
                 locked={!clue.editable}
-                error={error}
                 onChange={(value) =>
                   setDrafts((current) => current.map((draft, i) => (i === index ? value : draft)))
                 }
@@ -216,11 +216,16 @@ export function WelcomerFlow({ desk, preview = false }: WelcomerFlowProps) {
               <ArrowLeftIcon />
             </GameButton>
             {last ? (
-              <GameButton disabled={pending} onClick={next}>
+              <GameButton disabled={pending || blank} onClick={next}>
                 Done
               </GameButton>
             ) : (
-              <GameButton size="round" aria-label="Next clue" disabled={pending} onClick={next}>
+              <GameButton
+                size="round"
+                aria-label="Next clue"
+                disabled={pending || blank}
+                onClick={next}
+              >
                 <ArrowRightIcon />
               </GameButton>
             )}
@@ -231,13 +236,17 @@ export function WelcomerFlow({ desk, preview = false }: WelcomerFlowProps) {
     done: () => (
       <GameStage className="gap-9 pt-4">
         <div className="flex flex-col items-center gap-3">
-          <h1 ref={focusHeading} tabIndex={-1} className="font-game-serif text-3xl sm:text-hero outline-none">
-            {desk.status === "active" ? "Your clues are set." : "That’s a wrap."}
+          <h1
+            ref={focusHeading}
+            tabIndex={-1}
+            className="font-game-serif text-3xl sm:text-hero outline-none"
+          >
+            {over ? "That’s a wrap." : "Your clues are set."}
           </h1>
           <p className="text-game-muted text-base sm:text-lead">
-            {desk.status === "active"
-              ? `We’ll send them for you, and tell you the moment ${desk.playerFirstName} finds you.`
-              : `${desk.playerFirstName} knows it was you`}
+            {over
+              ? `${desk.playerFirstName} knows it was you.`
+              : `${desk.playerFirstName} gets one every three days.`}
           </p>
         </div>
         <ul aria-label="Your clues" className="flex flex-wrap justify-center gap-5">

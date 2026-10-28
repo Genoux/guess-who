@@ -9,8 +9,8 @@ export const AFTER_LEAVE_S = TRANSITION.exit.duration;
 
 /**
  * One step of a wizard swapping for the next; `custom` is 1 forward, -1 back (the way back
- * mirrors), and 0 on first load, when nothing is leaving to wait for. Both views hold the same
- * grid cell, so the leaving one fades out in place.
+ * mirrors), and 0 on first load, when nothing is leaving to wait for. The leaving one fades out
+ * in place.
  */
 export const STEP_MOTION: Variants = {
   enter: (direction: number) => ({ opacity: 0, y: direction < 0 ? -32 : 24 }),
