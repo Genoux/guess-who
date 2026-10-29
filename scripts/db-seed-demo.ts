@@ -2,12 +2,16 @@
 //
 //   bun run db:seed:demo -- --player <email> [--day 6] [--welcomer <seeded email>]
 //   bun run db:seed:demo -- --as-welcomer <email> [--day 2]
+//   bun run db:seed:demo -- --admin-board
 //
 // --player: (re)creates a game where <email> is the new hire, on game day --day, with a seeded
 //   welcomer whose clues 2 to 4 are written. The email signs in as the player.
 // --as-welcomer: (re)creates a game where <email> is the secret welcomer of the seeded new hire
 //   Léa Dubois, with no clues written yet.
-// Both upsert 20 seeded teammates with filled cards across the five teams.
+// --admin-board: (re)creates ten new-hire games on @example.com and @gmail.example emails, one for
+//   each state of the admin New hires page (playing, starting soon, done, a late clue, no sign-in).
+//   Only games for those emails are replaced; 12 teammates stay free to welcome a new hire.
+// All modes upsert 20 seeded teammates with filled cards across the five teams.
 // --player also collects five stickers (two on the maybe list, one wrong guess) so the album looks
 //   mid-game; pass --fresh for an empty album.
 // While signed in on a dev server, the scenario menu on /play reseeds your own game in one click.
@@ -23,6 +27,7 @@ import {
   DEMO_TEAM_COUNT,
   DEMO_TEAMMATE_COUNT,
   DEMO_WELCOMER_EMAIL,
+  seedAdminBoard,
   seedDemoGame,
 } from "../src/features/games/server/seed-demo-game";
 
@@ -37,8 +42,21 @@ const { values } = parseArgs({
     welcomer: { type: "string", default: DEMO_WELCOMER_EMAIL },
     day: { type: "string" },
     fresh: { type: "boolean", default: false },
+    "admin-board": { type: "boolean", default: false },
   },
 });
+
+const pool = new Pool({ connectionString: url });
+
+if (values["admin-board"]) {
+  try {
+    const { games } = await seedAdminBoard(drizzle(pool, { schema }), new Date());
+    console.info(`Admin board ready: ${games} new-hire games. Open /admin as an admin.`);
+  } finally {
+    await pool.end();
+  }
+  process.exit(0);
+}
 
 const asWelcomer = values["as-welcomer"] ? normalizeEmail(values["as-welcomer"]) : undefined;
 const player = values.player ? normalizeEmail(values.player) : undefined;
@@ -53,7 +71,6 @@ if (!Number.isInteger(day) || day < 1 || day > 20) {
 }
 const welcomer = normalizeEmail(values.welcomer);
 
-const pool = new Pool({ connectionString: url });
 try {
   const { removed, startDate } = await seedDemoGame(drizzle(pool, { schema }), {
     player,

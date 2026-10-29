@@ -129,7 +129,9 @@ Never commit, push or open a PR unless explicitly asked.
   they learned (private notebook); four clues (day 3 is always the team, days 6, 9, 12 written by
   the welcomer); guess any collected sticker, a wrong guess rules that person out; found or revealed
   on day 14; then the new hire makes their own sticker and joins the album. Teammates only edit
-  their own card. Admins start games, pick welcomers, manage people.
+  their own card, and write their three secret clues there ahead of time; only a teammate with all three
+  written can be picked as a welcomer. Admins add new hires (the welcomer is picked at random) and fix a game's email or
+  first day until the new hire signs in.
 - Design source: the canvas at https://claude.ai/artifact/9V2NQ7cHj3dC2rRtjs4ovj and `docs/plan.md`.
 
 ### Stack deltas
@@ -151,7 +153,7 @@ Never commit, push or open a PR unless explicitly asked.
 
 | What | Why | Owner |
 |---|---|---|
-| Player screens use a game UI layer in `src/shared/components/game` built on Fieldtrip tokens and fonts, not `@inbeat/ui` | The product is a game with the Fieldtrip brand; `@inbeat/ui` stays for admin screens | John |
+| Player and admin screens use a game UI layer in `src/shared/components/game` built on Fieldtrip tokens and fonts, not `@inbeat/ui` | The product is a game with the Fieldtrip brand, admin included | John |
 | `canvas-confetti` for confetti, beside `motion` | Use an existing library instead of hand-built sparkle | John |
 | PR-title lint and release-please in this app | Versioned releases and a changelog for the app | John |
 
@@ -184,7 +186,11 @@ Never commit, push or open a PR unless explicitly asked.
 - Emails (`people.email`, `games.player_email`) are stored normalized with `normalizeEmail`.
 - The game runs on Montréal time (`America/Toronto`): day 1 is `games.start_date`, clues land at
   09:00 on days 3, 6, 9 and 12, the reveal at 09:00 on day 14 (`features/games/lib/game-schedule.ts`).
-  Clue 1 is generated from the welcomer's team; clues 2 to 4 are the welcomer's rows.
+  Clue 1 is generated from the welcomer's team; clues 2 to 4 are the welcomer's own, one `welcomer_clues`
+  row per (person, number), kept across games and reused when they are picked again. Teammates write them ahead of time on `/card`
+  (and on the Welcomer page); `eligibleWelcomers` requires all three. While their game is
+  playing (day 1 on) a saved clue is read-only; an unwritten one can still be written once. The per-game
+  `clues` table is legacy, to be dropped in a contract migration.
 - Player pages read through `loadPlayerBoard()` and the view shapers; never pass a raw `games`,
   `people` or `collections` row to a client component.
 - Every player screen fills the viewport and centers its content vertically: `GameStage` always does it,
@@ -199,6 +205,9 @@ Never commit, push or open a PR unless explicitly asked.
 - Tooltips, player screens included, use `Tooltip` from `@inbeat/ui/components/tooltip` (text goes in
   `content`; `TooltipProvider` is mounted in the root layout). The trigger component must forward its
   props and ref, or the tooltip never opens.
+- Teams are groups of Deel departments (all entities: IB, CM, CA, AAG), defined once in
+  `src/entities/teams.ts`; the seeds and `teamForDeelDepartment` read that list. Renames go through
+  `formerName` so `seedTeams` renames the row in place.
 - Player-facing copy stays short and plain: one line telling the player what to do, no cute or
   wordy phrasing.
 

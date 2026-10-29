@@ -1,3 +1,4 @@
+import { TooltipProvider } from "@inbeat/ui/components/tooltip";
 import type { Decorator, Preview } from "@storybook/nextjs-vite";
 import { GameMotionConfig } from "../src/shared/components/game/game-motion-config";
 import "../src/app/globals.css";
@@ -11,12 +12,14 @@ const GAME_BACKGROUNDS = {
   talent: { name: "Stage pink", value: "#FF97AB" },
 };
 
-// GameShell also mounts the toaster and fills the viewport, so stories take only its base look.
+// The app's root layout mounts the TooltipProvider. GameShell also mounts the toaster and fills the viewport, so stories take only its base look.
 const withGameBase: Decorator = (Story) => (
   <div className="font-game-sans text-base text-game-ink">
-    <GameMotionConfig>
-      <Story />
-    </GameMotionConfig>
+    <TooltipProvider>
+      <GameMotionConfig>
+        <Story />
+      </GameMotionConfig>
+    </TooltipProvider>
   </div>
 );
 

@@ -50,6 +50,13 @@
       "when": 1793195935354,
       "tag": "0006_add_people_synced_session_id",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793289630223,
+      "tag": "0007_welcomer_clues",
+      "breakpoints": true
     }
   ]
 }

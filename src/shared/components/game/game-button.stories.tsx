@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { ArrowRightIcon } from "lucide-react";
+import { ArrowRightIcon, PencilIcon } from "lucide-react";
 import { GameButton } from "./game-button";
 
 const VARIANTS = ["cta", "yellow", "light", "on-dark", "link"] as const;
-const SIZES = ["lg", "default", "sm"] as const;
+const SIZES = ["lg", "default", "sm", "round", "round-sm"] as const;
 
 const meta = {
   title: "Game/Controls/GameButton",
@@ -31,6 +31,13 @@ export const OnDark: Story = {
 export const Link: Story = { args: { variant: "link", children: "Not sure yet" } };
 export const Large: Story = { args: { size: "lg" } };
 export const Small: Story = { args: { size: "sm" } };
+export const IconOnlySmall: Story = {
+  args: {
+    size: "round-sm",
+    "aria-label": "Edit",
+    children: <PencilIcon aria-hidden />,
+  },
+};
 export const Disabled: Story = { args: { disabled: true } };
 export const WithIcon: Story = {
   args: {

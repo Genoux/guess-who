@@ -1,37 +1,41 @@
+import type { WelcomerClue } from "@/db/schema";
 import type { Clue, Game } from "../types";
 import { CLUE_DAYS, CLUE_NUMBERS, type ClueNumber, clueReleaseAt, gameDay } from "./game-schedule";
 
 const NEVER = new Date(0);
 
+/** Clue 1: generated from the welcomer's team. */
+export const teamClueText = (teamName: string | null) =>
+  teamName ? `Works in ${teamName}.` : null;
+
 /** What the player reads when a clue landed but the welcomer never wrote it. */
 export const MISSING_CLUE_TEXT = "Your welcomer kept this one to themselves.";
 
 /**
- * The four clues of a game. Release times come from the schedule, not the rows, so a game
- * without clue rows still has its calendar. Clue 1 is generated from the welcomer's team;
- * clues 2 to 4 are the welcomer's text, null until written.
+ * The four clues of a game. Release times come from the schedule. Clue 1 is generated from the
+ * welcomer's team; clues 2 to 4 are the welcomer's own clues, null until they write them.
  */
 export function buildGameClues(
   game: Pick<Game, "id" | "startDate">,
-  rows: readonly Clue[],
+  welcomerClues: readonly Pick<WelcomerClue, "number" | "text" | "createdAt" | "updatedAt">[],
   welcomerTeamName: string | null,
 ): Clue[] {
   return CLUE_NUMBERS.map((number) => {
-    const row = rows.find((clue) => clue.gameId === game.id && clue.number === number);
+    const own = welcomerClues.find((clue) => clue.number === number);
     const text =
       number === 1
         ? welcomerTeamName
           ? `Works in ${welcomerTeamName}.`
           : null
-        : (row?.text ?? null);
+        : (own?.text ?? null);
     return {
-      id: row?.id ?? `${game.id}:${number}`,
+      id: `${game.id}:${number}`,
       gameId: game.id,
       number,
       text,
       releaseAt: clueReleaseAt(game.startDate, number),
-      createdAt: row?.createdAt ?? NEVER,
-      updatedAt: row?.updatedAt ?? NEVER,
+      createdAt: own?.createdAt ?? NEVER,
+      updatedAt: own?.updatedAt ?? NEVER,
     };
   });
 }

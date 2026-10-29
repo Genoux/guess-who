@@ -12,11 +12,11 @@ import {
   findLatestPlayerGame,
   findPersonById,
   listAlbumPeople,
-  listClueRows,
   listCollections,
   listGuesses,
   listShortlistedIds,
   listTeams,
+  listWelcomerClues,
   type Team,
 } from "./game-records";
 import { isInAlbum } from "./is-in-album";
@@ -89,7 +89,7 @@ export const loadPlayerBoard = cache(async (): Promise<PlayerBoard | null> => {
       listCollections(game.id),
       listShortlistedIds(game.id),
       listGuesses(game.id),
-      listClueRows(game.id),
+      listWelcomerClues(game.welcomerPersonId),
       findPersonById(game.welcomerPersonId),
     ]);
 

@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { type MouseEvent, useEffect, useState } from "react";
 import { GameBook } from "@/shared/components/game/game-book";
-import { gameCn } from "@/shared/components/game/game-cn";
 import { GameFilterMenu } from "@/shared/components/game/game-filter-menu";
 import { stagger, TRANSITION } from "@/shared/components/game/game-motion";
 import { Sticker } from "@/shared/components/game/sticker";
@@ -21,7 +20,7 @@ const EVERYONE = "all";
 const byName = new Intl.Collator("en", { sensitivity: "base" });
 
 type AlbumBoardProps = {
-  teams: { id: string; name: string; count: number }[];
+  teams: { id: string; name: string; color: string; count: number }[];
   stickers: AlbumSticker[];
   /** Locked stickers open while the game is on. */
   active: boolean;
@@ -34,7 +33,7 @@ const isPlainClick = (event: MouseEvent) =>
   event.button === 0 && !(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey);
 
 /**
- * The album page: team pills and a status menu over one grid of stickers, each opening in place.
+ * The album page: a team menu and a status menu over one grid of stickers, each opening in place.
  * Each control counts what it would show combined with the other one.
  */
 export function AlbumBoard({
@@ -52,10 +51,12 @@ export function AlbumBoard({
     teamId === EVERYONE || sticker.teamId === teamId;
   const countWhere = (teamId: string, filter: StickerFilter) =>
     stickers.filter((s) => inTeam(s, teamId) && matchesStickerFilter(s, filter)).length;
-  const teamFilters = [{ id: EVERYONE, name: "Everyone" }, ...teams].map((filter) => ({
-    ...filter,
-    count: countWhere(filter.id, status),
-  }));
+  const teamFilters = [{ id: EVERYONE, name: "Everyone", color: undefined }, ...teams].map(
+    (filter) => ({
+      ...filter,
+      count: countWhere(filter.id, status),
+    }),
+  );
   const statusOptions = STICKER_FILTERS.map((filter) => ({
     ...filter,
     count: countWhere(team, filter.value),
@@ -93,43 +94,22 @@ export function AlbumBoard({
     // Positioned so it slides over the AlbumCover above it.
     <GameBook className="relative px-2 pt-6 pb-10 sm:px-6 sm:pt-8">
       <div className="flex w-full flex-col gap-8">
-        <div className="flex w-full items-center justify-between gap-3 md:flex-wrap">
-          {/* A phone has no room for a row of team pills: the team is a menu like the status. */}
+        <div className="flex w-full items-center justify-between gap-3">
           <GameFilterMenu
             label="Team"
+            align="start"
             value={team}
-            options={teamFilters.map(({ id, name, count }) => ({ value: id, label: name, count }))}
+            options={teamFilters.map(({ id, name, count, color }) => ({
+              value: id,
+              label: name,
+              count,
+              color,
+            }))}
             onValueChange={(next) => {
               setTeam(next);
               setFiltered(true);
             }}
-            className="md:hidden"
           />
-          <div role="toolbar" aria-label="Teams" className="hidden flex-wrap gap-1.5 md:flex">
-            {teamFilters.map((filter) => {
-              const on = filter.id === team;
-              return (
-                <button
-                  key={filter.id}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => {
-                    setTeam(filter.id);
-                    setFiltered(true);
-                  }}
-                  className={gameCn(
-                    "inline-flex h-10 flex-none cursor-pointer items-center gap-2 rounded-full px-4 text-button-sm outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2",
-                    on
-                      ? "bg-game-ink text-white"
-                      : "bg-game-surface text-game-ink shadow-edge hover:bg-game-sidebar",
-                  )}
-                >
-                  {filter.name}
-                  <span className="text-small opacity-60">{filter.count}</span>
-                </button>
-              );
-            })}
-          </div>
           <GameFilterMenu
             label="Show"
             value={status}

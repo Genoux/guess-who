@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { CountChip } from "./count-chip";
 import { jonah } from "./fixtures";
 
-const VARIANTS = ["default", "soft", "yellow", "dark"] as const;
+const VARIANTS = ["default", "soft", "yellow", "dark", "found"] as const;
 const SIZES = ["default", "sm"] as const;
 
 const meta = {
@@ -23,6 +23,7 @@ type Story = StoryObj<typeof meta>;
 export const Playground: Story = {};
 export const Yellow: Story = { args: { variant: "yellow", children: "No. 21 · Talent" } };
 export const Dark: Story = { args: { variant: "dark", children: "8 days left" } };
+export const Found: Story = { args: { variant: "found", children: "Found on day 8" } };
 export const Small: Story = { args: { size: "sm" } };
 export const WithTeamDot: Story = { args: { dotColor: jonah.color, children: jonah.name } };
 

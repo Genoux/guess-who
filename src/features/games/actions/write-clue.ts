@@ -4,22 +4,16 @@ import { ok } from "@inbeat/core/result";
 import { action } from "@inbeat/next/action";
 import { ROUTES } from "@/shared/config/routes";
 import { writeClueSchema } from "../schemas";
-import { authorizeWelcomer } from "../server/authorize-welcomer";
+import { authorizeTeammate } from "../server/authorize-teammate";
 import { writeClueRecord } from "../server/write-clue-record";
 
 export const writeClue = action({
   name: "games.writeClue",
   schema: writeClueSchema,
-  authorize: authorizeWelcomer,
-  run: async ({ number, text }, welcomer) => {
-    await writeClueRecord({
-      game: welcomer.game,
-      viewerPersonId: welcomer.personId,
-      number,
-      text,
-      now: new Date(),
-    });
+  authorize: authorizeTeammate,
+  run: async ({ number, text }, teammate) => {
+    await writeClueRecord({ personId: teammate.personId, number, text, now: new Date() });
     return ok();
   },
-  revalidate: () => [ROUTES.welcomer],
+  revalidate: () => [ROUTES.clues, ROUTES.welcomer],
 });

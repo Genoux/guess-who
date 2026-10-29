@@ -82,7 +82,7 @@ function OverlayBody({ target, find, onFound, flightId, rotation, onClose }: Ove
         />
       </motion.div>
 
-      <div className="w-full px-4 py-8 md:px-10 flex items-center justify-center">
+      <div className="flex w-full items-center justify-center px-4 py-6 md:px-10">
         <CollectDetail
           target={target}
           find={find}

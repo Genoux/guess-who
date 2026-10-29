@@ -13,8 +13,10 @@ describe("isPublicPath", () => {
     "/dev/welcome",
     "/dev/album",
     "/dev/mission",
-    "/dev/welcomer",
     "/dev/card",
+    "/dev/welcomer",
+    "/dev/admin",
+    "/dev/clues",
   ])("lets %s through without a session", (path) => {
     expect(isPublicPath(path)).toBe(true);
   });
@@ -22,6 +24,7 @@ describe("isPublicPath", () => {
   it.each([
     "/",
     "/card",
+    "/clues",
     "/play",
     "/admin",
     "/api/health/deep",

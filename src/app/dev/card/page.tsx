@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { TEAM_DEFINITIONS } from "@/entities/teams";
 import { CardEditor } from "@/features/card/components/card-editor";
 import type { MyCard } from "@/features/card/types";
 import { TeammateTopNav } from "@/features/games/components/teammate-top-nav";
-import { TEAMS } from "@/shared/components/game/fixtures";
 import { GameShell } from "@/shared/components/game/game-shell";
 import { GameStage } from "@/shared/components/game/game-stage";
 import { env } from "@/shared/config/env";
@@ -20,10 +20,11 @@ const CARD: MyCard = {
   imageUrl: null,
   audience: "teammate",
   fields: { teamId: "", location: "", fact: "", ask: "" },
-  teams: Object.entries(TEAMS).map(([name, colors], index) => ({
+  teams: TEAM_DEFINITIONS.map(({ name, color, tint }, index) => ({
     id: `00000000-0000-4000-8000-00000000000${index + 1}`,
     name,
-    ...colors,
+    color,
+    tint,
   })),
 };
 
@@ -38,7 +39,7 @@ export default function CardPreviewPage() {
 
   return (
     <GameShell>
-      <TeammateTopNav current="card" welcomer={false} />
+      <TeammateTopNav current="card" admin={false} welcomer={false} />
       <GameStage>
         <CardEditor card={CARD} preview />
       </GameStage>

@@ -87,6 +87,12 @@ export function isPastReveal(startDate: string, now: Date): boolean {
   return now >= revealAt(startDate);
 }
 
+/** The calendar date (YYYY-MM-DD) of an instant in the game time zone. */
+export function todayInGameZone(now: Date): string {
+  const { year, month, day } = zoneParts(now);
+  return new Date(Date.UTC(year, month - 1, day)).toISOString().slice(0, 10);
+}
+
 /** The game day `now` falls on (1 on the start date); 0 or less before the game starts. */
 export function gameDay(startDate: string, now: Date): number {
   const p = zoneParts(now);

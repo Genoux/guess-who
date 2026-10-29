@@ -125,6 +125,9 @@
   --transition-duration-slower: 640ms;
 }
 
+/* A device where hovering works: controls can wait for a hover, and tooltips carry their words. */
+@custom-variant hoverable (@media (hover: hover));
+
 /* A swap of game screens (GameShell's ViewTransition): one dissolve, old into new. */
 ::view-transition-group(.game-page),
 ::view-transition-old(.game-page),

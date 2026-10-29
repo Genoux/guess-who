@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { TEAMS } from "./fixtures";
 import { GameField, type GameFieldProps } from "./game-field";
 
 const meta = {
@@ -40,9 +41,9 @@ export const Select: Story = {
     placeholder: "Pick your team",
     defaultValue: "",
     options: [
-      { value: "creative", label: "Creative" },
-      { value: "strategy", label: "Strategy" },
-      { value: "talent", label: "Talent" },
+      { value: "creative", label: "Creative", color: TEAMS.Creative.color },
+      { value: "strategy", label: "Strategy", color: TEAMS.Strategy.color },
+      { value: "talent", label: "Talent", color: TEAMS.Talent.color },
     ],
   },
 };

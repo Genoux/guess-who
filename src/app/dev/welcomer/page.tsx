@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { WelcomerFlow } from "@/features/games/components/welcomer-flow";
-import type { WelcomerDesk } from "@/features/games/queries/get-welcomer-desk";
+import { WelcomerHome } from "@/features/games/components/welcomer-home";
 import { env } from "@/shared/config/env";
 import { isCatalogueEnabled } from "@/shared/lib/catalogue-access";
 
@@ -10,22 +9,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const DESK: WelcomerDesk = {
-  playerFirstName: "Léa",
-  status: "active",
-  clues: [
-    { number: 1, text: "Works in Strategy.", editable: false },
-    { number: 2, text: null, editable: true },
-    { number: 3, text: null, editable: true },
-    { number: 4, text: null, editable: true },
-  ],
-};
-
-/** The welcomer's pick and clue writer with sample clues, for local dev and previews only. */
+/** The welcomer's ink page with a sample new hire, for local dev and previews only. */
 export default function WelcomerPreviewPage() {
   if (!isCatalogueEnabled({ nodeEnv: env.NODE_ENV, vercelEnv: env.NEXT_PUBLIC_VERCEL_ENV })) {
     notFound();
   }
 
-  return <WelcomerFlow desk={DESK} preview />;
+  return <WelcomerHome playerFirstName="Léa" cluesSet={false} />;
 }

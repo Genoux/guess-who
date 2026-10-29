@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Person } from "@/db/schema";
-import type { Clue, Collection, Game } from "../types";
+import type { Collection, Game } from "../types";
 
 const mocks = vi.hoisted(() => ({
   getViewerPerson: vi.fn(),
@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
   listCollections: vi.fn(),
   listShortlistedIds: vi.fn(),
   listGuesses: vi.fn(),
-  listClueRows: vi.fn(),
+  listWelcomerClues: vi.fn(),
 }));
 vi.mock("@/shared/lib/viewer-person", () => ({ getViewerPerson: mocks.getViewerPerson }));
 vi.mock("./game-records", () => mocks);
@@ -79,12 +79,9 @@ const collection = (personId: string, note: string): Collection => ({
   updatedAt: new Date(),
 });
 
-const clue = (number: number, text: string): Clue => ({
-  id: `clue_${number}`,
-  gameId: "game_1",
+const clue = (number: number, text: string) => ({
   number,
   text,
-  releaseAt: new Date(),
   createdAt: new Date(),
   updatedAt: new Date(),
 });
@@ -109,7 +106,10 @@ const setUp = (status: Game["status"], revealSeenAt: Date | null = null) => {
   mocks.listGuesses.mockResolvedValue([
     { personId: "jonah", correct: false, createdAt: new Date() },
   ]);
-  mocks.listClueRows.mockResolvedValue([clue(2, "Never owned a car"), clue(3, "Plays the cello")]);
+  mocks.listWelcomerClues.mockResolvedValue([
+    clue(2, "Never owned a car"),
+    clue(3, "Plays the cello"),
+  ]);
 };
 
 beforeEach(() => {

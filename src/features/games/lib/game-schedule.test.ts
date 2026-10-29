@@ -8,6 +8,7 @@ import {
   isPastReveal,
   releaseAtForDay,
   revealAt,
+  todayInGameZone,
   zonedTime,
 } from "./game-schedule";
 
@@ -79,5 +80,12 @@ describe("gameDay and daysLeft", () => {
 describe("isClueNumber", () => {
   it("accepts 1 to 4 only", () => {
     expect([0, 1, 2, 3, 4, 5].map(isClueNumber)).toEqual([false, true, true, true, true, false]);
+  });
+});
+
+describe("todayInGameZone", () => {
+  it("reads the calendar date in Montréal, not UTC", () => {
+    expect(todayInGameZone(new Date("2026-10-29T02:30:00Z"))).toBe("2026-10-28");
+    expect(todayInGameZone(new Date("2026-10-29T12:30:00Z"))).toBe("2026-10-29");
   });
 });

@@ -1,29 +1,27 @@
 import "server-only";
-import { clues } from "@/db/schema";
+import { welcomerClues } from "@/db/schema";
 import { db } from "@/shared/lib/db";
-import { type ClueNumber, clueReleaseAt } from "../lib/game-schedule";
-import type { Game } from "../types";
+import type { ClueNumber } from "../lib/game-schedule";
 import { assertCanWriteClue } from "./assert-can-write-clue";
+import { findActiveWelcomerGame } from "./find-active-welcomer-game";
+import { listWelcomerClues } from "./game-records";
 
-type WriteClueInput = {
-  game: Pick<Game, "id" | "welcomerPersonId" | "status" | "startDate">;
-  viewerPersonId: string;
-  number: ClueNumber;
-  text: string;
-  now: Date;
-};
+type WriteClueInput = { personId: string; number: ClueNumber; text: string; now: Date };
 
-/** Saves the welcomer's clue; it can change until the moment it lands. */
-export async function writeClueRecord({ game, viewerPersonId, number, text, now }: WriteClueInput) {
-  const releaseAt = clueReleaseAt(game.startDate, number);
+/** Saves a teammate's own clue; it stays with them for any game they are picked for. */
+export async function writeClueRecord({ personId, number, text, now }: WriteClueInput) {
+  const [activeGame, saved] = await Promise.all([
+    findActiveWelcomerGame(personId, now),
+    listWelcomerClues(personId),
+  ]);
   assertCanWriteClue({
-    game,
-    clue: { gameId: game.id, number, releaseAt },
-    viewerPersonId,
+    activeGame,
+    number,
+    savedText: saved.find((clue) => clue.number === number)?.text ?? null,
     now,
   });
   await db
-    .insert(clues)
-    .values({ gameId: game.id, number, text, releaseAt })
-    .onConflictDoUpdate({ target: [clues.gameId, clues.number], set: { text, releaseAt } });
+    .insert(welcomerClues)
+    .values({ personId, number, text })
+    .onConflictDoUpdate({ target: [welcomerClues.personId, welcomerClues.number], set: { text } });
 }

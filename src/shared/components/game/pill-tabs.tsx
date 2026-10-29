@@ -11,8 +11,8 @@ export type PillTab = {
 };
 
 type PillTabsProps = {
-  /** Up to three tabs. */
-  tabs: readonly [PillTab] | readonly [PillTab, PillTab] | readonly [PillTab, PillTab, PillTab];
+  /** Up to four tabs. */
+  tabs: readonly PillTab[];
   label?: string;
   /** ink for a GameTopNav on an ink page. */
   tone?: "light" | "ink";
@@ -48,7 +48,9 @@ export function PillTabs({ tabs, label = "Main", tone = "light", className }: Pi
           href={tab.href}
           aria-current={tab.current ? "page" : undefined}
           className={gameCn(
-            "inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-full px-3 text-base md:h-11 md:flex-none md:px-5 no-underline outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2",
+            "inline-flex h-10 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full px-3 text-base md:h-11 md:flex-none md:px-5 no-underline outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2",
+            // Four tabs share a phone's width: tighter padding and a smaller label keep each on one line.
+            tabs.length > 3 && "max-md:px-1 max-md:text-small",
             TONES[tone].tab,
             tab.current && TONES[tone].current,
           )}

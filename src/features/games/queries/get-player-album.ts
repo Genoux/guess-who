@@ -12,7 +12,7 @@ export type PlayerAlbum = {
   introSeen: boolean;
   newClue: { number: number; day: number } | null;
   outcome: GameOutcome;
-  teams: { id: string; name: string; count: number }[];
+  teams: { id: string; name: string; color: string; count: number }[];
   stickers: AlbumSticker[];
 };
 
@@ -28,7 +28,7 @@ export async function getPlayerAlbum(): Promise<PlayerAlbum | null> {
       ? { number: board.newClue.number, day: clueDay(board.newClue.number) }
       : null,
     outcome: toGameOutcome(board),
-    teams: board.teams.map(({ id, name, count }) => ({ id, name, count })),
+    teams: board.teams.map(({ id, name, color, count }) => ({ id, name, color, count })),
     stickers: board.stickers.map((sticker) => ({
       ...toStickerDetail(sticker),
       teamId: sticker.teamId,

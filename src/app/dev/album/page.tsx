@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { TEAM_DEFINITIONS } from "@/entities/teams";
 import { AlbumBoard } from "@/features/games/components/album-board";
 import type { AlbumSticker } from "@/features/games/queries/get-player-album";
 import { ana, jonah, noor } from "@/shared/components/game/fixtures";
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const TEAM_IDS = { Creative: "creative", Strategy: "strategy", Talent: "talent" } as const;
+const idOf = (name: string) => name.toLowerCase().replace(/[^a-z]+/g, "-");
 
 const NAMES = [
   "Mira Okafor",
@@ -29,6 +30,12 @@ const NAMES = [
 const lockedPerson = ({ city: _city, fact: _fact, photoUrl: _photoUrl, ...rest }: StickerPerson) =>
   rest;
 
+// Spread over all eight teams, so the team menu shows the real case.
+const inTeam = (person: StickerPerson, index: number): StickerPerson => {
+  const team = TEAM_DEFINITIONS[index % TEAM_DEFINITIONS.length];
+  return team ? { ...person, team: team.name, color: team.color, tint: team.tint } : person;
+};
+
 const people: StickerPerson[] = [
   noor,
   jonah,
@@ -37,7 +44,7 @@ const people: StickerPerson[] = [
     const base = [noor, jonah, ana][index % 3] as StickerPerson;
     return { ...base, name, number: 10 + index, photoUrl: null };
   }),
-];
+].map((person, index) => inTeam(person, index));
 
 // One collected card of each state, so every badge and the photo can be checked in motion.
 const SHORTLISTED_INDEX = 4;
@@ -49,7 +56,7 @@ const stickers: AlbumSticker[] = people.map((person, index) => {
   const ruled = index === RULED_INDEX;
   return {
     id: `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
-    teamId: TEAM_IDS[person.team as keyof typeof TEAM_IDS],
+    teamId: idOf(person.team),
     firstName: person.name.split(" ")[0] ?? person.name,
     person: collected ? person : lockedPerson(person),
     mode: !collected ? "locked" : shortlisted ? "maybe" : ruled ? "ruled" : "collected",
@@ -60,11 +67,12 @@ const stickers: AlbumSticker[] = people.map((person, index) => {
   };
 });
 
-const teams = Object.entries(TEAM_IDS).map(([name, id]) => ({
-  id,
+const teams = TEAM_DEFINITIONS.map(({ name, color }) => ({
+  id: idOf(name),
   name,
-  count: stickers.filter((sticker) => sticker.teamId === id).length,
-}));
+  color,
+  count: stickers.filter((sticker) => sticker.teamId === idOf(name)).length,
+})).filter((team) => team.count > 0);
 
 /** The player's album with sample stickers, for local dev and previews only. */
 export default function AlbumPreviewPage() {

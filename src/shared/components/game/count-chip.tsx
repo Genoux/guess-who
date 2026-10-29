@@ -12,6 +12,8 @@ const countChipVariants = cva(
         soft: "bg-game-ink/6 text-game-ink",
         yellow: "bg-game-shortlist text-game-ink",
         dark: "bg-game-ink-soft text-white",
+        /** A mission accomplished, in the found orange. */
+        found: "bg-game-found/14 text-game-error",
       },
       size: {
         default: "h-9 px-3.5 text-sm",

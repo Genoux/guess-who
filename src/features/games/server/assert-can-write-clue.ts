@@ -1,23 +1,30 @@
 import "server-only";
 import { AppError } from "@inbeat/core/errors";
-import type { Clue, Game } from "../types";
+import { hasStarted } from "../lib/new-hire-progress";
+import type { Game } from "../types";
 
-/** Clue 1 is the welcomer's team and is never written by hand. */
+/** Clue 1 is the teammate's team and is never written by hand. */
 const FIRST_WRITABLE_CLUE = 2;
 
 type ClueWriteCheck = {
-  game: Pick<Game, "id" | "welcomerPersonId" | "status">;
-  clue: Pick<Clue, "gameId" | "number" | "releaseAt">;
-  viewerPersonId: string;
+  /** The game they are welcoming now, if any. */
+  activeGame: Pick<Game, "startDate"> | null;
+  number: number;
+  /** What they already saved for this clue, if anything. */
+  savedText: string | null;
   now: Date;
 };
 
-export function assertCanWriteClue({ game, clue, viewerPersonId, now }: ClueWriteCheck) {
-  if (game.welcomerPersonId !== viewerPersonId) {
-    throw new AppError("forbidden", "viewer is not the welcomer of this game");
+/**
+ * A teammate writes their own clues whenever they like, until a game they welcome is playing: then a
+ * saved clue is read-only, so the player's card never changes under them, and one never written can
+ * still be added.
+ */
+export function assertCanWriteClue({ activeGame, number, savedText, now }: ClueWriteCheck) {
+  if (number < FIRST_WRITABLE_CLUE) throw new AppError("forbidden", "clue is generated");
+  if (savedText && activeGame && hasStarted(activeGame.startDate, now)) {
+    throw new AppError("forbidden", "saved clue is locked while the game is playing", {
+      safeMessage: "Locked while the new hire is playing.",
+    });
   }
-  if (clue.gameId !== game.id) throw new AppError("forbidden", "clue belongs to another game");
-  if (game.status !== "active") throw new AppError("conflict", "game is not active");
-  if (clue.number < FIRST_WRITABLE_CLUE) throw new AppError("forbidden", "clue is generated");
-  if (now >= clue.releaseAt) throw new AppError("conflict", "clue already released");
 }

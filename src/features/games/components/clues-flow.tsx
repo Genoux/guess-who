@@ -5,72 +5,61 @@ import { AnimatePresence, motion } from "motion/react";
 import { type ReactNode, useCallback, useRef, useState, useTransition } from "react";
 import { ClueCard } from "@/shared/components/game/clue-card";
 import { GameButton } from "@/shared/components/game/game-button";
+import { GameModal } from "@/shared/components/game/game-modal";
+import { GameModalActions } from "@/shared/components/game/game-modal-actions";
 import { stagger, TRANSITION } from "@/shared/components/game/game-motion";
 import { GameShell } from "@/shared/components/game/game-shell";
 import { GameStage } from "@/shared/components/game/game-stage";
 import { gameToast } from "@/shared/components/game/game-toaster";
+import { GameTooltip } from "@/shared/components/game/game-tooltip";
 import { Reveal } from "@/shared/components/game/reveal";
 import { Stepper } from "@/shared/components/game/stepper";
 import { celebrate } from "@/shared/lib/celebrate";
 import { writeClue } from "../actions/write-clue";
-import type { WelcomerClue, WelcomerDesk } from "../queries/get-welcomer-desk";
+import { CLUE_HINTS } from "../lib/clue-hints";
+import type { CluesDesk } from "../queries/get-clues-desk";
 import { writeClueSchema } from "../schemas";
 import { ClueWriterCard } from "./clue-writer-card";
 import { InertWhenLeaving, SLIDE_MOTION, STEP_MOTION } from "./step-motion";
 import { TeammateTopNav } from "./teammate-top-nav";
 
-const HINTS: Record<
-  WelcomerClue["number"],
-  { heading: string; hint: string; placeholder: string }
-> = {
-  1: {
-    heading: "Clue 1 is your team.",
-    hint: "We add it for you. You write the next three.",
-    placeholder: "Add your team to your sticker and it shows up here.",
-  },
-  2: {
-    heading: "Start broad.",
-    hint: "It should fit a few people in your team.",
-    placeholder: "Coffee or tea? Morning or night?",
-  },
-  3: {
-    heading: "Narrow it down.",
-    hint: "Two or three people should still fit.",
-    placeholder: "A hobby, a habit, a place",
-  },
-  4: {
-    heading: "The giveaway.",
-    hint: "Make it point at you.",
-    placeholder: "Something only you would say",
-  },
-};
 const DONE_ROTATIONS = [-4, 2, -1, 4];
 
-const STEPS = ["intro", "write", "done"] as const;
+const STEPS = ["write", "done"] as const;
 type Step = (typeof STEPS)[number];
 
-type WelcomerFlowProps = {
-  desk: WelcomerDesk;
+type CluesFlowProps = {
+  desk: CluesDesk;
+  /** Adds the New hires tab to the top bar. */
+  admin?: boolean;
   /** Dev preview: clues are not saved. */
   preview?: boolean;
 };
 
-/** Picked, then one clue at a time, then the status of the game. Always opens on the pick. */
-export function WelcomerFlow({ desk, preview = false }: WelcomerFlowProps) {
-  const [step, setStep] = useState<Step>("intro");
+/**
+ * A teammate's own clues, one card at a time, then the set view; it opens on the writer until all
+ * three clues are written. A secret welcomer confirms before saving, as it locks the clues.
+ */
+export function CluesFlow({ desk, admin = false, preview = false }: CluesFlowProps) {
+  const canEdit = desk.clues.some((c) => c.editable);
+  const cluesSet = !canEdit || desk.clues.every((c) => !c.editable || c.text);
+  const [step, setStep] = useState<Step>(cluesSet ? "done" : "write");
   const [direction, setDirection] = useState(0);
   const navigated = useRef(false);
   const [clueDirection, setClueDirection] = useState(1);
   const [index, setIndex] = useState(0);
   const [drafts, setDrafts] = useState(() => desk.clues.map((clue) => clue.text ?? ""));
   const [pending, startTransition] = useTransition();
+  const [confirming, setConfirming] = useState(false);
   const clue = desk.clues[index];
-  const over = desk.status !== "active";
-  const canEdit = !over && desk.clues.some((c) => c.editable);
-  const cluesSet = !canEdit || desk.clues.every((c) => !c.editable || c.text);
+  const who = desk.playerNamed ? desk.playerFirstName : "the new hire";
+  const unsaved = desk.clues.flatMap((c, i) => {
+    const text = drafts[i]?.trim() ?? "";
+    return c.editable && text && text !== (c.text ?? "") ? [{ number: c.number, text }] : [];
+  });
 
-  // Back from clue 1 returns where the writing started: the pick, or the clue view when editing.
-  const [writeFrom, setWriteFrom] = useState<Step>("intro");
+  // Back from clue 1 returns to the clue view when editing; opened on the writer, there is nowhere to go.
+  const [writeFrom, setWriteFrom] = useState<Step | null>(null);
 
   const goToStep = (next: Step, back = STEPS.indexOf(next) < STEPS.indexOf(step)) => {
     if (next === "write") setWriteFrom(step);
@@ -91,76 +80,40 @@ export function WelcomerFlow({ desk, preview = false }: WelcomerFlowProps) {
 
   const finish = () => {
     goToStep("done");
-    void celebrate({ x: 0.5, y: 0.45 });
+    if (desk.welcoming) void celebrate({ x: 0.5, y: 0.45 });
   };
 
   const next = () => {
     if (!clue) return;
-    const last = index === desk.clues.length - 1;
-    const advance = () => (last ? finish() : goTo(index + 1));
-    if (!clue.editable) {
-      advance();
-      return;
-    }
-    const parsed = writeClueSchema.safeParse({ number: clue.number, text: drafts[index] ?? "" });
-    if (!parsed.success) return;
-    if (preview) {
-      advance();
-      return;
-    }
+    if (index < desk.clues.length - 1) return goTo(index + 1);
+    if (unsaved.length === 0) return finish();
+    if (desk.welcoming) setConfirming(true);
+    else save();
+  };
+
+  const save = () => {
     startTransition(async () => {
-      const result = await writeClue(parsed.data);
-      if (!result.ok) {
-        gameToast(result.error);
-        return;
+      for (const { number, text } of unsaved) {
+        const parsed = writeClueSchema.safeParse({ number, text });
+        if (!parsed.success) return;
+        const result = preview ? { ok: true as const } : await writeClue(parsed.data);
+        if (!result.ok) {
+          gameToast(result.error);
+          setConfirming(false);
+          return;
+        }
       }
-      advance();
+      setConfirming(false);
+      if (!desk.welcoming) gameToast("Saved");
+      finish();
     });
   };
 
   const shown: Step = step === "write" && !clue ? "done" : step;
   const views: Record<Step, () => ReactNode> = {
-    intro: () => (
-      <GameStage className="gap-8 pt-0">
-        <div className="flex flex-col items-center gap-3">
-          <span className="font-game-mono text-caption text-game-shortlist uppercase">
-            Top secret
-          </span>
-          <h1
-            ref={focusHeading}
-            tabIndex={-1}
-            className="max-w-180 font-game-serif text-3xl sm:text-hero outline-none"
-          >
-            {over ? "You were" : "You’re"} {desk.playerFirstName}’s secret welcomer.
-          </h1>
-          <p className="text-balance text-game-border-strong text-base sm:text-lead">
-            {over
-              ? "The game is over."
-              : cluesSet
-                ? "Your clues are set. Now wait to be found."
-                : "Leave three clues. Then wait to be found."}
-          </p>
-        </div>
-        {cluesSet ? (
-          <GameButton variant="yellow" onClick={() => goToStep("done")}>
-            See my clues
-          </GameButton>
-        ) : (
-          <GameButton
-            variant="yellow"
-            onClick={() => {
-              goTo(0);
-              goToStep("write");
-            }}
-          >
-            Write my clues
-          </GameButton>
-        )}
-      </GameStage>
-    ),
     write: () => {
       if (!clue) return null;
-      const hint = HINTS[clue.number];
+      const hint = CLUE_HINTS[clue.number];
       const last = index === desk.clues.length - 1;
       const blank = clue.editable && !drafts[index]?.trim();
       return (
@@ -210,8 +163,10 @@ export function WelcomerFlow({ desk, preview = false }: WelcomerFlowProps) {
               variant="light"
               size="round"
               aria-label="Back"
-              disabled={pending}
-              onClick={() => (index === 0 ? goToStep(writeFrom, true) : goTo(index - 1))}
+              disabled={pending || (index === 0 && !writeFrom)}
+              onClick={() =>
+                index > 0 ? goTo(index - 1) : writeFrom ? goToStep(writeFrom, true) : undefined
+              }
             >
               <ArrowLeftIcon />
             </GameButton>
@@ -241,12 +196,12 @@ export function WelcomerFlow({ desk, preview = false }: WelcomerFlowProps) {
             tabIndex={-1}
             className="font-game-serif text-3xl sm:text-hero outline-none"
           >
-            {over ? "That’s a wrap." : "Your clues are set."}
+            Your clues are set.
           </h1>
-          <p className="text-game-muted text-base sm:text-lead">
-            {over
-              ? `${desk.playerFirstName} knows it was you.`
-              : `${desk.playerFirstName} gets one every three days.`}
+          <p className="max-w-130 text-balance text-game-muted text-base sm:text-lead">
+            {desk.welcoming
+              ? `${desk.playerFirstName} gets one every three days.`
+              : "If you're picked as a new hire's secret welcomer, they get one every three days."}
           </p>
         </div>
         <ul aria-label="Your clues" className="flex flex-wrap justify-center gap-5">
@@ -271,17 +226,25 @@ export function WelcomerFlow({ desk, preview = false }: WelcomerFlowProps) {
           >
             Edit clues
           </GameButton>
-        ) : null}
+        ) : (
+          <GameTooltip label={`Locked while ${who} is playing`} side="top">
+            <GameButton
+              variant="link"
+              aria-disabled="true"
+              className="cursor-not-allowed aria-disabled:pointer-events-auto hover:text-game-muted"
+              onClick={(event) => event.preventDefault()}
+            >
+              Edit clues
+            </GameButton>
+          </GameTooltip>
+        )}
       </GameStage>
     ),
   };
 
   return (
-    <GameShell
-      tone={shown === "intro" ? "ink" : "default"}
-      className="transition-colors duration-slow ease-game motion-reduce:transition-none"
-    >
-      <TeammateTopNav current="welcomer" welcomer tone={shown === "intro" ? "ink" : "light"} />
+    <GameShell>
+      <TeammateTopNav current="clues" admin={admin} welcomer={desk.welcoming} />
       {/* popLayout takes the leaving view out of the flow where it stands, so the arriving one's
           height never re-centers it mid-fade. The page returns to the top once nothing shows. */}
       <div className="relative flex flex-1">
@@ -303,6 +266,17 @@ export function WelcomerFlow({ desk, preview = false }: WelcomerFlowProps) {
           </motion.div>
         </AnimatePresence>
       </div>
+      <GameModal
+        open={confirming}
+        onOpenChange={(open) => !pending && setConfirming(open)}
+        title="Lock in your clues?"
+        description={`You can't edit them while ${who} is playing.`}
+      >
+        <GameModalActions
+          secondary={{ label: "Cancel", disabled: pending, onClick: () => setConfirming(false) }}
+          primary={{ label: "OK", disabled: pending, onClick: save }}
+        />
+      </GameModal>
     </GameShell>
   );
 }

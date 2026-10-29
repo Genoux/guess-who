@@ -1,6 +1,6 @@
 "use client";
 
-import { Tooltip } from "radix-ui";
+import { TooltipContent, TooltipRoot, TooltipTrigger } from "@inbeat/ui/components/tooltip";
 import type { ReactElement } from "react";
 
 type GameTooltipProps = {
@@ -11,22 +11,19 @@ type GameTooltipProps = {
   side?: "top" | "bottom" | "left" | "right";
 };
 
-/** Ink pill tooltip for the game's icon-only controls (Radix Tooltip). */
+/** Ink pill tooltip for the game's icon-only controls, on the toolkit tooltip. */
 export function GameTooltip({ label, children, side = "bottom" }: GameTooltipProps) {
   return (
-    <Tooltip.Provider delayDuration={300}>
-      <Tooltip.Root>
-        <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
-        <Tooltip.Portal>
-          <Tooltip.Content
-            side={side}
-            sideOffset={8}
-            className="z-50 rounded-full bg-game-ink px-3 py-1.5 font-game-sans font-medium text-small text-white"
-          >
-            {label}
-          </Tooltip.Content>
-        </Tooltip.Portal>
-      </Tooltip.Root>
-    </Tooltip.Provider>
+    <TooltipRoot delayDuration={300}>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent
+        side={side}
+        sideOffset={8}
+        // toolkit-gap: the arrow takes no className, so its ink color comes from this selector
+        className="rounded-full bg-game-ink px-3 py-1.5 font-game-sans font-medium text-small! text-white [&_svg]:bg-game-ink [&_svg]:fill-game-ink"
+      >
+        {label}
+      </TooltipContent>
+    </TooltipRoot>
   );
 }

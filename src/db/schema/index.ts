@@ -6,3 +6,4 @@ export * from "./notifications";
 export * from "./people";
 export * from "./shortlists";
 export * from "./teams";
+export * from "./welcomer-clues";
