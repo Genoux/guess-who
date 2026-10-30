@@ -21,7 +21,13 @@ type PeoplePlayingProps = {
 /** One row per started mission, furthest day first. */
 export function PeoplePlaying({ rows, onEnd, onChangeEmail }: PeoplePlayingProps) {
   return (
-    <GameBook as="section" className="people--playing items-stretch gap-0 p-4 text-left md:p-6">
+    <GameBook
+      as="section"
+      className={gameCn(
+        "people--playing items-stretch gap-0 p-4 text-left md:p-6",
+        rows.length === 0 && "flex-1",
+      )}
+    >
       {rows.length === 0 ? (
         <PeopleEmpty
           title="No one is playing"

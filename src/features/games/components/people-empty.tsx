@@ -4,7 +4,7 @@ type PeopleEmptyProps = { title: string; text: string };
 
 export function PeopleEmpty({ title, text }: PeopleEmptyProps) {
   return (
-    <div className="flex flex-col items-center gap-2 px-4 pt-14 pb-12 text-center">
+    <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 py-12 text-center">
       <span
         aria-hidden
         className="mb-4.5 grid h-21 w-16 -rotate-4 place-items-center rounded-card border-2 border-game-muted border-dashed text-game-muted"

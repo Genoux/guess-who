@@ -174,6 +174,9 @@ Never commit, push or open a PR unless explicitly asked.
 
 ### Known gaps
 
+- The licensed Fieldtrip fonts in `public/fonts` are committed so previews render them, although the
+  repo is public. Shortcut until the repo goes private or the fonts move to private storage fetched at
+  build time; then re-add `/public/fonts/` to `.gitignore`. Owner: John.
 - Sentry is wired by the template but has no project yet: `NEXT_PUBLIC_SENTRY_DSN` stays empty until
   the owner creates one. Errors still get `ERR_xxxx` ids and logs.
 - Only Clerk's development instance is set up. It signs in with Slack through a Slack app in the inBeat
