@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { CLUE_NUMBERS, GAME_DAYS } from "@/entities/game-schedule";
 import {
   DEV_SCENARIO_IDS,
   DEV_SCENARIOS,
@@ -7,7 +8,6 @@ import {
   devScenarioSteps,
 } from "./dev-state";
 import { clueDay } from "./game-clues";
-import { CLUE_NUMBERS, GAME_DAYS } from "./game-schedule";
 
 const scenarios = DEV_SCENARIO_IDS.map((id) => ({ id, ...DEV_SCENARIOS[id] }));
 const games = scenarios.flatMap(({ id, game }) => (game ? [{ id, game }] : []));
@@ -37,26 +37,13 @@ describe("DEV_SCENARIOS", () => {
     }
   });
 
-  it("writes between none and all three of the welcomer's clues", () => {
-    for (const { game } of games) {
-      expect(game.cluesWritten).toBeGreaterThanOrEqual(0);
-      expect(game.cluesWritten).toBeLessThanOrEqual(3);
-    }
-  });
-
   it("never finds the welcomer with an empty album", () => {
     for (const { game } of games.filter(({ game }) => game.as === "player")) {
       if (game.outcome === "found") expect(game.fresh).toBe(false);
     }
   });
 
-  it("leaves the intro unseen only on a new hire's game in play", () => {
-    for (const { game } of games.filter(({ game }) => !game.introSeen)) {
-      expect(game).toMatchObject({ as: "player", outcome: "active" });
-    }
-  });
-
-  it("keeps a new hire's own card empty and fills the welcomer's", () => {
+  it("keeps a player's own card empty and fills the welcomer's", () => {
     for (const { game, cardFilled } of scenarios) {
       if (game?.as === "player") expect(cardFilled).toBe(false);
       if (game?.as === "welcomer") expect(cardFilled).toBe(true);
@@ -79,7 +66,7 @@ describe("DEV_SCENARIOS", () => {
 
   it("lands each person where they play, welcome or edit their card", () => {
     for (const { role, game, landing } of scenarios) {
-      if (game?.as === "player") expect(role).toBe("New hire");
+      if (game?.as === "player") expect(role).toBe("Player");
       if (game?.as === "player") expect(landing).toMatch(/^\/play/);
       if (game?.as === "welcomer") expect(role).toBe("Teammate");
       if (game?.as === "welcomer") expect(landing).toBe("/welcomer");
@@ -98,7 +85,7 @@ describe("devScenarioSteps", () => {
 
   it("walks a playing day through role, state and stage", () => {
     expect(labelsOf("playing-day-7")).toEqual([
-      { step: "role", value: "New hire", options: ["New hire", "Teammate"] },
+      { step: "role", value: "Player", options: ["Player", "Teammate"] },
       {
         step: "state",
         value: "Playing",
@@ -107,7 +94,7 @@ describe("devScenarioSteps", () => {
       {
         step: "stage",
         value: "Day 7",
-        options: ["Day 2", "Day 4", "Day 7", "Day 10", "Day 13", "Skipped clues"],
+        options: ["Day 2", "Day 4", "Day 7", "Day 10", "Day 13"],
       },
     ]);
   });

@@ -17,7 +17,7 @@ vi.mock("./game-records", () => ({
   findLatestPlayerGame: mocks.findLatestPlayerGame,
   findLatestWelcomerGame: mocks.findLatestWelcomerGame,
 }));
-vi.mock("./finalize-expired-game-record", () => ({
+vi.mock("@/shared/lib/finalize-expired-game-record", () => ({
   finalizeExpiredGameRecord: mocks.finalizeExpiredGameRecord,
 }));
 
@@ -27,6 +27,7 @@ const game = {
   id: "game_1",
   playerPersonId: "player",
   welcomerPersonId: "welcomer",
+  startDate: "2026-11-02",
   status: "active",
 } as Game;
 

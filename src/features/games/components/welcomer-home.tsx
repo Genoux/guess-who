@@ -3,21 +3,21 @@ import { GameButton } from "@/shared/components/game/game-button";
 import { GameShell } from "@/shared/components/game/game-shell";
 import { GameStage } from "@/shared/components/game/game-stage";
 import { ROUTES } from "@/shared/config/routes";
-import { TeammateTopNav } from "./teammate-top-nav";
+import type { TopNavData } from "../lib/top-nav";
+import { AppTopNav } from "./app-top-nav";
 
 type WelcomerHomeProps = {
   playerFirstName: string;
   /** All three of their clues are written. */
   cluesSet: boolean;
-  /** Adds the New hires tab to the top bar. */
-  admin?: boolean;
+  nav: TopNavData;
 };
 
 /** The secret welcomer's page: who they are welcoming, and the way to their clues. */
-export function WelcomerHome({ playerFirstName, cluesSet, admin = false }: WelcomerHomeProps) {
+export function WelcomerHome({ playerFirstName, cluesSet, nav }: WelcomerHomeProps) {
   return (
     <GameShell tone="ink">
-      <TeammateTopNav current="welcomer" admin={admin} welcomer tone="ink" />
+      <AppTopNav nav={nav} current="welcomer" tone="ink" />
       <GameStage className="gap-8 pt-0">
         <div className="flex flex-col items-center gap-3">
           <span className="font-game-mono text-caption text-game-shortlist uppercase">

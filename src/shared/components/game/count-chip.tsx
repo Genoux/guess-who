@@ -18,6 +18,10 @@ const countChipVariants = cva(
       size: {
         default: "h-9 px-3.5 text-sm",
         sm: "h-8 px-3.5 text-small",
+        /** Inside a tab or a line of text, where sm would crowd it. */
+        /** In a list row, at the row's own text size. */
+        row: "h-6 px-2.5 text-xs",
+        xs: "h-6 px-2 text-xs tabular-nums",
       },
     },
     defaultVariants: { variant: "default", size: "default" },

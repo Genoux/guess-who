@@ -57,6 +57,48 @@
       "when": 1793289630223,
       "tag": "0007_welcomer_clues",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793308264610,
+      "tag": "0008_collections_by_collector",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793308406607,
+      "tag": "0009_mission_start",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793363437971,
+      "tag": "0010_welcomer_team_snapshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793382535318,
+      "tag": "0011_people_new_hire",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793387131206,
+      "tag": "0012_missions_start_on_create",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793387282673,
+      "tag": "0013_games_intro_seen",
+      "breakpoints": true
     }
   ]
 }

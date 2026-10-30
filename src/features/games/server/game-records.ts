@@ -1,6 +1,7 @@
 import "server-only";
-import { and, asc, desc, eq, isNotNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, isNotNull, lte, ne, or, sql } from "drizzle-orm";
 import {
+  clues,
   collections,
   games,
   guesses,
@@ -11,8 +12,10 @@ import {
   type WelcomerClue,
   welcomerClues,
 } from "@/db/schema";
+import { lastExpiredStartDate } from "@/entities/game-schedule";
+import { clearNewHire } from "@/shared/lib/clear-new-hire";
 import { db } from "@/shared/lib/db";
-import type { Collection, Game } from "../types";
+import type { ClueRow, Collection, Game } from "../types";
 
 const activeFirst = sql`(${games.status} = 'active') desc`;
 
@@ -43,13 +46,39 @@ export async function findGameById(gameId: string): Promise<Game | undefined> {
   return game;
 }
 
-/** Everyone welcoming a game that has not ended, started or not. */
-export async function listActiveWelcomerIds(): Promise<string[]> {
+/** Everyone welcoming a mission that is still running: active and not past its day-14 reveal. */
+export async function listActiveWelcomerIds(now: Date): Promise<string[]> {
   const rows = await db
     .select({ welcomerPersonId: games.welcomerPersonId })
     .from(games)
-    .where(eq(games.status, "active"));
-  return rows.map((row) => row.welcomerPersonId);
+    .where(
+      and(
+        eq(games.status, "active"),
+        isNotNull(games.welcomerPersonId),
+        gt(games.startDate, lastExpiredStartDate(now)),
+      ),
+    );
+  return rows.flatMap((row) => (row.welcomerPersonId ? [row.welcomerPersonId] : []));
+}
+
+/**
+ * Ends every mission past day 14 that nobody has read since: the active-welcomer index holds a
+ * welcomer until their game is revealed, so a pick has to free them first.
+ */
+export async function revealExpiredGames(now: Date): Promise<number> {
+  const revealed = await db
+    .update(games)
+    .set({ status: "revealed" })
+    .where(
+      and(
+        eq(games.status, "active"),
+        isNotNull(games.welcomerPersonId),
+        lte(games.startDate, lastExpiredStartDate(now)),
+      ),
+    )
+    .returning({ playerPersonId: games.playerPersonId });
+  await clearNewHire(revealed.map(({ playerPersonId }) => playerPersonId));
+  return revealed.length;
 }
 
 export async function findPersonById(personId: string): Promise<Person | undefined> {
@@ -72,8 +101,8 @@ export async function listTeams(): Promise<Team[]> {
   return db.select().from(teams).orderBy(asc(teams.sortOrder), asc(teams.name));
 }
 
-export async function listCollections(gameId: string): Promise<Collection[]> {
-  return db.select().from(collections).where(eq(collections.gameId, gameId));
+export async function listCollections(collectorPersonId: string): Promise<Collection[]> {
+  return db.select().from(collections).where(eq(collections.collectorPersonId, collectorPersonId));
 }
 
 export async function listShortlistedIds(gameId: string): Promise<string[]> {
@@ -91,6 +120,11 @@ export async function listGuesses(gameId: string) {
     .where(eq(guesses.gameId, gameId));
 }
 
+/** The welcomer's clues 2 to 4 as they were when the game started. */
+export async function listGameClues(gameId: string): Promise<ClueRow[]> {
+  return db.select().from(clues).where(eq(clues.gameId, gameId)).orderBy(asc(clues.number));
+}
+
 /** The clues a teammate wrote for themselves, which follow them from game to game. */
 export async function listWelcomerClues(personId: string): Promise<WelcomerClue[]> {
   return db
@@ -100,11 +134,13 @@ export async function listWelcomerClues(personId: string): Promise<WelcomerClue[
     .orderBy(asc(welcomerClues.number));
 }
 
-export async function hasCollected(gameId: string, personId: string): Promise<boolean> {
+export async function hasCollected(collectorPersonId: string, personId: string): Promise<boolean> {
   const [row] = await db
     .select({ id: collections.id })
     .from(collections)
-    .where(and(eq(collections.gameId, gameId), eq(collections.personId, personId)))
+    .where(
+      and(eq(collections.collectorPersonId, collectorPersonId), eq(collections.personId, personId)),
+    )
     .limit(1);
   return row !== undefined;
 }
@@ -116,4 +152,33 @@ export async function hasGuessed(gameId: string, personId: string): Promise<bool
     .where(and(eq(guesses.gameId, gameId), eq(guesses.personId, personId)))
     .limit(1);
   return row !== undefined;
+}
+
+// The same rule as `isInAlbum`, in SQL, plus the welcomer of the viewer's running mission, who is
+// always in the album so the mission stays winnable.
+const albumCondition = (viewerPersonId: string, runningWelcomerId: string | null) => {
+  const filledCard = and(
+    ne(people.id, viewerPersonId),
+    eq(people.hidden, false),
+    isNotNull(people.teamId),
+    sql`btrim(coalesce(${people.ask}, '')) <> ''`,
+  );
+  return runningWelcomerId ? or(filledCard, eq(people.id, runningWelcomerId)) : filledCard;
+};
+
+/** How many stickers the viewer's album holds and how many they collected, without loading it. */
+export async function countAlbum(
+  viewerPersonId: string,
+  runningWelcomerId: string | null,
+): Promise<{ collected: number; total: number }> {
+  const album = albumCondition(viewerPersonId, runningWelcomerId);
+  const [[inAlbum], [collected]] = await Promise.all([
+    db.select({ value: count() }).from(people).where(album),
+    db
+      .select({ value: count() })
+      .from(collections)
+      .innerJoin(people, eq(collections.personId, people.id))
+      .where(and(eq(collections.collectorPersonId, viewerPersonId), album)),
+  ]);
+  return { collected: collected?.value ?? 0, total: inAlbum?.value ?? 0 };
 }

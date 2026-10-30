@@ -1,20 +1,20 @@
 import type { Metadata } from "next";
-import { NewHiresScreen } from "@/features/games/components/new-hires-screen";
-import { TeammateTopNav } from "@/features/games/components/teammate-top-nav";
-import { getIsWelcomer } from "@/features/games/queries/get-is-welcomer";
-import { getNewHireBoard } from "@/features/games/queries/get-new-hire-board";
+import { AppTopNav } from "@/features/games/components/app-top-nav";
+import { PeopleScreen } from "@/features/games/components/people-screen";
+import { getPeopleBoard } from "@/features/games/queries/get-people-board";
+import { getTopNav } from "@/features/games/queries/get-top-nav";
 import { GameShell } from "@/shared/components/game/game-shell";
 import { GameStage } from "@/shared/components/game/game-stage";
 
-export const metadata: Metadata = { title: "New hires" };
+export const metadata: Metadata = { title: "People" };
 
 export default async function AdminPage() {
-  const [board, welcomer] = await Promise.all([getNewHireBoard(), getIsWelcomer()]);
+  const [board, nav] = await Promise.all([getPeopleBoard(), getTopNav()]);
   return (
     <GameShell>
-      <TeammateTopNav current="admin" admin welcomer={welcomer} />
-      <GameStage>
-        <NewHiresScreen board={board} />
+      <AppTopNav nav={nav} current="admin" />
+      <GameStage width="wide" className="justify-start">
+        <PeopleScreen board={board} />
       </GameStage>
     </GameShell>
   );

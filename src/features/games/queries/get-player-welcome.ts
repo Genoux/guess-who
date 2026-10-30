@@ -1,12 +1,13 @@
 import "server-only";
+import { missionPhase } from "@/entities/mission-phase";
 import { firstName } from "../lib/first-name";
-import { loadPlayerBoard } from "../server/load-player-board";
+import { loadPlayerGame } from "../server/load-player-board";
 
-export type PlayerWelcome = { firstName: string };
+export type PlayerWelcome = { firstName: string; seen: boolean };
 
-/** The player's first name for the intro; the tour itself uses a fictional cast. */
+/** The first name for the tour, while a mission is running; the tour itself uses a fictional cast. */
 export async function getPlayerWelcome(): Promise<PlayerWelcome | null> {
-  const board = await loadPlayerBoard();
-  if (!board) return null;
-  return { firstName: firstName(board.player.name) };
+  const { game, person } = await loadPlayerGame();
+  if (missionPhase(game) !== "playing") return null;
+  return { firstName: firstName(person.name), seen: game?.introSeenAt != null };
 }

@@ -38,19 +38,27 @@ export const writeClueSchema = z.object({
 
 export const devStateSchema = z.object({ scenario: z.enum(DEV_SCENARIO_IDS) });
 
-const newHireEmail = z
+const playerEmail = z
   .string()
   .trim()
   .pipe(z.email({ error: "Enter their email." }))
   .transform(normalizeEmail);
 
-const firstDay = z.iso.date({ error: "Pick the first day." });
+export const addNewHireSchema = z.object({ email: playerEmail });
 
-export const createNewHireSchema = z.object({ email: newHireEmail, startDate: firstDay });
+export const changeInviteEmailSchema = z.object({ gameId: z.uuid(), email: playerEmail });
 
-export const updateNewHireSchema = createNewHireSchema.extend({
-  gameId: z.uuid(),
-  welcomerPersonId: z.uuid().optional(),
+export const setAsNewHireSchema = z.object({ personId: z.uuid(), startMission: z.boolean() });
+
+export const endMissionSchema = z.object({ gameId: z.uuid() });
+
+/** More than the team has people today; a guard against an absurd request, not a product limit. */
+export const TURN_ON_MISSIONS_MAX = 500;
+
+export const turnOnMissionsSchema = z.object({
+  personIds: z
+    .array(z.uuid())
+    .min(1, "Pick at least one person.")
+    .max(TURN_ON_MISSIONS_MAX)
+    .transform((ids) => [...new Set(ids)]),
 });
-
-export const removeNewHireSchema = z.object({ gameId: z.uuid() });

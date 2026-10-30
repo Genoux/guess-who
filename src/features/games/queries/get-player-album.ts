@@ -9,21 +9,18 @@ export type AlbumSticker = StickerDetail & { teamId: string | null };
 export type PlayerAlbum = {
   nav: PlayerNav;
   active: boolean;
-  introSeen: boolean;
   newClue: { number: number; day: number } | null;
   outcome: GameOutcome;
   teams: { id: string; name: string; color: string; count: number }[];
   stickers: AlbumSticker[];
 };
 
-export async function getPlayerAlbum(): Promise<PlayerAlbum | null> {
+export async function getPlayerAlbum(): Promise<PlayerAlbum> {
   const board = await loadPlayerBoard();
-  if (!board) return null;
 
   return {
     nav: toPlayerNav(board),
-    active: board.game.status === "active",
-    introSeen: board.introSeen,
+    active: board.mission === "playing",
     newClue: board.newClue
       ? { number: board.newClue.number, day: clueDay(board.newClue.number) }
       : null,

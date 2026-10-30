@@ -1,6 +1,6 @@
 import { isAppError } from "@inbeat/core/errors";
 import { describe, expect, it } from "vitest";
-import { chooseWelcomer, eligibleWelcomers } from "./choose-welcomer";
+import { chooseWelcomer, eligibleWelcomers, NO_WELCOMER_FREE } from "./choose-welcomer";
 
 const person = (id: string, overrides = {}) => ({
   id,
@@ -16,7 +16,8 @@ const choose = (overrides: Partial<Parameters<typeof chooseWelcomer>[0]> = {}) =
   chooseWelcomer({
     people: [person("ana"), person("ben"), person("cleo")],
     busyWelcomerIds: [],
-    playerEmail: "sam@gmail.com",
+    playerPersonId: "sam",
+    welcomedPersonId: null,
     random: () => 0,
     ...overrides,
   });
@@ -28,12 +29,16 @@ describe("chooseWelcomer", () => {
     expect(choose({ random: () => 0.999 }).id).toBe("cleo");
   });
 
-  it("skips teammates already welcoming a new hire", () => {
+  it("skips teammates already welcoming a mission", () => {
     expect(choose({ busyWelcomerIds: ["ana"] }).id).toBe("ben");
   });
 
-  it("skips the new hire, matched by email", () => {
-    expect(choose({ playerEmail: "ana@inbeat.agency" }).id).toBe("ben");
+  it("skips the player", () => {
+    expect(choose({ playerPersonId: "ana" }).id).toBe("ben");
+  });
+
+  it("skips the person the player is welcoming, so two people never welcome each other", () => {
+    expect(choose({ welcomedPersonId: "ana" }).id).toBe("ben");
   });
 
   it.each([
@@ -52,32 +57,31 @@ describe("chooseWelcomer", () => {
     expect(choose({ people: [person("ana", { writtenClues }), person("ben")] }).id).toBe("ben");
   });
 
-  it("says so when nobody is free", () => {
-    expect(() => choose({ busyWelcomerIds: ["ana", "ben", "cleo"] })).toThrow(
-      expect.toSatisfy((err) => isAppError(err, "not_found")),
-    );
+  it("answers a conflict when nobody is free", () => {
+    const noOne = expect.toSatisfy((err) => isAppError(err, "conflict"));
+    expect(() => choose({ busyWelcomerIds: ["ana", "ben", "cleo"] })).toThrow(noOne);
     expect(() => choose({ people: [] })).toThrow(
-      expect.objectContaining({ safeMessage: "No teammate is free to welcome them yet." }),
+      expect.objectContaining({ safeMessage: NO_WELCOMER_FREE }),
     );
   });
 });
 
 describe("eligibleWelcomers", () => {
   const people = [person("ana"), person("ben", { hidden: true }), person("cleo"), person("dev")];
+  const base = { people, busyWelcomerIds: [], playerPersonId: "sam", welcomedPersonId: null };
 
-  it("lists everyone who could welcome the new hire, in order", () => {
-    expect(
-      eligibleWelcomers({ people, busyWelcomerIds: ["cleo"], playerEmail: "sam@gmail.com" }).map(
-        ({ id }) => id,
-      ),
-    ).toEqual(["ana", "dev"]);
+  it("lists everyone who could welcome the player, in order", () => {
+    expect(eligibleWelcomers({ ...base, busyWelcomerIds: ["cleo"] }).map(({ id }) => id)).toEqual([
+      "ana",
+      "dev",
+    ]);
   });
 
-  it("leaves the new hire out", () => {
+  it("leaves the player and the person they welcome out", () => {
     expect(
-      eligibleWelcomers({ people, busyWelcomerIds: [], playerEmail: "dev@inbeat.agency" }).map(
+      eligibleWelcomers({ ...base, playerPersonId: "dev", welcomedPersonId: "ana" }).map(
         ({ id }) => id,
       ),
-    ).toEqual(["ana", "cleo"]);
+    ).toEqual(["cleo"]);
   });
 });

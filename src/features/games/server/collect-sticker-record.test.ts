@@ -8,20 +8,21 @@ vi.mock("@/shared/lib/db", async () => (await import("@/test/fake-db")).fakeDbMo
 const records = vi.hoisted(() => ({
   findPersonById: vi.fn(),
   hasCollected: vi.fn(),
+  findLatestPlayerGame: vi.fn(),
 }));
 vi.mock("./game-records", () => records);
 
 import { collectStickerRecord } from "./collect-sticker-record";
 
-const game = { id: "game_1", playerPersonId: "player", status: "active" as const };
 const teammate = { id: "teammate", hidden: false, teamId: "team_1", ask: "Night trains" };
-const input = { game, viewerPersonId: "player", personId: "teammate", note: "Loves trains" };
+const input = { viewerPersonId: "viewer", personId: "teammate", note: "Loves trains" };
 
 beforeEach(() => {
   client.query.mockReset();
   client.query.mockResolvedValue({ rows: [["collection_1"]] });
   records.findPersonById.mockResolvedValue(teammate);
   records.hasCollected.mockResolvedValue(false);
+  records.findLatestPlayerGame.mockResolvedValue(undefined);
 });
 
 describe("collectStickerRecord", () => {
@@ -29,9 +30,19 @@ describe("collectStickerRecord", () => {
     await collectStickerRecord(input);
     const [insert] = sentStatements(client);
     expect(insert?.sql).toMatch(
-      /insert into collections .* on conflict \(game_id,person_id\) do nothing returning/,
+      /insert into collections .* on conflict \(collector_person_id,person_id\) do nothing returning/,
     );
-    expect(insert?.params).toEqual(expect.arrayContaining(["game_1", "teammate", "Loves trains"]));
+    expect(insert?.params).toEqual(expect.arrayContaining(["viewer", "teammate", "Loves trains"]));
+  });
+
+  it("lets a player collect the welcomer of their running mission, whatever their card says", async () => {
+    records.findPersonById.mockResolvedValue({ ...teammate, hidden: true, teamId: null });
+    records.findLatestPlayerGame.mockResolvedValue({
+      status: "active",
+      welcomerPersonId: "teammate",
+      startDate: "2026-10-28",
+    });
+    await expect(collectStickerRecord(input)).resolves.toBeUndefined();
   });
 
   it("checks the policy before writing", async () => {

@@ -1,6 +1,6 @@
 import "server-only";
+import { finalizeExpiredGameRecord } from "@/shared/lib/finalize-expired-game-record";
 import type { Game } from "../types";
-import { finalizeExpiredGameRecord } from "./finalize-expired-game-record";
 import { findLatestWelcomerGame } from "./game-records";
 
 /** The game the person is welcoming right now; null between games. */

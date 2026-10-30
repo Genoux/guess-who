@@ -1,63 +1,76 @@
 import { describe, expect, it } from "vitest";
-import { createNewHireSchema, removeNewHireSchema, updateNewHireSchema } from "./schemas";
+import {
+  addNewHireSchema,
+  changeInviteEmailSchema,
+  endMissionSchema,
+  setAsNewHireSchema,
+  TURN_ON_MISSIONS_MAX,
+  turnOnMissionsSchema,
+} from "./schemas";
 
-const GAME_ID = "6f0c1d2e-3b4a-4c5d-8e9f-0a1b2c3d4e5f";
+const ID = "6f0c1d2e-3b4a-4c5d-8e9f-0a1b2c3d4e5f";
+const ID_2 = "7a1d2e3f-4c5b-4d6e-9fa0-1b2c3d4e5f60";
 
-const messages = (
-  schema: typeof createNewHireSchema | typeof updateNewHireSchema,
-  values: object,
-) => {
+const messages = (schema: typeof addNewHireSchema, values: object) => {
   const parsed = schema.safeParse(values);
   return parsed.success
     ? {}
     : Object.fromEntries(parsed.error.issues.map((issue) => [issue.path[0], issue.message]));
 };
 
-describe("createNewHireSchema", () => {
+describe("addNewHireSchema", () => {
   it("normalizes the email", () => {
-    expect(
-      createNewHireSchema.parse({ email: "  Sam.Taylor@Gmail.com ", startDate: "2026-11-02" }),
-    ).toEqual({ email: "sam.taylor@gmail.com", startDate: "2026-11-02" });
+    expect(addNewHireSchema.parse({ email: "  Sam.Taylor@Gmail.com " })).toEqual({
+      email: "sam.taylor@gmail.com",
+    });
   });
 
   it.each(["", "   ", "sam", "sam@"])("asks for an email, not %j", (email) => {
-    expect(messages(createNewHireSchema, { email, startDate: "2026-11-02" })).toEqual({
-      email: "Enter their email.",
+    expect(messages(addNewHireSchema, { email })).toEqual({ email: "Enter their email." });
+  });
+});
+
+describe("changeInviteEmailSchema", () => {
+  it("needs the game id", () => {
+    const values = { email: "sam@gmail.com" };
+    expect(changeInviteEmailSchema.safeParse({ ...values, gameId: ID }).success).toBe(true);
+    expect(changeInviteEmailSchema.safeParse({ ...values, gameId: "x" }).success).toBe(false);
+  });
+});
+
+describe.each([["endMissionSchema", endMissionSchema]])("%s", (_name, schema) => {
+  it("needs the game id", () => {
+    expect(schema.safeParse({ gameId: ID }).success).toBe(true);
+    expect(schema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe("turnOnMissionsSchema", () => {
+  it("takes person ids, once each", () => {
+    expect(turnOnMissionsSchema.parse({ personIds: [ID, ID_2, ID] })).toEqual({
+      personIds: [ID, ID_2],
     });
   });
 
-  it.each(["", "2026-13-01", "11/02/2026"])("asks for a real first day, not %j", (startDate) => {
-    expect(messages(createNewHireSchema, { email: "sam@gmail.com", startDate })).toEqual({
-      startDate: "Pick the first day.",
-    });
-  });
-});
-
-describe("updateNewHireSchema", () => {
-  it("needs the game id", () => {
-    const values = { email: "sam@gmail.com", startDate: "2026-11-02" };
-    expect(updateNewHireSchema.safeParse({ ...values, gameId: GAME_ID }).success).toBe(true);
-    expect(updateNewHireSchema.safeParse({ ...values, gameId: "x" }).success).toBe(false);
-  });
-});
-
-describe("updateNewHireSchema welcomer", () => {
-  const values = { gameId: GAME_ID, email: "sam@gmail.com", startDate: "2026-11-02" };
-
-  it("takes an optional welcomer id", () => {
-    expect(updateNewHireSchema.safeParse(values).success).toBe(true);
-    expect(updateNewHireSchema.safeParse({ ...values, welcomerPersonId: GAME_ID }).success).toBe(
-      true,
+  it("refuses nobody, ids that are not uuids, and an absurd list", () => {
+    expect(turnOnMissionsSchema.safeParse({ personIds: [] }).success).toBe(false);
+    expect(turnOnMissionsSchema.safeParse({ personIds: ["ana"] }).success).toBe(false);
+    const tooMany = Array.from(
+      { length: TURN_ON_MISSIONS_MAX + 1 },
+      (_, i) => `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`,
     );
-    expect(updateNewHireSchema.safeParse({ ...values, welcomerPersonId: "ana" }).success).toBe(
-      false,
-    );
+    expect(turnOnMissionsSchema.safeParse({ personIds: tooMany }).success).toBe(false);
   });
 });
 
-describe("removeNewHireSchema", () => {
-  it("needs the game id", () => {
-    expect(removeNewHireSchema.safeParse({ gameId: GAME_ID }).success).toBe(true);
-    expect(removeNewHireSchema.safeParse({}).success).toBe(false);
+describe("setAsNewHireSchema", () => {
+  it("needs a person id", () => {
+    expect(setAsNewHireSchema.safeParse({ personId: ID, startMission: true }).success).toBe(true);
+    expect(setAsNewHireSchema.safeParse({ personId: "x", startMission: true }).success).toBe(false);
+  });
+
+  it("says whether to start the mission now", () => {
+    expect(setAsNewHireSchema.safeParse({ personId: ID, startMission: false }).success).toBe(true);
+    expect(setAsNewHireSchema.safeParse({ personId: ID }).success).toBe(false);
   });
 });

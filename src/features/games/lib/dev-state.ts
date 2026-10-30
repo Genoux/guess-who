@@ -1,21 +1,18 @@
 import { ROUTES } from "@/shared/config/routes";
 
 export type DevGame = {
-  /** The tester plays the game, or secretly welcomes the seeded new hire Léa. */
+  /** The tester plays the mission, or secretly welcomes the seeded player Léa. */
   as: "player" | "welcomer";
   /** Today's game day; day 15 is past the day-14 reveal. */
   day: number;
   outcome: "active" | "found" | "revealed";
-  /** Clues 2 to 4 the welcomer wrote, in order. */
-  cluesWritten: number;
   lastReadClue: number;
   /** An empty album instead of 5 stickers, 2 maybes and 1 ruled out. */
   fresh: boolean;
-  introSeen: boolean;
 };
 
 type DevScenario = {
-  role: "New hire" | "Teammate";
+  role: "Player" | "Teammate";
   state: string;
   stage?: string;
   hint: string;
@@ -28,10 +25,8 @@ const playing = (game: Partial<DevGame>): DevGame => ({
   as: "player",
   day: 7,
   outcome: "active",
-  cluesWritten: 3,
   lastReadClue: 0,
   fresh: false,
-  introSeen: true,
   ...game,
 });
 
@@ -39,10 +34,8 @@ const welcoming = (game: Partial<DevGame>): DevGame => ({
   as: "welcomer",
   day: 7,
   outcome: "active",
-  cluesWritten: 3,
   lastReadClue: 0,
   fresh: true,
-  introSeen: true,
   ...game,
 });
 
@@ -52,15 +45,15 @@ const welcoming = (game: Partial<DevGame>): DevGame => ({
  */
 const SCENARIOS = {
   "welcome-tour": {
-    role: "New hire",
+    role: "Player",
     state: "Welcome tour",
-    hint: "Day 1, first visit: the tour, then an empty album.",
+    hint: "First visit: the tour, then the mission.",
     landing: ROUTES.playWelcome,
-    game: playing({ day: 1, fresh: true, introSeen: false }),
+    game: playing({ day: 1, fresh: true }),
     cardFilled: false,
   },
   "playing-day-2": {
-    role: "New hire",
+    role: "Player",
     state: "Playing",
     stage: "Day 2",
     hint: "No clue out yet. 5 stickers, 2 maybes, 1 ruled out.",
@@ -69,7 +62,7 @@ const SCENARIOS = {
     cardFilled: false,
   },
   "playing-day-4": {
-    role: "New hire",
+    role: "Player",
     state: "Playing",
     stage: "Day 4",
     hint: "Clue 1, the welcomer's team, just landed.",
@@ -78,7 +71,7 @@ const SCENARIOS = {
     cardFilled: false,
   },
   "playing-day-7": {
-    role: "New hire",
+    role: "Player",
     state: "Playing",
     stage: "Day 7",
     hint: "Clue 2 just landed.",
@@ -87,7 +80,7 @@ const SCENARIOS = {
     cardFilled: false,
   },
   "playing-day-10": {
-    role: "New hire",
+    role: "Player",
     state: "Playing",
     stage: "Day 10",
     hint: "Clue 3 just landed.",
@@ -96,7 +89,7 @@ const SCENARIOS = {
     cardFilled: false,
   },
   "playing-day-13": {
-    role: "New hire",
+    role: "Player",
     state: "Playing",
     stage: "Day 13",
     hint: "Clue 4 just landed; the reveal is tomorrow.",
@@ -104,17 +97,8 @@ const SCENARIOS = {
     game: playing({ day: 13, lastReadClue: 3 }),
     cardFilled: false,
   },
-  "playing-skipped-clues": {
-    role: "New hire",
-    state: "Playing",
-    stage: "Skipped clues",
-    hint: "Day 13. The welcomer only wrote clue 2, so clues 3 and 4 show as missing.",
-    landing: ROUTES.playMission,
-    game: playing({ day: 13, lastReadClue: 4, cluesWritten: 1 }),
-    cardFilled: false,
-  },
   found: {
-    role: "New hire",
+    role: "Player",
     state: "Found",
     hint: "Guessed right on day 10 with 3 clues. Their own sticker comes next.",
     landing: ROUTES.playMission,
@@ -122,7 +106,7 @@ const SCENARIOS = {
     cardFilled: false,
   },
   "times-up": {
-    role: "New hire",
+    role: "Player",
     state: "Time’s up",
     hint: "Day 14 passed unfound. The reveal plays once.",
     landing: ROUTES.playMission,
@@ -132,7 +116,7 @@ const SCENARIOS = {
   "teammate-first-visit": {
     role: "Teammate",
     state: "First visit",
-    hint: "No game, empty sticker card.",
+    hint: "No mission, empty sticker card.",
     landing: ROUTES.card,
     game: null,
     cardFilled: false,
@@ -140,7 +124,7 @@ const SCENARIOS = {
   "teammate-card-filled": {
     role: "Teammate",
     state: "Card filled",
-    hint: "No game, back to edit their sticker.",
+    hint: "No mission, back to edit their sticker.",
     landing: ROUTES.card,
     game: null,
     cardFilled: true,
@@ -149,25 +133,16 @@ const SCENARIOS = {
     role: "Teammate",
     state: "Secret welcomer",
     stage: "Just picked",
-    hint: "Day 2. No clues written yet.",
+    hint: "Day 2. Their three clues are locked in.",
     landing: ROUTES.welcomer,
-    game: welcoming({ day: 2, cluesWritten: 0 }),
-    cardFilled: true,
-  },
-  "welcomer-late": {
-    role: "Teammate",
-    state: "Secret welcomer",
-    stage: "Running late",
-    hint: "Day 7. Clue 2 landed unwritten; clues 3 and 4 are still open.",
-    landing: ROUTES.welcomer,
-    game: welcoming({ day: 7, cluesWritten: 0 }),
+    game: welcoming({ day: 2 }),
     cardFilled: true,
   },
   "welcomer-set": {
     role: "Teammate",
     state: "Secret welcomer",
     stage: "Clues set",
-    hint: "Day 7. All three written, waiting to be found.",
+    hint: "Day 7, waiting to be found.",
     landing: ROUTES.welcomer,
     game: welcoming({ day: 7 }),
     cardFilled: true,
@@ -225,3 +200,14 @@ export function devScenarioSteps(id: DevScenarioId) {
     return [{ step, value, options }];
   });
 }
+
+/** The widest top bar, for the dev pages: a mission, an admin and a welcomer in one. */
+export const DEV_TOP_NAV = {
+  hasMission: true,
+  hasNewClue: false,
+  collectedCount: 5,
+  total: 19,
+  admin: true,
+  welcomer: true,
+  locked: false,
+};

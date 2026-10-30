@@ -3,16 +3,16 @@ import { and, eq, inArray, isNull, like, or, sql } from "drizzle-orm";
 import type { NeonDatabase } from "drizzle-orm/neon-serverless";
 import * as schema from "@/db/schema";
 import { seedTeams } from "@/db/seed-teams";
+import { addDays, todayInGameZone, zonedTime } from "@/entities/game-schedule";
 import { TEAM_DEFINITIONS } from "@/entities/teams";
-import { addDays, CLUE_NUMBERS, todayInGameZone, zonedTime } from "../lib/game-schedule";
 import { CLUE_NUMBERS_TO_WRITE } from "../lib/welcomer-readiness";
 
 type SchemaDb = NeonDatabase<typeof schema>;
 
 export type SeedDemoGameOptions = {
-  /** The new hire's email; the game seeds a seeded welcomer with clues 2 to 4 written. */
+  /** The player's email; the game is welcomed by a seeded teammate with all three clues written. */
   player?: string;
-  /** The secret welcomer's email; the game seeds Léa Dubois as the new hire, with no clues. */
+  /** The secret welcomer's email; the game seeds Léa Dubois as the player. */
   asWelcomer?: string;
   /** The seeded teammate who welcomes a --player game. */
   welcomer: string;
@@ -23,11 +23,7 @@ export type SeedDemoGameOptions = {
   /** The highest clue the player has turned over. */
   lastReadClue?: number;
   outcome?: "active" | "found" | "revealed";
-  /** Skip the welcome intro. */
-  introSeen?: boolean;
   revealSeen?: boolean;
-  /** Clues 2 to 4 written, in order; all three for a --player game, none for --as-welcomer. */
-  cluesWritten?: number;
 };
 
 // name, team, city, fact, ask
@@ -170,7 +166,12 @@ const PROGRESS = [
   { name: "Jonah Park", note: "Tracks every meal he has eaten since 2019.", wrongGuess: true },
 ];
 
-async function seedProgress(db: SchemaDb, gameId: string, welcomerEmail: string) {
+async function seedProgress(
+  db: SchemaDb,
+  { collectorId, gameId }: { collectorId: string; gameId: string },
+  welcomerEmail: string,
+) {
+  await db.delete(schema.collections).where(eq(schema.collections.collectorPersonId, collectorId));
   const rows = await db
     .select({ id: schema.people.id, email: schema.people.email })
     .from(schema.people)
@@ -185,7 +186,9 @@ async function seedProgress(db: SchemaDb, gameId: string, welcomerEmail: string)
     const email = demoEmailOf(entry.name);
     const personId = idOf.get(email);
     if (!personId) continue;
-    await db.insert(schema.collections).values({ gameId, personId, note: entry.note });
+    await db
+      .insert(schema.collections)
+      .values({ collectorPersonId: collectorId, personId, note: entry.note });
     if (entry.maybe) await db.insert(schema.shortlists).values({ gameId, personId });
     // Never rule out the real welcomer: that guess would have ended the game.
     if (entry.wrongGuess && email !== welcomerEmail) {
@@ -195,12 +198,39 @@ async function seedProgress(db: SchemaDb, gameId: string, welcomerEmail: string)
 }
 
 /** The player collected their welcomer and guessed right. */
-async function seedFound(db: SchemaDb, gameId: string, welcomerId: string) {
+async function seedFound(
+  db: SchemaDb,
+  { collectorId, gameId }: { collectorId: string; gameId: string },
+  welcomerId: string,
+) {
   await db
     .insert(schema.collections)
-    .values({ gameId, personId: welcomerId, note: "Turned out to be my welcomer." })
+    .values({
+      collectorPersonId: collectorId,
+      personId: welcomerId,
+      note: "Turned out to be my welcomer.",
+    })
     .onConflictDoNothing();
   await db.insert(schema.guesses).values({ gameId, personId: welcomerId, correct: true });
+}
+
+/** The welcomer's clues and team name as they stand now, copied into the game as Start does. */
+export async function snapshotClues(db: SchemaDb, gameId: string, welcomerId: string) {
+  const [welcomerTeam] = await db
+    .select({ name: schema.teams.name })
+    .from(schema.people)
+    .leftJoin(schema.teams, eq(schema.people.teamId, schema.teams.id))
+    .where(eq(schema.people.id, welcomerId));
+  await db
+    .update(schema.games)
+    .set({ welcomerTeamName: welcomerTeam?.name ?? null })
+    .where(eq(schema.games.id, gameId));
+  const written = await db
+    .select({ number: schema.welcomerClues.number, text: schema.welcomerClues.text })
+    .from(schema.welcomerClues)
+    .where(eq(schema.welcomerClues.personId, welcomerId));
+  if (written.length === 0) return;
+  await db.insert(schema.clues).values(written.map((clue) => ({ gameId, ...clue })));
 }
 
 /** Replaces the clues a teammate wrote for themselves with exactly these. */
@@ -303,9 +333,7 @@ export async function seedDemoGame(
     fresh,
     lastReadClue = 0,
     outcome = "active",
-    introSeen = false,
     revealSeen = false,
-    cluesWritten = player ? 3 : 0,
   }: SeedDemoGameOptions,
 ): Promise<{ removed: number; startDate: string }> {
   const teamIds = await seedTeammates(db);
@@ -373,17 +401,10 @@ export async function seedDemoGame(
     .delete(schema.games)
     .where(eq(schema.games.playerEmail, gamePlayerEmail))
     .returning({ id: schema.games.id });
-  if (asWelcomer) {
-    // Also drop older demo games this welcomer had, so /welcomer shows the new one.
-    const old = await db
-      .select({ id: schema.games.id, email: schema.games.playerEmail })
-      .from(schema.games)
-      .where(eq(schema.games.welcomerPersonId, welcomerId));
-    const demoGames = old.filter((game) => game.email.endsWith("@example.com")).map((g) => g.id);
-    if (demoGames.length > 0) {
-      await db.delete(schema.games).where(inArray(schema.games.id, demoGames));
-    }
-  }
+  // A teammate welcomes one running mission, so any other the welcomer had makes way.
+  await db
+    .delete(schema.games)
+    .where(and(eq(schema.games.welcomerPersonId, welcomerId), eq(schema.games.status, "active")));
 
   // A signed-in tester without a real picture gets a stand-in so their own sticker looks real.
   for (const email of [player, asWelcomer].filter((value): value is string => Boolean(value))) {
@@ -401,36 +422,41 @@ export async function seedDemoGame(
       );
   }
 
+  // The album belongs to the person, so the tester gets their row now; sign-in claims it.
+  await db
+    .insert(schema.people)
+    .values({ email: gamePlayerEmail, name: gamePlayerEmail.split("@")[0] ?? gamePlayerEmail })
+    .onConflictDoNothing({ target: schema.people.email });
   const [playerRow] = await db
-    .select({ id: schema.people.id })
+    .select({ id: schema.people.id, clerkUserId: schema.people.clerkUserId })
     .from(schema.people)
     .where(eq(schema.people.email, gamePlayerEmail));
+  if (!playerRow) throw new Error("Player row is missing");
   const now = new Date();
   const [game] = await db
     .insert(schema.games)
     .values({
       playerEmail: gamePlayerEmail,
-      playerPersonId: playerRow?.id ?? null,
+      playerPersonId: playerRow.clerkUserId ? playerRow.id : null,
       welcomerPersonId: welcomerId,
       startDate,
+      // A fresh game is the first visit: the welcome tour has not been seen.
+      introSeenAt: fresh ? null : now,
       status: outcome,
       foundAt: outcome === "found" ? now : null,
       foundWithClues: outcome === "found" ? lastReadClue : null,
-      introSeenAt: introSeen ? now : null,
       revealSeenAt: revealSeen || outcome === "found" ? now : null,
       lastReadClue,
     })
     .returning({ id: schema.games.id });
   if (!game) throw new Error("Game insert failed");
 
-  await setWelcomerClues(
-    db,
-    welcomerId,
-    CLUE_NUMBERS.filter((number) => number > 1 && number - 1 <= cluesWritten),
-  );
+  await setWelcomerClues(db, welcomerId, CLUE_NUMBERS_TO_WRITE);
+  await snapshotClues(db, game.id, welcomerId);
 
-  if (player && !fresh) await seedProgress(db, game.id, welcomerOption);
-  if (outcome === "found") await seedFound(db, game.id, welcomerId);
+  const album = { collectorId: playerRow.id, gameId: game.id };
+  if (player && !fresh) await seedProgress(db, album, welcomerOption);
+  if (outcome === "found") await seedFound(db, album, welcomerId);
 
   return { removed: removed.length, startDate };
 }
@@ -478,106 +504,121 @@ export async function setPersonCard(db: SchemaDb, email: string, filled: boolean
     .where(eq(schema.people.email, email));
 }
 
-type AdminBoardGame = {
+type AdminBoardMission = {
   name: string;
   email: string;
-  /** Today's game day; 0 starts tomorrow, -7 in eight days. */
+  /** The player signed in: their people row has a Clerk id and the mission is linked to it. */
+  signedIn: boolean;
+  /** Clues 2 to 4 they wrote for their own welcomer turn. */
+  cluesWritten: number;
+  /** Today's game day. */
   day: number;
   welcomer: string;
-  /** The new hire already signed in: the game is linked to their people row. */
-  signedIn: boolean;
-  /** A seeded teammate who added it; From Deel when absent. */
+  /** A seeded teammate who turned it on. */
   addedBy?: string;
   outcome?: "found" | "revealed";
-  /** What the new hire did; none for a game they have not played. */
+  /** What the player did; none for a mission they have not played. */
   activity?: { collected: number; wrongGuesses: number; idleDays: number };
 };
 
 const FOUND_ON_DAY = 8;
 
-// Emails on reserved domains, so no seeded new hire can ever collide with a real sign-in.
-const ADMIN_BOARD_GAMES: readonly AdminBoardGame[] = [
+// Emails on reserved domains, so no seeded person can ever collide with a real sign-in. Together
+// with the seeded teammates, who sign in with a fake Clerk id and have no mission, they cover
+// every row of the admin People page: no mission, playing, done, not signed in, and
+// people with clues missing.
+const ADMIN_BOARD_MISSIONS: readonly AdminBoardMission[] = [
   {
     name: "Priya Shah",
     email: "priya.shah@example.com",
-    day: 10,
-    welcomer: "Ana Ferreira",
     signedIn: true,
+    cluesWritten: 3,
+    day: 10,
+    welcomer: "Leo Martin",
     addedBy: "Omar Aziz",
     activity: { collected: 12, wrongGuesses: 2, idleDays: 0 },
   },
   {
     name: "Daniel Okoye",
     email: "daniel.okoye@example.com",
-    day: 3,
-    welcomer: "Mateo Ruiz",
     signedIn: true,
+    cluesWritten: 3,
+    day: 3,
+    welcomer: "Sofia Rossi",
     activity: { collected: 3, wrongGuesses: 0, idleDays: 1 },
   },
   {
     name: "Wen Zhang",
     email: "wen.zhang@example.com",
+    signedIn: true,
+    cluesWritten: 1,
     day: 7,
     welcomer: "Noor Haddad",
-    signedIn: true,
     activity: { collected: 2, wrongGuesses: 1, idleDays: 4 },
   },
   {
+    name: "Luca Moretti",
+    email: "luca.moretti@example.com",
+    signedIn: true,
+    cluesWritten: 3,
+    day: 18,
+    welcomer: "Zoe Garcia",
+    activity: { collected: 5, wrongGuesses: 0, idleDays: 16 },
+  },
+  {
     name: "Taylor Brooks",
-    email: "taylor.brooks@gmail.example",
+    email: "taylor.brooks@example.com",
+    signedIn: true,
+    cluesWritten: 2,
     day: 2,
-    welcomer: "Maya Chen",
-    signedIn: false,
+    welcomer: "Mateo Ruiz",
   },
   {
     name: "Jamie Reyes",
     email: "jamie.reyes@example.com",
+    signedIn: true,
+    cluesWritten: 0,
     day: 1,
-    welcomer: "Leo Martin",
-    signedIn: false,
+    welcomer: "Ava Patel",
     addedBy: "Omar Aziz",
   },
   {
     name: "Amara Diallo",
     email: "amara.diallo@example.com",
-    day: 0,
-    welcomer: "Jonah Park",
     signedIn: false,
+    cluesWritten: 0,
+    day: 2,
+    welcomer: "Noah Dubois",
   },
   {
     name: "Kofi Mensah",
     email: "kofi.mensah@gmail.example",
-    day: -7,
-    welcomer: "Sofia Rossi",
     signedIn: false,
+    cluesWritten: 0,
+    day: 1,
+    welcomer: "Chloe Nguyen",
     addedBy: "Inès Moreau",
   },
   {
     name: "Hugo Laurent",
     email: "hugo.laurent@example.com",
+    signedIn: true,
+    cluesWritten: 3,
     day: 21,
     welcomer: "Ethan Kim",
-    signedIn: true,
     outcome: "found",
     activity: { collected: 9, wrongGuesses: 1, idleDays: 20 },
   },
   {
     name: "Aisha Khan",
     email: "aisha.khan@example.com",
+    signedIn: true,
+    cluesWritten: 3,
     day: 21,
     welcomer: "Hana Kim",
-    signedIn: true,
     addedBy: "Inès Moreau",
     outcome: "revealed",
     activity: { collected: 7, wrongGuesses: 3, idleDays: 10 },
-  },
-  {
-    name: "Luca Moretti",
-    email: "luca.moretti@example.com",
-    day: 18,
-    welcomer: "Zoe Garcia",
-    signedIn: true,
-    activity: { collected: 5, wrongGuesses: 0, idleDays: 16 },
   },
 ];
 
@@ -587,18 +628,19 @@ const MINUTE_MS = 60_000;
 /** Stickers collected, the first few of them wrong guesses, ending `idleDays` days ago. */
 async function seedActivity(
   db: SchemaDb,
-  gameId: string,
+  { collectorId, gameId }: { collectorId: string; gameId: string },
   teammateIds: readonly string[],
-  { collected, wrongGuesses, idleDays }: NonNullable<AdminBoardGame["activity"]>,
+  { collected, wrongGuesses, idleDays }: NonNullable<AdminBoardMission["activity"]>,
   now: Date,
 ) {
   const lastActiveAt = now.getTime() - idleDays * DAY_MS;
   const at = (index: number) => new Date(lastActiveAt - index * 10 * MINUTE_MS);
   const picked = teammateIds.slice(0, collected);
+  await db.delete(schema.collections).where(eq(schema.collections.collectorPersonId, collectorId));
   if (picked.length > 0) {
     await db.insert(schema.collections).values(
       picked.map((personId, index) => ({
-        gameId,
+        collectorPersonId: collectorId,
         personId,
         note: "Something they told me.",
         createdAt: at(index),
@@ -620,31 +662,35 @@ async function seedActivity(
 }
 
 /**
- * Dev-only: (re)creates ten new-hire games covering every state of the admin New hires page, on
- * top of the seeded teammates. Only games for the seeded new-hire emails are replaced. Callers
- * must have checked the database is not production.
+ * Dev-only: (re)creates the people and missions that cover every row of the admin People page, on
+ * top of the seeded teammates, who all sign in with a fake Clerk id. Only missions for the seeded
+ * emails are replaced. Callers must have checked the database is not production.
  */
-export async function seedAdminBoard(db: SchemaDb, now: Date): Promise<{ games: number }> {
+export async function seedAdminBoard(db: SchemaDb, now: Date): Promise<{ missions: number }> {
   await seedTeammates(db);
   const today = todayInGameZone(now);
-  const emails = ADMIN_BOARD_GAMES.map(({ email }) => email);
+  const emails = ADMIN_BOARD_MISSIONS.map(({ email }) => email);
+  const teammateEmails = TEAMMATES.map(([name]) => demoEmailOf(name));
+  const signedInPeople = ADMIN_BOARD_MISSIONS.filter(({ signedIn }) => signedIn);
 
+  await db
+    .update(schema.people)
+    .set({ clerkUserId: sql`'seed_' || ${schema.people.email}` })
+    .where(and(inArray(schema.people.email, teammateEmails), isNull(schema.people.clerkUserId)));
   await db
     .insert(schema.people)
     .values(
-      ADMIN_BOARD_GAMES.filter(({ signedIn }) => signedIn).map(({ name, email }) => ({
-        name,
-        email,
-      })),
+      signedInPeople.map(({ name, email }) => ({ name, email, clerkUserId: `seed_${email}` })),
     )
-    .onConflictDoUpdate({ target: schema.people.email, set: { name: sql`excluded.name` } });
+    .onConflictDoUpdate({
+      target: schema.people.email,
+      set: { name: sql`excluded.name`, clerkUserId: sql`excluded.clerk_user_id` },
+    });
 
   const rows = await db
     .select({ id: schema.people.id, name: schema.people.name, email: schema.people.email })
     .from(schema.people)
-    .where(
-      inArray(schema.people.email, [...TEAMMATES.map(([name]) => demoEmailOf(name)), ...emails]),
-    );
+    .where(inArray(schema.people.email, [...teammateEmails, ...emails]));
   const idOf = (email: string) => {
     const id = rows.find((row) => row.email === email)?.id;
     if (!id) throw new Error(`Seeded person ${email} is missing`);
@@ -652,35 +698,65 @@ export async function seedAdminBoard(db: SchemaDb, now: Date): Promise<{ games: 
   };
 
   await db.delete(schema.games).where(inArray(schema.games.playerEmail, emails));
+  // A teammate welcomes one running mission, so the seeded welcomers' other missions make way.
+  const welcomerIds = ADMIN_BOARD_MISSIONS.flatMap(({ welcomer }) =>
+    welcomer ? [idOf(demoEmailOf(welcomer))] : [],
+  );
+  await db
+    .delete(schema.games)
+    .where(
+      and(inArray(schema.games.welcomerPersonId, welcomerIds), eq(schema.games.status, "active")),
+    );
 
-  for (const entry of ADMIN_BOARD_GAMES) {
+  for (const entry of ADMIN_BOARD_MISSIONS) {
+    if (entry.signedIn) {
+      await setWelcomerClues(
+        db,
+        idOf(entry.email),
+        CLUE_NUMBERS_TO_WRITE.slice(0, entry.cluesWritten),
+      );
+    }
+    const welcomerId = idOf(demoEmailOf(entry.welcomer));
     const startDate = addDays(today, -(entry.day - 1));
     const [game] = await db
       .insert(schema.games)
       .values({
         playerEmail: entry.email,
         playerPersonId: entry.signedIn ? idOf(entry.email) : null,
-        welcomerPersonId: idOf(demoEmailOf(entry.welcomer)),
+        welcomerPersonId: welcomerId,
         startDate,
         status: entry.outcome ?? "active",
         foundAt:
           entry.outcome === "found" ? zonedTime(addDays(startDate, FOUND_ON_DAY - 1), 14) : null,
         foundWithClues: entry.outcome === "found" ? 3 : null,
+        introSeenAt: now,
         revealSeenAt: entry.outcome ? now : null,
-        introSeenAt: entry.signedIn ? now : null,
         createdBy: entry.addedBy ? idOf(demoEmailOf(entry.addedBy)) : null,
       })
       .returning({ id: schema.games.id });
     if (!game) throw new Error("Game insert failed");
-    await setWelcomerClues(db, idOf(demoEmailOf(entry.welcomer)), CLUE_NUMBERS_TO_WRITE);
+    // An unfinished mission is what makes someone a new hire; a finished one clears it.
+    if (entry.signedIn) {
+      await db
+        .update(schema.people)
+        .set({ newHire: entry.outcome === undefined })
+        .where(eq(schema.people.id, idOf(entry.email)));
+    }
+    await snapshotClues(db, game.id, welcomerId);
     if (entry.activity) {
       const welcomerEmail = demoEmailOf(entry.welcomer);
-      const collectable = TEAMMATES.map(([name]) => demoEmailOf(name))
-        .filter((email) => email !== welcomerEmail)
-        .map(idOf);
-      await seedActivity(db, game.id, collectable, entry.activity, now);
+      const collectable = teammateEmails.filter((email) => email !== welcomerEmail).map(idOf);
+      await seedActivity(
+        db,
+        { collectorId: idOf(entry.email), gameId: game.id },
+        collectable,
+        entry.activity,
+        now,
+      );
     }
-    if (entry.outcome === "found") await seedFound(db, game.id, idOf(demoEmailOf(entry.welcomer)));
+    if (entry.outcome === "found") {
+      await seedFound(db, { collectorId: idOf(entry.email), gameId: game.id }, welcomerId);
+    }
   }
-  return { games: ADMIN_BOARD_GAMES.length };
+  return { missions: ADMIN_BOARD_MISSIONS.length };
 }

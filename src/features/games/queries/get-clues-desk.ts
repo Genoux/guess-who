@@ -2,7 +2,6 @@ import "server-only";
 import { getViewerPerson } from "@/shared/lib/viewer-person";
 import { buildDeskClues, type DeskClue } from "../lib/desk-clues";
 import { firstName } from "../lib/first-name";
-import { hasStarted } from "../lib/new-hire-progress";
 import { findActiveWelcomerGame } from "../server/find-active-welcomer-game";
 import { findPersonById, listTeams, listWelcomerClues } from "../server/game-records";
 
@@ -35,7 +34,7 @@ export async function getCluesDesk(): Promise<CluesDesk> {
     clues: buildDeskClues({
       saved,
       teamName: team?.name ?? null,
-      started: game !== null && hasStarted(game.startDate, now),
+      welcoming: game !== null,
     }),
   };
 }

@@ -5,6 +5,7 @@ import {
   clueDay,
   clueUnlockCopy,
   clueUnlocksIn,
+  hasUnreadClue,
   newestUnreadClue,
   nextClue,
 } from "./game-clues";
@@ -120,5 +121,31 @@ describe("clueUnlockCopy", () => {
       "Unlocks tomorrow",
       "Unlocks in 3 days",
     ]);
+  });
+});
+
+describe("hasUnreadClue", () => {
+  const running = {
+    status: "active" as const,
+    welcomerPersonId: "ana",
+    startDate: "2026-11-02",
+    lastReadClue: 0,
+  };
+  // Clue 1 lands on day 3, 09:00 Montréal: 2026-11-04 14:00Z.
+  const beforeClue = new Date("2026-11-04T13:00:00Z");
+  const afterClue = new Date("2026-11-04T15:00:00Z");
+
+  it("is true once a clue landed that the player has not opened", () => {
+    expect(hasUnreadClue(running, afterClue)).toBe(true);
+    expect(hasUnreadClue({ ...running, lastReadClue: 1 }, afterClue)).toBe(false);
+  });
+
+  it("is false before the first clue lands", () => {
+    expect(hasUnreadClue(running, beforeClue)).toBe(false);
+  });
+
+  it("is false for a mission that is over or missing", () => {
+    expect(hasUnreadClue({ ...running, status: "found" }, afterClue)).toBe(false);
+    expect(hasUnreadClue(null, afterClue)).toBe(false);
   });
 });

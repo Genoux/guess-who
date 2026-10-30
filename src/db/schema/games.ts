@@ -24,14 +24,19 @@ export const games = pgTable(
     }),
     // Stored normalized (trimmed, lowercase), like people.email.
     playerEmail: text("player_email").notNull(),
+    // A mission starts the moment it exists: the welcomer and day 1 are fixed with the row.
     welcomerPersonId: uuid("welcomer_person_id")
       .notNull()
       .references(() => people.id, { onDelete: "restrict" }),
     startDate: date("start_date").notNull(),
+    // The welcomer's team as it was at the start: clue 1 reads it, so a card edited mid-mission never
+    // changes what the player was told.
+    welcomerTeamName: text("welcomer_team_name"),
     status: gameStatus("status").notNull().default("active"),
     foundAt: timestamp("found_at", { withTimezone: true }),
-    // Player-only progress: when they finished the welcome intro, and the highest clue they opened.
+    // When the player first finished or skipped the welcome tour.
     introSeenAt: timestamp("intro_seen_at", { withTimezone: true }),
+    // Player-only progress: the highest clue they opened.
     // When the player first saw the welcomer reveal; set by the right guess or on the first open.
     revealSeenAt: timestamp("reveal_seen_at", { withTimezone: true }),
     lastReadClue: smallint("last_read_clue").notNull().default(0),
@@ -46,11 +51,15 @@ export const games = pgTable(
       .$onUpdate(() => new Date()),
   },
   (t) => [
-    index("games_player_email_idx").on(t.playerEmail),
-    index("games_player_person_id_idx").on(t.playerPersonId),
+    // One mission per person, ever: a finished one stays as history.
+    uniqueIndex("games_player_email_unique").on(t.playerEmail),
+    uniqueIndex("games_player_person_id_unique")
+      .on(t.playerPersonId)
+      .where(sql`${t.playerPersonId} is not null`),
     index("games_welcomer_person_id_idx").on(t.welcomerPersonId),
-    uniqueIndex("games_active_player_email_unique")
-      .on(t.playerEmail)
+    // A person welcomes at most one running mission.
+    uniqueIndex("games_active_welcomer_unique")
+      .on(t.welcomerPersonId)
       .where(sql`${t.status} = 'active'`),
   ],
 );

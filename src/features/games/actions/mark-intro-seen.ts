@@ -19,5 +19,5 @@ export const markIntroSeen = action({
     });
     return ok();
   },
-  revalidate: () => [ROUTES.play],
+  revalidate: () => [ROUTES.play, ROUTES.playMission, ROUTES.playWelcome],
 });

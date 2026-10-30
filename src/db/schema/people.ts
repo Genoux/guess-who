@@ -31,6 +31,9 @@ export const people = pgTable(
     photoKey: text("photo_key"),
     stickerNumber: integer("sticker_number").notNull().generatedByDefaultAsIdentity(),
     hidden: boolean("hidden").notNull().default(false),
+    // A new hire has not done their mission yet: it clears when the mission ends, found or revealed.
+    // While it is set, My card and My clues stay closed.
+    newHire: boolean("new_hire").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()

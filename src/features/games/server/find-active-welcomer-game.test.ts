@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ findLatestWelcomerGame: vi.fn(), finalize: vi.fn() }));
 vi.mock("./game-records", () => ({ findLatestWelcomerGame: mocks.findLatestWelcomerGame }));
-vi.mock("./finalize-expired-game-record", () => ({ finalizeExpiredGameRecord: mocks.finalize }));
+vi.mock("@/shared/lib/finalize-expired-game-record", () => ({
+  finalizeExpiredGameRecord: mocks.finalize,
+}));
 
 import { findActiveWelcomerGame } from "./find-active-welcomer-game";
 

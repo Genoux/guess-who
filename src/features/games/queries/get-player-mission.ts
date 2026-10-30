@@ -1,6 +1,6 @@
 import "server-only";
-import { clueCardState, clueUnlocksIn, MISSING_CLUE_TEXT } from "../lib/game-clues";
-import { loadPlayerBoard, type PlayerNav, toPlayerNav } from "../server/load-player-board";
+import { clueCardState, clueUnlocksIn } from "../lib/game-clues";
+import { loadPlayerBoard } from "../server/load-player-board";
 import { type GameOutcome, toGameOutcome } from "../server/to-game-outcome";
 
 export type MissionClue = {
@@ -13,25 +13,25 @@ export type MissionClue = {
 };
 
 export type PlayerMission = {
-  nav: PlayerNav;
   outcome: GameOutcome;
   clues: MissionClue[];
 };
 
+/** The viewer's mission screen; null without a mission. */
 export async function getPlayerMission(): Promise<PlayerMission | null> {
   const board = await loadPlayerBoard();
-  if (!board) return null;
+  if (board.mission !== "playing" && board.mission !== "over") return null;
+  if (board.startDate === null) return null;
+  const { startDate, now } = board;
   return {
-    nav: toPlayerNav(board),
     outcome: toGameOutcome(board),
     clues: board.clues.map((clue) => {
       const state = clueCardState(clue, board.lastReadClue);
       return {
         number: clue.number,
         state,
-        unlocksInDays:
-          state === "down" ? clueUnlocksIn(clue.number, board.startDate, board.now) : null,
-        text: state === "down" ? null : (clue.text ?? MISSING_CLUE_TEXT),
+        unlocksInDays: state === "down" ? clueUnlocksIn(clue.number, startDate, now) : null,
+        text: state === "down" ? null : clue.text,
       };
     }),
   };

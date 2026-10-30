@@ -9,15 +9,15 @@ export type CollectTarget = StickerDetail & {
   total: number;
 };
 
-/** One sticker of the player's album; null when the id is not in it or there is no game. */
+/** One sticker of the viewer's album; null when the id is not in it. */
 export async function getCollectTarget(personId: string): Promise<CollectTarget | null> {
   if (!z.uuid().safeParse(personId).success) return null;
   const board = await loadPlayerBoard();
-  const sticker = board?.stickers.find((candidate) => candidate.id === personId);
-  if (!board || !sticker) return null;
+  const sticker = board.stickers.find((candidate) => candidate.id === personId);
+  if (!sticker) return null;
   return {
     ...toStickerDetail(sticker),
-    active: board.game.status === "active",
+    active: board.mission === "playing",
     collectedCount: board.collectedCount,
     total: board.stickers.length,
   };

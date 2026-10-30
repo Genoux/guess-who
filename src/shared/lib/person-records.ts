@@ -1,6 +1,6 @@
 import "server-only";
 import { errorChain, isUniqueViolation } from "@inbeat/core/errors";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { games, type Person, people } from "@/db/schema";
 import type { VerifiedIdentity } from "./clerk-identity";
 import { db } from "./db";
@@ -29,13 +29,15 @@ export async function claimPerson(
   personId: string,
   clerkUserId: string,
   syncedSessionId: string,
-  { imageUrl, slackUserId }: Pick<VerifiedIdentity, "imageUrl" | "slackUserId">,
+  { name, imageUrl, slackUserId }: Pick<VerifiedIdentity, "name" | "imageUrl" | "slackUserId">,
 ) {
   const [person] = await db
     .update(people)
     .set({
       clerkUserId,
       syncedSessionId,
+      // A row adding someone pre-created is named after their email until they sign in.
+      name: sql`case when ${people.name} = split_part(${people.email}, '@', 1) then ${name} else ${people.name} end`,
       ...(imageUrl && { imageUrl }),
       ...(slackUserId && { slackUserId }),
     })

@@ -19,4 +19,5 @@ export const ROUTES = {
   devCard: "/dev/card",
   devAdmin: "/dev/admin",
   devClues: "/dev/clues",
+  devLocked: "/dev/locked",
 } as const;

@@ -36,13 +36,23 @@ const inTeam = (person: StickerPerson, index: number): StickerPerson => {
   return team ? { ...person, team: team.name, color: team.color, tint: team.tint } : person;
 };
 
+// The committed demo portraits, so the album shows real files from /demo/avatars.
+const DEMO_PHOTOS = [
+  "ana-souza",
+  "mateo-ruiz",
+  "noor-haddad",
+  "omar-aziz",
+  "ben-carter",
+  "grace-liu",
+].map((slug) => `/demo/avatars/${slug}.webp`);
+
 const people: StickerPerson[] = [
   noor,
   jonah,
   ana,
   ...NAMES.map((name, index) => {
     const base = [noor, jonah, ana][index % 3] as StickerPerson;
-    return { ...base, name, number: 10 + index, photoUrl: null };
+    return { ...base, name, number: 10 + index, photoUrl: DEMO_PHOTOS[index] ?? null };
   }),
 ].map((person, index) => inTeam(person, index));
 

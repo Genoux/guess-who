@@ -1,18 +1,14 @@
 type ClueAccessInput = {
   number: number;
-  /** What the welcomer saved for this clue. */
-  text: string | null;
-  over: boolean;
-  /** The game's first day has come. */
-  started: boolean;
+  /** They are the welcomer of a started, running mission. */
+  welcoming: boolean;
 };
 
 /**
- * What the welcomer may do with a clue: free until the game plays, then a saved clue is locked and
- * an unwritten one can still be added. Clue 1 is generated; once the game is over nothing changes.
+ * What a teammate may do with their own clue: write it freely, until they welcome a started
+ * mission; then it is locked, so the player never meets a clue that moved. Clue 1 is generated.
  */
-export function welcomerClueAccess({ number, text, over, started }: ClueAccessInput) {
-  if (number === 1 || over) return { editable: false, locked: false };
-  const locked = started && Boolean(text);
-  return { editable: !locked, locked };
+export function welcomerClueAccess({ number, welcoming }: ClueAccessInput) {
+  if (number === 1) return { editable: false, locked: false };
+  return { editable: !welcoming, locked: welcoming };
 }

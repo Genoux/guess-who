@@ -5,8 +5,6 @@ import { AnimatePresence, motion } from "motion/react";
 import { type ReactNode, useCallback, useRef, useState, useTransition } from "react";
 import { ClueCard } from "@/shared/components/game/clue-card";
 import { GameButton } from "@/shared/components/game/game-button";
-import { GameModal } from "@/shared/components/game/game-modal";
-import { GameModalActions } from "@/shared/components/game/game-modal-actions";
 import { stagger, TRANSITION } from "@/shared/components/game/game-motion";
 import { GameShell } from "@/shared/components/game/game-shell";
 import { GameStage } from "@/shared/components/game/game-stage";
@@ -14,14 +12,15 @@ import { gameToast } from "@/shared/components/game/game-toaster";
 import { GameTooltip } from "@/shared/components/game/game-tooltip";
 import { Reveal } from "@/shared/components/game/reveal";
 import { Stepper } from "@/shared/components/game/stepper";
-import { celebrate } from "@/shared/lib/celebrate";
 import { writeClue } from "../actions/write-clue";
+import { canAdvanceFrom, clueNeedsTeam, teamMissing } from "../lib/clue-flow";
 import { CLUE_HINTS } from "../lib/clue-hints";
+import type { TopNavData } from "../lib/top-nav";
 import type { CluesDesk } from "../queries/get-clues-desk";
 import { writeClueSchema } from "../schemas";
+import { AppTopNav } from "./app-top-nav";
 import { ClueWriterCard } from "./clue-writer-card";
 import { InertWhenLeaving, SLIDE_MOTION, STEP_MOTION } from "./step-motion";
-import { TeammateTopNav } from "./teammate-top-nav";
 
 const DONE_ROTATIONS = [-4, 2, -1, 4];
 
@@ -30,19 +29,20 @@ type Step = (typeof STEPS)[number];
 
 type CluesFlowProps = {
   desk: CluesDesk;
-  /** Adds the New hires tab to the top bar. */
-  admin?: boolean;
+  nav: TopNavData;
   /** Dev preview: clues are not saved. */
   preview?: boolean;
 };
 
 /**
  * A teammate's own clues, one card at a time, then the set view; it opens on the writer until all
- * three clues are written. A secret welcomer confirms before saving, as it locks the clues.
+ * three clues are written.
  */
-export function CluesFlow({ desk, admin = false, preview = false }: CluesFlowProps) {
+export function CluesFlow({ desk, nav, preview = false }: CluesFlowProps) {
   const canEdit = desk.clues.some((c) => c.editable);
-  const cluesSet = !canEdit || desk.clues.every((c) => !c.editable || c.text);
+  // Clue 1 says where they work, so a person with no team has not set their clues yet.
+  const cluesSet =
+    !canEdit || (!teamMissing(desk.clues) && desk.clues.every((c) => !c.editable || c.text));
   const [step, setStep] = useState<Step>(cluesSet ? "done" : "write");
   const [direction, setDirection] = useState(0);
   const navigated = useRef(false);
@@ -50,7 +50,6 @@ export function CluesFlow({ desk, admin = false, preview = false }: CluesFlowPro
   const [index, setIndex] = useState(0);
   const [drafts, setDrafts] = useState(() => desk.clues.map((clue) => clue.text ?? ""));
   const [pending, startTransition] = useTransition();
-  const [confirming, setConfirming] = useState(false);
   const clue = desk.clues[index];
   const who = desk.playerNamed ? desk.playerFirstName : "the new hire";
   const unsaved = desk.clues.flatMap((c, i) => {
@@ -78,17 +77,11 @@ export function CluesFlow({ desk, admin = false, preview = false }: CluesFlowPro
     setIndex(next);
   };
 
-  const finish = () => {
-    goToStep("done");
-    if (desk.welcoming) void celebrate({ x: 0.5, y: 0.45 });
-  };
-
   const next = () => {
-    if (!clue) return;
+    if (!clue || !canAdvanceFrom(desk.clues, index)) return;
     if (index < desk.clues.length - 1) return goTo(index + 1);
-    if (unsaved.length === 0) return finish();
-    if (desk.welcoming) setConfirming(true);
-    else save();
+    if (unsaved.length === 0) return goToStep("done");
+    save();
   };
 
   const save = () => {
@@ -99,13 +92,11 @@ export function CluesFlow({ desk, admin = false, preview = false }: CluesFlowPro
         const result = preview ? { ok: true as const } : await writeClue(parsed.data);
         if (!result.ok) {
           gameToast(result.error);
-          setConfirming(false);
           return;
         }
       }
-      setConfirming(false);
-      if (!desk.welcoming) gameToast("Saved");
-      finish();
+      gameToast("Saved");
+      goToStep("done");
     });
   };
 
@@ -116,6 +107,7 @@ export function CluesFlow({ desk, admin = false, preview = false }: CluesFlowPro
       const hint = CLUE_HINTS[clue.number];
       const last = index === desk.clues.length - 1;
       const blank = clue.editable && !drafts[index]?.trim();
+      const needsTeam = clueNeedsTeam(clue);
       return (
         <GameStage className="gap-8 pt-4">
           <Stepper
@@ -171,14 +163,14 @@ export function CluesFlow({ desk, admin = false, preview = false }: CluesFlowPro
               <ArrowLeftIcon />
             </GameButton>
             {last ? (
-              <GameButton disabled={pending || blank} onClick={next}>
+              <GameButton disabled={pending || blank || needsTeam} onClick={next}>
                 Done
               </GameButton>
             ) : (
               <GameButton
                 size="round"
                 aria-label="Next clue"
-                disabled={pending || blank}
+                disabled={pending || blank || needsTeam}
                 onClick={next}
               >
                 <ArrowRightIcon />
@@ -244,7 +236,7 @@ export function CluesFlow({ desk, admin = false, preview = false }: CluesFlowPro
 
   return (
     <GameShell>
-      <TeammateTopNav current="clues" admin={admin} welcomer={desk.welcoming} />
+      <AppTopNav nav={nav} current="clues" />
       {/* popLayout takes the leaving view out of the flow where it stands, so the arriving one's
           height never re-centers it mid-fade. The page returns to the top once nothing shows. */}
       <div className="relative flex flex-1">
@@ -266,17 +258,6 @@ export function CluesFlow({ desk, admin = false, preview = false }: CluesFlowPro
           </motion.div>
         </AnimatePresence>
       </div>
-      <GameModal
-        open={confirming}
-        onOpenChange={(open) => !pending && setConfirming(open)}
-        title="Lock in your clues?"
-        description={`You can't edit them while ${who} is playing.`}
-      >
-        <GameModalActions
-          secondary={{ label: "Cancel", disabled: pending, onClick: () => setConfirming(false) }}
-          primary={{ label: "OK", disabled: pending, onClick: save }}
-        />
-      </GameModal>
     </GameShell>
   );
 }

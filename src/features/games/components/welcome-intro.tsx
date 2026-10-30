@@ -25,7 +25,7 @@ import { AFTER_LEAVE_S, InertWhenLeaving, SLIDE_MOTION, STEP_MOTION } from "./st
 
 type WelcomeIntroProps = {
   firstName: string;
-  /** Dev preview: finishing replays the intro instead of saving and leaving. */
+  /** Dev preview: finishing replays the intro instead of leaving it. */
   preview?: boolean;
 };
 
@@ -189,7 +189,7 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
     ? (heading: HTMLHeadingElement | null) => heading?.focus({ preventScroll: true })
     : undefined;
 
-  const finish = () => {
+  const leaveTo = (destination: string) => {
     if (preview) {
       goTo(0);
       return;
@@ -200,7 +200,7 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
         gameToast(result.error);
         return;
       }
-      router.push(ROUTES.play);
+      router.push(destination);
     });
   };
 
@@ -277,7 +277,7 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
                 Your first two weeks come with a small game.
               </p>
               <div className="mt-10 flex gap-3">
-                <GameButton variant="light" onClick={finish} disabled={pending}>
+                <GameButton variant="light" onClick={() => leaveTo(ROUTES.play)} disabled={pending}>
                   Skip for now
                 </GameButton>
                 <GameButton onClick={() => goTo(1)}>How it works</GameButton>
@@ -368,8 +368,8 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
                   <ArrowLeftIcon />
                 </GameButton>
                 {last ? (
-                  <GameButton onClick={finish} disabled={pending}>
-                    {preview ? "Replay" : "Open my album"}
+                  <GameButton onClick={() => leaveTo(ROUTES.playMission)} disabled={pending}>
+                    {preview ? "Replay" : "Let’s go"}
                   </GameButton>
                 ) : (
                   <GameButton size="round" aria-label="Next" onClick={() => goTo(step + 1)}>
