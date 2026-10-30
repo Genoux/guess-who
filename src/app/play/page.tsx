@@ -41,6 +41,11 @@ export default async function AlbumPage(props: {
           <div className="flex flex-col items-center gap-5">
             <h1 className="font-game-serif text-hero">Your album</h1>
             <ProgressSlots collected={album.nav.collectedCount} total={album.nav.total} />
+            {album.stickers.length === 0 && (
+              <p className="text-game-muted">
+                The album is still empty. Stickers arrive as teammates fill in their cards.
+              </p>
+            )}
           </div>
           {album.outcome.over ? (
             <AlbumBanner href={ROUTES.playMission} {...endingBanner(album.outcome)} />
@@ -53,7 +58,7 @@ export default async function AlbumPage(props: {
             />
           ) : null}
         </AlbumCover>
-        {album.stickers.length > 0 ? (
+        {album.stickers.length > 0 && (
           <AlbumBoard
             teams={album.teams}
             stickers={album.stickers}
@@ -61,10 +66,6 @@ export default async function AlbumPage(props: {
             collectedCount={album.nav.collectedCount}
             initialStatus={parseStickerFilter(query[STICKER_FILTER_PARAM])}
           />
-        ) : (
-          <p className="text-game-muted">
-            The album is still empty. Stickers arrive as teammates fill in their cards.
-          </p>
         )}
       </GameStage>
     </GameShell>

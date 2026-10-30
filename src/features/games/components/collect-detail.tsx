@@ -29,7 +29,7 @@ type CollectBarProps = {
 export function CollectBar({ onClose, reveal, tone = "soft" }: CollectBarProps) {
   return (
     <div className="flex w-full items-center justify-between">
-      <span className="font-game-serif text-heading md:text-logo">The Album</span>
+      <span className="font-game-serif whitespace-nowrap text-heading lg:text-logo">The Album</span>
       {reveal === "playing" ? (
         <CloseButton
           tone={tone}
