@@ -9,7 +9,13 @@ import { NumberCell, PersonCell, RoleTag, TeamTag, WelcomerCell } from "./person
 /** Finished missions, most recently ended first. */
 export function PeopleDone({ rows }: { rows: readonly DoneRowView[] }) {
   return (
-    <GameBook as="section" className="people--done items-stretch gap-0 p-4 text-left md:p-6">
+    <GameBook
+      as="section"
+      className={gameCn(
+        "people--done items-stretch gap-0 p-4 text-left md:p-6",
+        rows.length === 0 && "flex-1",
+      )}
+    >
       {rows.length === 0 ? (
         <PeopleEmpty
           title="Nothing here yet"

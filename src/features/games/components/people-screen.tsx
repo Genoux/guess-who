@@ -171,7 +171,7 @@ export function PeopleScreen({
         </GameButton>
       </Reveal>
 
-      <Reveal delay={BOOK_DELAY_S} className="flex w-full flex-col gap-5">
+      <Reveal delay={BOOK_DELAY_S} className="flex w-full flex-1 flex-col gap-5">
         <PillTabs
           tone="page"
           label="People views"

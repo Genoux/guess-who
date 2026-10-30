@@ -87,7 +87,10 @@ export function PeopleNoMission({ rows, onTurnOn, onSetNewHire }: PeopleNoMissio
     <>
       <GameBook
         as="section"
-        className={gameCn("people--no-mission items-stretch gap-0 p-4 text-left md:p-6")}
+        className={gameCn(
+          "people--no-mission items-stretch gap-0 p-4 text-left md:p-6",
+          matching.length === 0 && "flex-1",
+        )}
       >
         <div className="flex flex-wrap items-center gap-2 pb-2 md:flex-nowrap md:gap-3">
           <GameSearchField

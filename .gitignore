@@ -15,9 +15,6 @@ npm-debug.log*
 .clerk/
 .claude/
 
-# Licensed brand fonts (Fieldtrip): never commit, the repo is public
-/public/fonts/
-
 # Storybook
 storybook-static/
 *storybook.log
