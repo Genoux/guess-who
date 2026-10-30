@@ -173,10 +173,12 @@ function FoundBody({ outcome, phase, onReveal, onRevealed, flightId, onClose }: 
       <motion.div
         // Lines the logo up with GameTopNav's so it stays put as this opens over the page; py-2.5
         // makes up for the close button being 4px taller than the nav's avatar.
-        className="flex items-center justify-between border-transparent border-b px-4 pt-1 pb-2.5 md:h-18 md:px-10 md:py-0 [&>*]:pointer-events-auto"
+        className="flex items-center justify-between border-transparent border-b px-4 pt-1 pb-2.5 md:h-18 md:px-6 md:py-0 lg:px-10 [&>*]:pointer-events-auto"
         {...OVERLAY_FADE}
       >
-        <span className="font-game-serif text-heading md:text-logo">The Album</span>
+        <span className="font-game-serif whitespace-nowrap text-heading lg:text-logo">
+          The Album
+        </span>
         {phase === "gate" ? (
           <CloseButton asChild tone="on-color" label="Back to album">
             <Link href={ROUTES.play} />

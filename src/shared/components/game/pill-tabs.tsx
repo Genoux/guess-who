@@ -86,6 +86,8 @@ export function PillTabs({ tabs, label = "Main", tone = "light", className }: Pi
           // Four or more tabs share a phone's width: tighter padding and a smaller label keep each on one line.
           tabs.length > 3 && "max-md:px-2 max-md:text-small",
           tabs.length > 5 && "max-md:px-1 max-md:text-[0.8125rem]",
+          // Five or six nav tabs beside the logo on a tablet: tighter until there is room.
+          tabs.length > 4 && tone !== "page" && "md:max-lg:px-2.5 md:max-lg:text-small",
           // Tabs that carry a count are wider: tighter on a phone so four of them fit.
           tone === "page" &&
             "max-md:gap-1 max-md:px-1.5 max-md:text-[0.8125rem] max-[24rem]:px-1 max-[24rem]:text-xs",

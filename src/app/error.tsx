@@ -14,7 +14,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
     <main className="flex min-h-screen flex-col items-center justify-center gap-3 px-6 text-center">
       <h1 className="text-2xl font-medium">Something went wrong</h1>
       {error.digest ? (
-        <p className="font-mono text-xs text-muted-foreground">{error.digest}</p>
+        <p className="font-mono text-xs text-muted-foreground">Error: {error.digest}</p>
       ) : null}
       <Button type="button" variant="outline" onClick={reset}>
         Try again

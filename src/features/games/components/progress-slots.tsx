@@ -8,6 +8,7 @@ type ProgressSlotsProps = {
 
 /** One slot per sticker in the album, filled as the player collects them. */
 export function ProgressSlots({ collected, total, className }: ProgressSlotsProps) {
+  if (total === 0) return null;
   return (
     <div
       role="img"
