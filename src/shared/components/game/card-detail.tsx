@@ -17,7 +17,7 @@ export function CardDetail({ card, cardFooter, panel, footer, className }: CardD
   return (
     <div
       className={gameCn(
-        "mx-auto grid w-full max-w-220 justify-items-center gap-10 md:grid-cols-[auto_minmax(0,1fr)] md:items-center md:justify-items-stretch md:gap-x-16",
+        "mx-auto grid w-full max-w-220 justify-items-center gap-8 md:grid-cols-[auto_minmax(0,1fr)] md:items-center md:justify-items-stretch md:gap-x-16",
         className,
       )}
     >

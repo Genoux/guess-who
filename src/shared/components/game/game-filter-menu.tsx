@@ -8,6 +8,8 @@ export type GameFilterOption<Value extends string> = {
   value: Value;
   label: string;
   count?: number;
+  /** A team color, shown as a dot before the label. */
+  color?: string;
 };
 
 type GameFilterMenuProps<Value extends string> = {
@@ -17,6 +19,8 @@ type GameFilterMenuProps<Value extends string> = {
   /** The first option is the unfiltered one; any other turns the trigger ink. */
   options: readonly GameFilterOption<Value>[];
   onValueChange: (value: Value) => void;
+  /** Which edge of the trigger the menu lines up with. */
+  align?: "start" | "end";
   className?: string;
 };
 
@@ -26,6 +30,7 @@ export function GameFilterMenu<Value extends string>({
   value,
   options,
   onValueChange,
+  align = "end",
   className,
 }: GameFilterMenuProps<Value>) {
   const selected = options.find((option) => option.value === value) ?? options[0];
@@ -48,7 +53,7 @@ export function GameFilterMenu<Value extends string>({
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content
-          align="end"
+          align={align}
           sideOffset={8}
           collisionPadding={16}
           className="z-50 flex min-w-52 flex-col gap-0.5 rounded-game-lg bg-game-surface p-1.5 font-game-sans text-game-ink shadow-pop"
@@ -68,7 +73,14 @@ export function GameFilterMenu<Value extends string>({
                     <CheckIcon aria-hidden className="size-4" />
                   </DropdownMenu.ItemIndicator>
                 </span>
-                <span className="flex-1">{option.label}</span>
+                {option.color ? (
+                  <span
+                    aria-hidden
+                    className="size-2 flex-none rounded-full"
+                    style={{ backgroundColor: option.color }}
+                  />
+                ) : null}
+                <span className="flex-1 whitespace-nowrap">{option.label}</span>
                 {option.count === undefined ? null : (
                   <span className="text-game-muted text-small tabular-nums">{option.count}</span>
                 )}

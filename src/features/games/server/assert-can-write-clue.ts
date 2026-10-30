@@ -1,23 +1,24 @@
 import "server-only";
 import { AppError } from "@inbeat/core/errors";
-import type { Clue, Game } from "../types";
 
-/** Clue 1 is the welcomer's team and is never written by hand. */
+/** Clue 1 is the teammate's team and is never written by hand. */
 const FIRST_WRITABLE_CLUE = 2;
 
 type ClueWriteCheck = {
-  game: Pick<Game, "id" | "welcomerPersonId" | "status">;
-  clue: Pick<Clue, "gameId" | "number" | "releaseAt">;
-  viewerPersonId: string;
-  now: Date;
+  number: number;
+  /** They welcome a mission that is playing. */
+  welcoming: boolean;
 };
 
-export function assertCanWriteClue({ game, clue, viewerPersonId, now }: ClueWriteCheck) {
-  if (game.welcomerPersonId !== viewerPersonId) {
-    throw new AppError("forbidden", "viewer is not the welcomer of this game");
+/**
+ * A teammate writes their own clues whenever they like, until they welcome a started mission:
+ * then every clue is read-only, so the player never meets a clue that moved.
+ */
+export function assertCanWriteClue({ number, welcoming }: ClueWriteCheck) {
+  if (number < FIRST_WRITABLE_CLUE) throw new AppError("forbidden", "clue is generated");
+  if (welcoming) {
+    throw new AppError("forbidden", "clues are locked while their mission is playing", {
+      safeMessage: "Locked while the new hire is playing.",
+    });
   }
-  if (clue.gameId !== game.id) throw new AppError("forbidden", "clue belongs to another game");
-  if (game.status !== "active") throw new AppError("conflict", "game is not active");
-  if (clue.number < FIRST_WRITABLE_CLUE) throw new AppError("forbidden", "clue is generated");
-  if (now >= clue.releaseAt) throw new AppError("conflict", "clue already released");
 }

@@ -50,6 +50,19 @@ describe("guessWelcomerRecord", () => {
     );
   });
 
+  it("clears the player's new hire flag with the find, in the same transaction", async () => {
+    await guess("welcomer");
+    const sql = statements();
+    const clear = sql.findIndex((text) => text.startsWith("update people set new_hire"));
+    expect(clear).toBeGreaterThan(sql.findIndex((text) => text.startsWith("update games")));
+    expect(clear).toBeLessThan(sql.lastIndexOf("commit"));
+  });
+
+  it("keeps the flag on a wrong guess", async () => {
+    await guess("teammate");
+    expect(statements().join("\n")).not.toMatch(/update people/);
+  });
+
   it("rules out a wrong guess and drops them from the maybe list", async () => {
     await expect(guess("teammate")).resolves.toEqual({ correct: false });
     const sql = statements();

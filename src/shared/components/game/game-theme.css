@@ -31,6 +31,7 @@
   --color-game-found: #ea4112;
   /* found, darkened so error text passes 4.5:1 on the surface and the background */
   --color-game-error: #b8320c;
+  --color-game-ready: #157428;
 
   /* Fonts: licensed faces with system fallbacks (files are not committed) */
   --font-game-serif: "Diplomat ST", Georgia, serif;
@@ -124,6 +125,9 @@
   --transition-duration-slow: 500ms;
   --transition-duration-slower: 640ms;
 }
+
+/* A device where hovering works: controls can wait for a hover, and tooltips carry their words. */
+@custom-variant hoverable (@media (hover: hover));
 
 /* A swap of game screens (GameShell's ViewTransition): one dissolve, old into new. */
 ::view-transition-group(.game-page),

@@ -1,22 +1,19 @@
 import { describe, expect, it } from "vitest";
-import type { Clue } from "../types";
 import {
   buildGameClues,
   clueCardState,
   clueDay,
   clueUnlockCopy,
   clueUnlocksIn,
+  hasUnreadClue,
   newestUnreadClue,
   nextClue,
 } from "./game-clues";
 
 const game = { id: "game_1", startDate: "2026-11-02" };
-const row = (number: number, text: string | null, gameId = "game_1"): Clue => ({
-  id: `clue_${number}`,
-  gameId,
+const row = (number: number, text: string) => ({
   number,
   text,
-  releaseAt: new Date("2030-01-01T00:00:00Z"),
   createdAt: new Date("2026-11-02T00:00:00Z"),
   updatedAt: new Date("2026-11-02T00:00:00Z"),
 });
@@ -39,15 +36,19 @@ describe("buildGameClues", () => {
     expect(buildGameClues(game, [], null)[0]?.text).toBeNull();
   });
 
-  it("takes clues 2 to 4 from the welcomer's rows, never from another game", () => {
+  it("takes clues 2 to 4 from the welcomer's own clues", () => {
     const clues = buildGameClues(
       game,
-      [row(2, "Has never owned a car"), row(3, "Other game", "game_2")],
+      [row(2, "Has never owned a car"), row(4, "Plays it badly")],
       "Creative",
     );
-    expect(clues[1]).toMatchObject({ id: "clue_2", text: "Has never owned a car" });
+    expect(clues[1]).toMatchObject({
+      id: "game_1:2",
+      gameId: "game_1",
+      text: "Has never owned a car",
+    });
     expect(clues[2]?.text).toBeNull();
-    expect(clues[3]?.text).toBeNull();
+    expect(clues[3]?.text).toBe("Plays it badly");
   });
 
   it("uses the schedule over a stored release time", () => {
@@ -120,5 +121,31 @@ describe("clueUnlockCopy", () => {
       "Unlocks tomorrow",
       "Unlocks in 3 days",
     ]);
+  });
+});
+
+describe("hasUnreadClue", () => {
+  const running = {
+    status: "active" as const,
+    welcomerPersonId: "ana",
+    startDate: "2026-11-02",
+    lastReadClue: 0,
+  };
+  // Clue 1 lands on day 3, 09:00 Montréal: 2026-11-04 14:00Z.
+  const beforeClue = new Date("2026-11-04T13:00:00Z");
+  const afterClue = new Date("2026-11-04T15:00:00Z");
+
+  it("is true once a clue landed that the player has not opened", () => {
+    expect(hasUnreadClue(running, afterClue)).toBe(true);
+    expect(hasUnreadClue({ ...running, lastReadClue: 1 }, afterClue)).toBe(false);
+  });
+
+  it("is false before the first clue lands", () => {
+    expect(hasUnreadClue(running, beforeClue)).toBe(false);
+  });
+
+  it("is false for a mission that is over or missing", () => {
+    expect(hasUnreadClue({ ...running, status: "found" }, afterClue)).toBe(false);
+    expect(hasUnreadClue(null, afterClue)).toBe(false);
   });
 });

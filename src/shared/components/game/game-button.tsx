@@ -20,6 +20,8 @@ const gameButtonVariants = cva(
         sm: "h-11 gap-2 px-5.5 text-button-sm",
         /** Icon only, e.g. a wizard's back and next arrows. */
         round: "size-13 [&_svg]:size-5",
+        /** Icon only, where the round button would grow its row: a list row's action. */
+        "round-sm": "size-11 [&_svg]:size-4.5",
       },
     },
     compoundVariants: [

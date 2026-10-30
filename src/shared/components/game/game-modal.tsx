@@ -57,13 +57,15 @@ export function GameModal({
                 <div className="flex flex-col items-center gap-1.5">
                   <Dialog.Title className="font-game-serif text-hero-md">{title}</Dialog.Title>
                   {description ? (
-                    <Dialog.Description className="max-w-130 text-game-muted text-lead">
+                    <Dialog.Description className="max-w-130 text-balance text-game-muted text-lead">
                       {description}
                     </Dialog.Description>
                   ) : null}
                 </div>
                 {children ? (
-                  <div className="flex flex-wrap items-center justify-center gap-4">{children}</div>
+                  <div className="flex w-full flex-wrap items-center justify-center gap-4">
+                    {children}
+                  </div>
                 ) : null}
               </motion.div>
             </Dialog.Content>

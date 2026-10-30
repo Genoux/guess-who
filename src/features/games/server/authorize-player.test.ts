@@ -17,17 +17,17 @@ vi.mock("./game-records", () => ({
   findLatestPlayerGame: mocks.findLatestPlayerGame,
   findLatestWelcomerGame: mocks.findLatestWelcomerGame,
 }));
-vi.mock("./finalize-expired-game-record", () => ({
+vi.mock("@/shared/lib/finalize-expired-game-record", () => ({
   finalizeExpiredGameRecord: mocks.finalizeExpiredGameRecord,
 }));
 
 import { authorizePlayer } from "./authorize-player";
-import { authorizeWelcomer } from "./authorize-welcomer";
 
 const game = {
   id: "game_1",
   playerPersonId: "player",
   welcomerPersonId: "welcomer",
+  startDate: "2026-11-02",
   status: "active",
 } as Game;
 
@@ -65,24 +65,5 @@ describe("authorizePlayer", () => {
     signInAs("player");
     mocks.findPersonByClerkUserId.mockResolvedValue(undefined);
     await expect(authorizePlayer()).rejects.toSatisfy((err) => isAppError(err, "forbidden"));
-  });
-});
-
-describe("authorizeWelcomer", () => {
-  it("returns the welcomer with the game they welcome", async () => {
-    signInAs("welcomer");
-    await expect(authorizeWelcomer()).resolves.toMatchObject({ personId: "welcomer", game });
-    expect(mocks.findLatestWelcomerGame).toHaveBeenCalledWith("welcomer");
-  });
-
-  it("forbids someone who welcomes no game", async () => {
-    signInAs("teammate");
-    mocks.findLatestWelcomerGame.mockResolvedValue(undefined);
-    await expect(authorizeWelcomer()).rejects.toSatisfy((err) => isAppError(err, "forbidden"));
-  });
-
-  it("forbids a game that is not theirs", async () => {
-    signInAs("teammate");
-    await expect(authorizeWelcomer()).rejects.toSatisfy((err) => isAppError(err, "forbidden"));
   });
 });

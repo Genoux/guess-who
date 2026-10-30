@@ -1,3 +1,4 @@
+import { normalizeEmail } from "@inbeat/core/email";
 import { z } from "zod";
 import { DEV_SCENARIO_IDS } from "./lib/dev-state";
 
@@ -36,3 +37,28 @@ export const writeClueSchema = z.object({
 });
 
 export const devStateSchema = z.object({ scenario: z.enum(DEV_SCENARIO_IDS) });
+
+const playerEmail = z
+  .string()
+  .trim()
+  .pipe(z.email({ error: "Enter their email." }))
+  .transform(normalizeEmail);
+
+export const addNewHireSchema = z.object({ email: playerEmail });
+
+export const changeInviteEmailSchema = z.object({ gameId: z.uuid(), email: playerEmail });
+
+export const setAsNewHireSchema = z.object({ personId: z.uuid(), startMission: z.boolean() });
+
+export const endMissionSchema = z.object({ gameId: z.uuid() });
+
+/** More than the team has people today; a guard against an absurd request, not a product limit. */
+export const TURN_ON_MISSIONS_MAX = 500;
+
+export const turnOnMissionsSchema = z.object({
+  personIds: z
+    .array(z.uuid())
+    .min(1, "Pick at least one person.")
+    .max(TURN_ON_MISSIONS_MAX)
+    .transform((ids) => [...new Set(ids)]),
+});

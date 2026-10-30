@@ -12,10 +12,16 @@ const countChipVariants = cva(
         soft: "bg-game-ink/6 text-game-ink",
         yellow: "bg-game-shortlist text-game-ink",
         dark: "bg-game-ink-soft text-white",
+        /** A mission accomplished, in the found orange. */
+        found: "bg-game-found/14 text-game-error",
       },
       size: {
         default: "h-9 px-3.5 text-sm",
         sm: "h-8 px-3.5 text-small",
+        /** Inside a tab or a line of text, where sm would crowd it. */
+        /** In a list row, at the row's own text size. */
+        row: "h-6 px-2.5 text-xs",
+        xs: "h-6 px-2 text-xs tabular-nums",
       },
     },
     defaultVariants: { variant: "default", size: "default" },

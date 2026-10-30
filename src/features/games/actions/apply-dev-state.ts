@@ -39,6 +39,7 @@ export const applyDevState = action({
     ROUTES.playMission,
     ROUTES.playWelcome,
     ROUTES.welcomer,
+    ROUTES.clues,
     ROUTES.card,
   ],
 });

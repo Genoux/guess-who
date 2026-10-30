@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Welcome" };
 
 export default async function WelcomePage() {
   const welcome = await getPlayerWelcome();
-  if (!welcome) redirect(ROUTES.card);
+  if (!welcome) redirect(ROUTES.playMission);
 
   return (
     <GameShell>

@@ -4,17 +4,16 @@ import { ok } from "@inbeat/core/result";
 import { action } from "@inbeat/next/action";
 import { ROUTES } from "@/shared/config/routes";
 import { collectStickerSchema } from "../schemas";
-import { authorizePlayer } from "../server/authorize-player";
+import { authorizeCollector } from "../server/authorize-collector";
 import { collectStickerRecord } from "../server/collect-sticker-record";
 
 export const collectSticker = action({
   name: "games.collectSticker",
   schema: collectStickerSchema,
-  authorize: authorizePlayer,
-  run: async ({ personId, note }, player) => {
+  authorize: authorizeCollector,
+  run: async ({ personId, note }, teammate) => {
     await collectStickerRecord({
-      game: player.game,
-      viewerPersonId: player.personId,
+      viewerPersonId: teammate.personId,
       personId,
       note,
     });

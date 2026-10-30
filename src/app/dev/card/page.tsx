@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { TEAM_DEFINITIONS } from "@/entities/teams";
 import { CardEditor } from "@/features/card/components/card-editor";
 import type { MyCard } from "@/features/card/types";
-import { TeammateTopNav } from "@/features/games/components/teammate-top-nav";
-import { TEAMS } from "@/shared/components/game/fixtures";
+import { AppTopNav } from "@/features/games/components/app-top-nav";
+import { DEV_TOP_NAV } from "@/features/games/lib/dev-state";
 import { GameShell } from "@/shared/components/game/game-shell";
 import { GameStage } from "@/shared/components/game/game-stage";
 import { env } from "@/shared/config/env";
 import { isCatalogueEnabled } from "@/shared/lib/catalogue-access";
 
 export const metadata: Metadata = {
-  title: "Your sticker (dev)",
+  title: "My card (dev)",
   robots: { index: false, follow: false },
 };
 
@@ -20,10 +21,11 @@ const CARD: MyCard = {
   imageUrl: null,
   audience: "teammate",
   fields: { teamId: "", location: "", fact: "", ask: "" },
-  teams: Object.entries(TEAMS).map(([name, colors], index) => ({
+  teams: TEAM_DEFINITIONS.map(({ name, color, tint }, index) => ({
     id: `00000000-0000-4000-8000-00000000000${index + 1}`,
     name,
-    ...colors,
+    color,
+    tint,
   })),
 };
 
@@ -38,7 +40,7 @@ export default function CardPreviewPage() {
 
   return (
     <GameShell>
-      <TeammateTopNav current="card" welcomer={false} />
+      <AppTopNav nav={DEV_TOP_NAV} current="card" />
       <GameStage>
         <CardEditor card={CARD} preview />
       </GameStage>

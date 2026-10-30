@@ -52,7 +52,7 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
   const [pending, startTransition] = useTransition();
   const switched = useRef(false);
   const editButton = useRef<HTMLButtonElement>(null);
-  const teamField = useRef<HTMLSelectElement>(null);
+  const teamField = useRef<HTMLButtonElement>(null);
 
   // The clicked button goes inert with its state, so focus moves into the new one; never on load.
   useEffect(() => {
@@ -177,10 +177,14 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
                     ref={teamField}
                     label="Team"
                     name="teamId"
-                    options={card.teams.map((option) => ({ value: option.id, label: option.name }))}
+                    options={card.teams.map((option) => ({
+                      value: option.id,
+                      label: option.name,
+                      color: option.color,
+                    }))}
                     placeholder="Pick one"
                     value={values.teamId}
-                    onChange={set("teamId")}
+                    onValueChange={(teamId) => set("teamId")({ target: { value: teamId } })}
                     error={errors.teamId}
                   />
                   <GameField

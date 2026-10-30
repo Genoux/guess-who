@@ -42,6 +42,7 @@ const person = (overrides: Partial<Person> = {}): Person => ({
   syncedSessionId: null,
   stickerNumber: 1,
   hidden: false,
+  newHire: false,
   createdAt: new Date(),
   updatedAt: new Date(),
   ...overrides,

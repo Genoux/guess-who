@@ -7,7 +7,7 @@ vi.mock("@/shared/lib/db", async () => (await import("@/test/fake-db")).fakeDbMo
 
 import { markIntroSeenRecord } from "./mark-intro-seen-record";
 
-const game = { id: "game_1", playerPersonId: "player" };
+const game = { id: "game_1", playerPersonId: "player", status: "active" as const };
 const now = new Date("2026-11-02T15:00:00Z");
 
 beforeEach(() => {
@@ -15,7 +15,7 @@ beforeEach(() => {
 });
 
 describe("markIntroSeenRecord", () => {
-  it("keeps the first time the player saw the intro", async () => {
+  it("keeps the first time the player left the tour", async () => {
     await markIntroSeenRecord({ game, viewerPersonId: "player", now });
     const [update] = sentStatements(client);
     expect(update?.sql).toMatch(

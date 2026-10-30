@@ -12,8 +12,8 @@ import { isCatalogueEnabled } from "@/shared/lib/catalogue-access";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "inBeat app",
-  description: "Built on the inBeat toolkit",
+  title: { default: "The Album", template: "%s | The Album" },
+  description: "Collect your teammates' stickers and find your secret welcomer.",
 };
 
 // The nav bar is the game surface, so the browser chrome matches it.

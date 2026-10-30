@@ -5,13 +5,13 @@ import { db } from "@/shared/lib/db";
 import type { Game } from "../types";
 import { assertCanPlay } from "./assert-can-play";
 
-/** The player finished the welcome intro; the first time is kept. */
+/** The player finished or skipped the welcome tour; the first time is kept. */
 export async function markIntroSeenRecord({
   game,
   viewerPersonId,
   now,
 }: {
-  game: Pick<Game, "id" | "playerPersonId">;
+  game: Pick<Game, "id" | "playerPersonId" | "status">;
   viewerPersonId: string;
   now: Date;
 }) {

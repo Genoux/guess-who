@@ -13,8 +13,11 @@ describe("isPublicPath", () => {
     "/dev/welcome",
     "/dev/album",
     "/dev/mission",
-    "/dev/welcomer",
     "/dev/card",
+    "/dev/welcomer",
+    "/dev/admin",
+    "/dev/clues",
+    "/dev/locked",
   ])("lets %s through without a session", (path) => {
     expect(isPublicPath(path)).toBe(true);
   });
@@ -22,7 +25,10 @@ describe("isPublicPath", () => {
   it.each([
     "/",
     "/card",
+    "/clues",
     "/play",
+    "/play/mission",
+    "/play/collect/3f2a",
     "/admin",
     "/api/health/deep",
     "/api/healthz",
@@ -40,7 +46,10 @@ describe("isAdminPath", () => {
     expect(isAdminPath(path)).toBe(true);
   });
 
-  it.each(["/", "/card", "/play", "/administrator", "/api/health"])("does not gate %s", (path) => {
-    expect(isAdminPath(path)).toBe(false);
-  });
+  it.each(["/", "/card", "/play", "/play/collect/3f2a", "/administrator", "/api/health"])(
+    "does not gate %s",
+    (path) => {
+      expect(isAdminPath(path)).toBe(false);
+    },
+  );
 });

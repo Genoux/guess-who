@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Person } from "@/db/schema";
-import type { Clue, Collection, Game } from "../types";
+import type { Collection, Game } from "../types";
 
 const mocks = vi.hoisted(() => ({
   getViewerPerson: vi.fn(),
@@ -11,11 +11,11 @@ const mocks = vi.hoisted(() => ({
   listCollections: vi.fn(),
   listShortlistedIds: vi.fn(),
   listGuesses: vi.fn(),
-  listClueRows: vi.fn(),
+  listGameClues: vi.fn(),
 }));
 vi.mock("@/shared/lib/viewer-person", () => ({ getViewerPerson: mocks.getViewerPerson }));
 vi.mock("./game-records", () => mocks);
-vi.mock("./finalize-expired-game-record", () => ({
+vi.mock("@/shared/lib/finalize-expired-game-record", () => ({
   finalizeExpiredGameRecord: async (game: Game) => game,
 }));
 
@@ -36,6 +36,7 @@ const person = (id: string, overrides: Partial<Person> = {}): Person => ({
   syncedSessionId: null,
   stickerNumber: id.length,
   hidden: false,
+  newHire: false,
   createdAt: new Date(),
   updatedAt: new Date(),
   ...overrides,
@@ -58,6 +59,7 @@ const game = (status: Game["status"], revealSeenAt: Date | null = null): Game =>
   playerEmail: "player@example.com",
   welcomerPersonId: "welcomer",
   startDate: "2026-11-02",
+  welcomerTeamName: "Creative",
   status,
   foundAt: status === "found" ? new Date("2026-11-07T15:00:00Z") : null,
   foundWithClues: status === "found" ? 1 : null,
@@ -71,7 +73,7 @@ const game = (status: Game["status"], revealSeenAt: Date | null = null): Game =>
 
 const collection = (personId: string, note: string): Collection => ({
   id: `collection_${personId}`,
-  gameId: "game_1",
+  collectorPersonId: "player",
   personId,
   note,
   chatKind: null,
@@ -79,12 +81,11 @@ const collection = (personId: string, note: string): Collection => ({
   updatedAt: new Date(),
 });
 
-const clue = (number: number, text: string): Clue => ({
+const clue = (number: number, text: string) => ({
   id: `clue_${number}`,
   gameId: "game_1",
   number,
   text,
-  releaseAt: new Date(),
   createdAt: new Date(),
   updatedAt: new Date(),
 });
@@ -109,7 +110,7 @@ const setUp = (status: Game["status"], revealSeenAt: Date | null = null) => {
   mocks.listGuesses.mockResolvedValue([
     { personId: "jonah", correct: false, createdAt: new Date() },
   ]);
-  mocks.listClueRows.mockResolvedValue([clue(2, "Never owned a car"), clue(3, "Plays the cello")]);
+  mocks.listGameClues.mockResolvedValue([clue(2, "Never owned a car"), clue(3, "Plays the cello")]);
 };
 
 beforeEach(() => {
@@ -124,17 +125,28 @@ afterEach(() => {
 });
 
 describe("loadPlayerBoard while the game is active", () => {
-  it("returns null without a game", async () => {
+  it("still builds the album for a teammate with no mission", async () => {
     setUp("active");
     mocks.findLatestPlayerGame.mockResolvedValue(undefined);
-    await expect(loadPlayerBoard()).resolves.toBeNull();
+    const board = await loadPlayerBoard();
+    expect(board.game).toBeNull();
+    expect(board.clues).toEqual([]);
+    expect(board.collectedCount).toBe(2);
+    expect(board.stickers.map((s) => [s.id, s.mode])).toEqual([
+      ["welcomer", "locked"],
+      ["mateo", "collected"],
+      ["jonah", "collected"],
+      ["noor", "locked"],
+    ]);
+    expect(toPlayerNav(board)).toMatchObject({ hasMission: false, hasNewClue: false });
+    expect(mocks.listCollections).toHaveBeenCalledWith("player");
   });
 
   it("never sends the welcomer, unreleased clues or locked card fields", async () => {
     setUp("active");
     const board = await loadPlayerBoard();
     const sent = JSON.stringify(board);
-    expect(board?.game.welcomerPersonId).toBeNull();
+    expect(board?.game?.welcomerPersonId).toBeNull();
     expect(board?.welcomer).toBeNull();
     expect(sent).not.toContain("Plays the cello");
     for (const locked of ["welcomer", "noor"]) {
@@ -157,6 +169,23 @@ describe("loadPlayerBoard while the game is active", () => {
     expect(board?.newClue?.number).toBe(2);
   });
 
+  it("keeps clue 1 as the team the welcomer had at Start, even if their card changes", async () => {
+    setUp("active");
+    mocks.findPersonById.mockResolvedValue({ ...welcomer, teamId: "other" });
+    const board = await loadPlayerBoard();
+    expect(board.clues[0]).toMatchObject({ number: 1, text: "Works in Creative." });
+  });
+
+  it("keeps the welcomer in the album while the mission runs, even if their card slips out", async () => {
+    setUp("active");
+    const slipped = { ...welcomer, hidden: true, teamId: null, ask: null };
+    mocks.findPersonById.mockResolvedValue(slipped);
+    mocks.listAlbumPeople.mockResolvedValue(people.filter(({ id }) => id !== "welcomer"));
+    const board = await loadPlayerBoard();
+    expect(board.stickers.map(({ id }) => id)).toContain("welcomer");
+    expect(board.stickers.find(({ id }) => id === "welcomer")?.mode).toBe("locked");
+  });
+
   it("builds the album without the player or hidden people", async () => {
     setUp("active");
     const board = await loadPlayerBoard();
@@ -168,22 +197,20 @@ describe("loadPlayerBoard while the game is active", () => {
     ]);
     expect(board?.collectedCount).toBe(2);
     expect(board && toPlayerNav(board)).toEqual({
-      name: "Player Person",
-      color: "#F9D317",
       collectedCount: 2,
       total: 4,
       hasNewClue: true,
-      over: false,
+      hasMission: true,
     });
   });
 
   it.each(["found", "revealed"] as const)(
-    "marks the nav over, with no new clue dot, once the game is %s",
+    "keeps the Mission tab, with no new clue dot, once the game is %s",
     async (status) => {
       setUp(status);
       const board = await loadPlayerBoard();
       expect(board?.newClue).toBeNull();
-      expect(board && toPlayerNav(board)).toMatchObject({ over: true, hasNewClue: false });
+      expect(board && toPlayerNav(board)).toMatchObject({ hasMission: true, hasNewClue: false });
     },
   );
 
@@ -204,7 +231,7 @@ describe("loadPlayerBoard once the game is over", () => {
   it("opens the found welcomer's card without a badge once the reveal was seen", async () => {
     setUp("found", new Date());
     const board = await loadPlayerBoard();
-    expect(board?.game.welcomerPersonId).toBe("welcomer");
+    expect(board?.game?.welcomerPersonId).toBe("welcomer");
     expect(board?.welcomer).toMatchObject({ id: "welcomer", mode: "collected", collected: false });
     expect(board?.welcomer?.person.fact).toBe("welcomer secret fact");
   });

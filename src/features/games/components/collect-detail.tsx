@@ -153,7 +153,7 @@ export function CollectDetail({
               titleAs={Heading}
             />
           </motion.div>
-        ) : find || (target.active && target.collected) ? (
+        ) : find || (target.active && target.collected && !target.ruled) ? (
           fadeOut(wrapContent(<StickerMaybe target={target} />))
         ) : null
       }
@@ -162,7 +162,7 @@ export function CollectDetail({
           ? undefined
           : fadeOut(
               wrapContent(
-                <div className="flex flex-col gap-8">
+                <div className="flex flex-col gap-6">
                   {/* Stacked on a phone, the card right above already shows the name. */}
                   <Heading className="font-game-serif text-hero-md max-md:sr-only">
                     {person.name}

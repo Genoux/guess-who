@@ -17,7 +17,7 @@ type ShortlistInput = {
 export async function setShortlistRecord({ game, viewerPersonId, personId, on }: ShortlistInput) {
   // While the game is active every guess was wrong, so a guessed person is ruled out.
   const [collected, ruled] = await Promise.all([
-    hasCollected(game.id, personId),
+    hasCollected(viewerPersonId, personId),
     hasGuessed(game.id, personId),
   ]);
   assertCanShortlist({ game, viewerPersonId, collected, ruled });

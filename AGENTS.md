@@ -122,14 +122,31 @@ Never commit, push or open a PR unless explicitly asked.
 
 ### Product brief
 
-- The Album + Misión Incógnita: a small game for an inBeat new hire's first two weeks.
-- Users: new hires (players), teammates (fill in their sticker card), the secret welcomer
-  (a teammate picked per game), admins (People Strategy).
-- Core flows: a new hire collects teammates' stickers by chatting with them and writing one thing
-  they learned (private notebook); four clues (day 3 is always the team, days 6, 9, 12 written by
-  the welcomer); guess any collected sticker, a wrong guess rules that person out; found or revealed
-  on day 14; then the new hire makes their own sticker and joins the album. Teammates only edit
-  their own card. Admins start games, pick welcomers, manage people.
+- The Album + Misión Incógnita: a small game for an inBeat teammate's first two weeks, or anyone's
+  who an admin turns a mission on for. "New hire" is not a kind of person: it is someone whose
+  mission has not finished.
+- Users: teammates (fill in their sticker card, collect stickers, write their three secret clues),
+  players (a teammate with a mission), the secret welcomer (a teammate picked when a mission
+  starts), admins (People Strategy).
+- Core flows: every signed-in teammate has an album and collects stickers by chatting with people
+  and writing one thing they learned (private notebook). Turning a mission on starts it: a random
+  welcomer is picked and day 1 is today (there is no Start button and no waiting state). The
+  player's first visit shows the welcome tour as an explanation, then leads to the mission. Four
+  clues (day 3 is always the welcomer's team, days 6, 9, 12 are the welcomer's own, copied when the
+  mission starts); guess any collected sticker, a wrong guess rules that person out; found or
+  revealed on day 14; then the player makes their own sticker. Only a teammate with all three
+  clues written can be picked as a welcomer. The admin People page has three views, each person in
+  exactly one by mission state: Playing (including emails added by hand, with an icon until they
+  sign in), No mission (signed in, no game; search, filter, and select people to turn missions on;
+  people who find no free welcomer stay here and the toast says so) and Done. "Add new hire" adds an
+  email and starts their mission at once; they link on first sign-in. Removing a mission is End
+  mission only. One pipeline, the rite of passage: a new hire (`people.new_hire`,
+  set by "Add new hire" or "Set as new hire", and cleared when their mission ends, found or revealed)
+  earns their card and clues by playing. While the flag is set My card and My clues are hidden,
+  /card and /clues redirect, and the card and clue actions refuse ("Finish your mission first.";
+  one rule, `isLockedNewHire`). With no mission they have nothing to open, only the locked home.
+  A teammate who is not a new hire keeps My card and My clues, mission or not, and is turned on
+  from No mission once they can welcome (a finished card and all three clues).
 - Design source: the canvas at https://claude.ai/artifact/9V2NQ7cHj3dC2rRtjs4ovj and `docs/plan.md`.
 
 ### Stack deltas
@@ -151,7 +168,7 @@ Never commit, push or open a PR unless explicitly asked.
 
 | What | Why | Owner |
 |---|---|---|
-| Player screens use a game UI layer in `src/shared/components/game` built on Fieldtrip tokens and fonts, not `@inbeat/ui` | The product is a game with the Fieldtrip brand; `@inbeat/ui` stays for admin screens | John |
+| Player and admin screens use a game UI layer in `src/shared/components/game` built on Fieldtrip tokens and fonts, not `@inbeat/ui` | The product is a game with the Fieldtrip brand, admin included | John |
 | `canvas-confetti` for confetti, beside `motion` | Use an existing library instead of hand-built sparkle | John |
 | PR-title lint and release-please in this app | Versioned releases and a changelog for the app | John |
 
@@ -174,8 +191,19 @@ Never commit, push or open a PR unless explicitly asked.
 
 ### Learned facts
 
-- New hires are not a Clerk role: they are the `player` of a game. Welcomers are the `welcomer`
-  of a game. Clerk roles are only `admin` and `member`.
+- Players are not a Clerk role: a player is the `player` of a game, and a game is a person's one
+  mission (unique per email and per player). Welcomers are the `welcomer` of a game. Clerk roles
+  are only `admin` and `member`.
+- The album belongs to the person: `collections` has `collector_person_id`, not a game, so
+  deleting a game never touches it. Anyone signed in can open it; nobody collects their own sticker.
+- A game exists only once its mission has started: `welcomer_person_id` and `start_date` are
+  required. `beginMissionRecord` (used by turn-on, Add new hire and Set as new hire) takes one
+  advisory lock, picks the welcomer, inserts the game with `start_date` today and copies the
+  welcomer's three `welcomer_clues` into the per-game `clues` table; the board and the reveal read
+  that copy. A partial unique index allows one active game per welcomer; a lost race is retried
+  once, then answers "No welcomer is free right now. Try again tomorrow." Bulk turn-on starts people
+  one by one and returns `{ started, skippedNoWelcomer }`. `games.intro_seen_at` records the
+  welcome tour, shown on the first visit to `/`.
 - `getViewerPerson()` creates or links the viewer's `people` row on first request (Clerk user id,
   else verified primary email) and links unclaimed games whose `player_email` matches. A row
   already linked to another Clerk user is never moved; an admin clears `clerk_user_id` first.
@@ -184,7 +212,12 @@ Never commit, push or open a PR unless explicitly asked.
 - Emails (`people.email`, `games.player_email`) are stored normalized with `normalizeEmail`.
 - The game runs on Montréal time (`America/Toronto`): day 1 is `games.start_date`, clues land at
   09:00 on days 3, 6, 9 and 12, the reveal at 09:00 on day 14 (`features/games/lib/game-schedule.ts`).
-  Clue 1 is generated from the welcomer's team; clues 2 to 4 are the welcomer's rows.
+  Clue 1 is generated from the welcomer's team; clues 2 to 4 are the welcomer's own, one `welcomer_clues`
+  row per (person, number), kept across missions. Teammates write them on `/clues`; `eligibleWelcomers`
+  requires all three, and excludes the player, anyone welcoming a running mission and the person
+  the player welcomes. While someone welcomes a started active mission their clues are read-only.
+  Playing and welcoming at once is allowed.
+- One top bar, `AppTopNav`, for every signed-in screen: tabs Album, Mission (only with a game in any state), My card, My clues, Welcomer (while welcoming a started mission), at most 5 in PillTabs; People (admins) is an icon button beside the avatar. Only pages everyone shown them can open become tabs.
 - Player pages read through `loadPlayerBoard()` and the view shapers; never pass a raw `games`,
   `people` or `collections` row to a client component.
 - Every player screen fills the viewport and centers its content vertically: `GameStage` always does it,
@@ -199,6 +232,9 @@ Never commit, push or open a PR unless explicitly asked.
 - Tooltips, player screens included, use `Tooltip` from `@inbeat/ui/components/tooltip` (text goes in
   `content`; `TooltipProvider` is mounted in the root layout). The trigger component must forward its
   props and ref, or the tooltip never opens.
+- Teams are groups of Deel departments (all entities: IB, CM, CA, AAG), defined once in
+  `src/entities/teams.ts`; the seeds and `teamForDeelDepartment` read that list. Renames go through
+  `formerName` so `seedTeams` renames the row in place.
 - Player-facing copy stays short and plain: one line telling the player what to do, no cute or
   wordy phrasing.
 

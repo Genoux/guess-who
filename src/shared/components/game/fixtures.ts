@@ -1,11 +1,18 @@
+import { TEAM_DEFINITIONS, type TeamName } from "@/entities/teams";
 import type { StickerPerson } from "./sticker-view";
 
-// Team colors mirror the teams table in the app.
+const colorsOf = (name: TeamName) => {
+  const team = TEAM_DEFINITIONS.find((definition) => definition.name === name);
+  if (!team) throw new Error(`Unknown team: ${name}`);
+  return { color: team.color, tint: team.tint };
+};
+
+// The teams the sample people belong to; colors come from the one team definition.
 export const TEAMS = {
-  Creative: { color: "#46BDF0", tint: "#B5E5F9" },
-  Strategy: { color: "#157428", tint: "#A1C8A9" },
-  Talent: { color: "#FF97AB", tint: "#FFD5DD" },
-} as const;
+  Creative: colorsOf("Creative"),
+  Strategy: colorsOf("Strategy"),
+  Talent: colorsOf("Talent"),
+};
 
 // A plain silhouette standing in for an uploaded photo, so the photo path can be seen.
 const SAMPLE_PHOTO = `data:image/svg+xml,${encodeURIComponent(

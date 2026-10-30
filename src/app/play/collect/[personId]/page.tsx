@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { CollectScreen } from "@/features/games/components/collect-screen";
 import { getCollectTarget } from "@/features/games/queries/get-collect-target";
+import { getTopNav } from "@/features/games/queries/get-top-nav";
 import { GameShell } from "@/shared/components/game/game-shell";
+import { ROUTES } from "@/shared/config/routes";
 
 export const metadata: Metadata = { title: "Collect a sticker" };
 
 export default async function CollectPage({ params }: { params: Promise<{ personId: string }> }) {
   const { personId } = await params;
+  const nav = await getTopNav();
+  // A new hire with no mission has no album to collect from.
+  if (nav.locked && !nav.hasMission) redirect(ROUTES.play);
   const target = await getCollectTarget(personId);
   if (!target) notFound();
 

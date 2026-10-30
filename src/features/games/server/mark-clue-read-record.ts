@@ -2,9 +2,9 @@ import "server-only";
 import { AppError } from "@inbeat/core/errors";
 import { eq, sql } from "drizzle-orm";
 import { games } from "@/db/schema";
+import { type ClueNumber, clueReleaseAt } from "@/entities/game-schedule";
 import { db } from "@/shared/lib/db";
 import { isClueOut } from "../lib/game-clues";
-import { type ClueNumber, clueReleaseAt } from "../lib/game-schedule";
 import type { Game } from "../types";
 import { assertCanPlay } from "./assert-can-play";
 

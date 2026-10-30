@@ -8,6 +8,7 @@ const game = (status: Game["status"]): Game => ({
   playerEmail: "new.hire@inbeat.agency",
   welcomerPersonId: "welcomer",
   startDate: "2026-11-02",
+  welcomerTeamName: null,
   status,
   foundAt: null,
   foundWithClues: null,

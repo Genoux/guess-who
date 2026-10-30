@@ -1,5 +1,5 @@
+import { gameDay } from "@/entities/game-schedule";
 import type { StickerMode, StickerPerson } from "@/shared/components/game/sticker-view";
-import { gameDay } from "../lib/game-schedule";
 import type { PlayerBoard } from "./load-player-board";
 
 export type GameOutcome =
@@ -35,7 +35,7 @@ export function toGameOutcome({
   welcomer,
   startDate,
 }: Pick<PlayerBoard, "game" | "welcomer" | "startDate">): GameOutcome {
-  if (game.status === "active" || !welcomer) return { over: false };
+  if (!game || game.status === "active" || !welcomer || startDate === null) return { over: false };
 
   const { foundAt } = game;
   const stats =

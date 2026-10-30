@@ -10,8 +10,7 @@ vi.mock("./game-records", () => records);
 
 import { saveNoteRecord } from "./save-note-record";
 
-const game = { id: "game_1", playerPersonId: "player" };
-const input = { game, viewerPersonId: "player", personId: "teammate", note: "Plays the cello." };
+const input = { viewerPersonId: "viewer", personId: "teammate", note: "Plays the cello." };
 
 beforeEach(() => {
   client.query.mockReset();
@@ -20,14 +19,14 @@ beforeEach(() => {
 });
 
 describe("saveNoteRecord", () => {
-  it("updates the note of this game's collection only", async () => {
+  it("updates the note of the viewer's collection only", async () => {
     await saveNoteRecord(input);
     const [update] = sentStatements(client);
     expect(update?.sql).toMatch(
-      /update collections set note = \$1, updated_at = \$2 where \(collections\.game_id = \$3 and collections\.person_id = \$4\)/,
+      /update collections set note = \$1, updated_at = \$2 where \(collections\.collector_person_id = \$3 and collections\.person_id = \$4\)/,
     );
     expect(update?.params).toEqual(
-      expect.arrayContaining(["Plays the cello.", "game_1", "teammate"]),
+      expect.arrayContaining(["Plays the cello.", "viewer", "teammate"]),
     );
   });
 
@@ -35,11 +34,5 @@ describe("saveNoteRecord", () => {
     records.hasCollected.mockResolvedValue(false);
     await expect(saveNoteRecord(input)).rejects.toSatisfy((err) => isAppError(err, "forbidden"));
     expect(client.query).not.toHaveBeenCalled();
-  });
-
-  it("refuses anyone but the player", async () => {
-    await expect(saveNoteRecord({ ...input, viewerPersonId: "teammate" })).rejects.toSatisfy(
-      (err) => isAppError(err, "forbidden"),
-    );
   });
 });

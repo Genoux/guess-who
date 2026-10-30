@@ -2,6 +2,7 @@ import "server-only";
 import { AppError, isUniqueViolation } from "@inbeat/core/errors";
 import { and, eq } from "drizzle-orm";
 import { games, guesses, shortlists } from "@/db/schema";
+import { clearNewHire } from "@/shared/lib/clear-new-hire";
 import { db } from "@/shared/lib/db";
 import type { Game } from "../types";
 import { assertCanGuess } from "./assert-can-guess";
@@ -29,7 +30,7 @@ export async function guessWelcomerRecord({
   now,
 }: GuessInput): Promise<GuessResult> {
   const [collected, alreadyGuessed] = await Promise.all([
-    hasCollected(game.id, personId),
+    hasCollected(viewerPersonId, personId),
     hasGuessed(game.id, personId),
   ]);
   assertCanGuess({ game, viewerPersonId, collected, alreadyGuessed });
@@ -51,6 +52,7 @@ export async function guessWelcomerRecord({
           .where(and(eq(games.id, game.id), eq(games.status, "active")))
           .returning({ foundWithClues: games.foundWithClues });
         if (!found) throw new AppError("conflict", "game is not active");
+        await clearNewHire([game.playerPersonId], tx);
         return {
           correct: true,
           ...toFoundStats({

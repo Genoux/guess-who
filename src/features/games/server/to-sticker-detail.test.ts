@@ -20,6 +20,7 @@ const person: Person = {
   syncedSessionId: null,
   stickerNumber: 7,
   hidden: false,
+  newHire: false,
   createdAt: new Date(),
   updatedAt: new Date(),
 };

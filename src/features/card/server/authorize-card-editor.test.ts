@@ -14,12 +14,15 @@ vi.mock("@/shared/lib/db", async () => {
   return { db: drizzle({ client: client as never, schema }) };
 });
 vi.mock("@/shared/lib/viewer-person", () => ({ getViewerPerson }));
+const { assertCardUnlocked } = vi.hoisted(() => ({ assertCardUnlocked: vi.fn() }));
+vi.mock("@/shared/lib/card-access", () => ({ assertCardUnlocked }));
 
 import { authorizeCardEditor } from "./authorize-card-editor";
 
 beforeEach(() => {
   client.query.mockReset();
   client.query.mockResolvedValue({ rows: [] });
+  assertCardUnlocked.mockReset();
   getViewerPerson.mockReset();
   getViewerPerson.mockResolvedValue({ userId: "user_1", role: "member", person: { id: "p_1" } });
 });
@@ -42,9 +45,16 @@ describe("authorizeCardEditor", () => {
     await expect(authorizeCardEditor()).resolves.toMatchObject({ audience: "new-hire" });
   });
 
-  it("forbids a player mid-game", async () => {
+  it("lets a player edit their card mid-mission", async () => {
     client.query.mockResolvedValueOnce({ rows: [["active"]] });
+    await expect(authorizeCardEditor()).resolves.toMatchObject({ audience: "teammate" });
+  });
+
+  it("refuses a new hire whose mission is unfinished, before reading any game", async () => {
+    assertCardUnlocked.mockRejectedValueOnce(new AppError("forbidden", "closed"));
     await expect(authorizeCardEditor()).rejects.toSatisfy((err) => isAppError(err, "forbidden"));
+    expect(assertCardUnlocked).toHaveBeenCalledWith({ id: "p_1" });
+    expect(client.query).not.toHaveBeenCalled();
   });
 
   it("denies a visitor without a session", async () => {

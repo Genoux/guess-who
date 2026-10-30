@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { AlbumBanner } from "@/features/games/components/album-banner";
 import { AlbumBoard } from "@/features/games/components/album-board";
 import { AlbumCover } from "@/features/games/components/album-cover";
-import { PlayerTopNav } from "@/features/games/components/player-top-nav";
+import { AppTopNav } from "@/features/games/components/app-top-nav";
+import { LockedHome } from "@/features/games/components/locked-home";
 import { ProgressSlots } from "@/features/games/components/progress-slots";
 import { endingEyebrow } from "@/features/games/lib/ending-eyebrow";
 import { parseStickerFilter, STICKER_FILTER_PARAM } from "@/features/games/lib/sticker-filter";
 import { getPlayerAlbum } from "@/features/games/queries/get-player-album";
+import { getTopNav } from "@/features/games/queries/get-top-nav";
 import type { GameOutcome } from "@/features/games/server/to-game-outcome";
 import { GameShell } from "@/shared/components/game/game-shell";
 import { GameStage } from "@/shared/components/game/game-stage";
@@ -22,18 +23,19 @@ function endingBanner({ found, revealSeen, welcomer }: EndedOutcome) {
   return { eyebrow, title: `${verb} ${welcomer.firstName}.`, cta: "See mission" };
 }
 
-export const metadata: Metadata = { title: "Your album" };
+export const metadata: Metadata = { title: "Album" };
 
 export default async function AlbumPage(props: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [album, query] = await Promise.all([getPlayerAlbum(), props.searchParams]);
-  if (!album) redirect(ROUTES.card);
-  if (album.active && !album.introSeen) redirect(ROUTES.playWelcome);
+  const [nav, query] = await Promise.all([getTopNav(), props.searchParams]);
+  // A new hire with no mission has no album to open.
+  if (nav.locked && !nav.hasMission) return <LockedHome nav={nav} />;
+  const album = await getPlayerAlbum();
 
   return (
     <GameShell>
-      <PlayerTopNav nav={album.nav} current="album" />
+      <AppTopNav nav={nav} current="album" />
       <GameStage className="max-w-360 px-2 sm:px-4 md:px-8">
         <AlbumCover>
           <div className="flex flex-col items-center gap-5">
