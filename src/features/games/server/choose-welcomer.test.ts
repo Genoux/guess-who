@@ -7,6 +7,8 @@ const person = (id: string, overrides = {}) => ({
   email: `${id}@inbeat.agency`,
   hidden: false,
   teamId: "team_1",
+  location: "Lisbon",
+  fact: "Rides night trains",
   ask: "Night trains",
   writtenClues: [2, 3, 4],
   ...overrides,
@@ -44,6 +46,8 @@ describe("chooseWelcomer", () => {
   it.each([
     ["hidden", { hidden: true }],
     ["without a team", { teamId: null }],
+    ["without a location", { location: null }],
+    ["without a fact", { fact: " " }],
     ["without an ask", { ask: " " }],
   ])("skips a card that is %s", (_name, overrides) => {
     expect(choose({ people: [person("ana", overrides), person("ben")] }).id).toBe("ben");

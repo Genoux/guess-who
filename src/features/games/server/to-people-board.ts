@@ -10,19 +10,21 @@ import type {
 import { asWelcomer } from "../lib/welcomer-readiness";
 import type { Game } from "../types";
 
-/** One line of the admin's data: a signed-in person, or an email an admin added. */
+/** One line of the admin's data: a person, signed in or only invited by email. */
 export type PersonRecord = {
-  /** Null for an email nobody has signed in with. */
-  personId: string | null;
+  personId: string;
   signedIn: boolean;
   name: string | null;
   email: string;
   team: { name: string; color: string } | null;
+  teamId: string | null;
+  location: string | null;
+  fact: string | null;
   ask: string | null;
   imageUrl: string | null;
   newHire: boolean;
-  /** Clues 2 to 4 written; null until they have signed in. */
-  cluesWritten: number | null;
+  /** Clues 2 to 4 written. */
+  cluesWritten: number;
   game:
     | (Pick<
         Game,
@@ -73,12 +75,15 @@ export function toPeopleBoard({
   const playing: PlayingRowView[] = [];
   const noMission: NoMissionRowView[] = [];
   const done: (DoneRowView & { endedAt: Date })[] = [];
+  const welcomerIds = new Set(people.flatMap(({ game }) => (game ? [game.welcomerPersonId] : [])));
 
   for (const record of people) {
     const { game } = record;
     const state = missionStateAt(game, now);
     const identity = {
-      key: record.personId ?? game?.id ?? record.email,
+      key: record.personId,
+      hasWelcomed: welcomerIds.has(record.personId),
+      signedIn: record.signedIn,
       name: record.name,
       email: record.email,
       team: record.team,
@@ -86,24 +91,20 @@ export function toPeopleBoard({
       newHire: record.newHire,
     };
 
-    const standing =
-      record.personId !== null && record.signedIn
-        ? asWelcomer({ hasTeam: record.team !== null, ask: record.ask }, record.cluesWritten ?? 0)
-        : null;
-    if (standing && !game) noMission.push({ ...identity, asWelcomer: standing });
-    if (!game) continue;
+    const standing = asWelcomer(record, record.cluesWritten);
+    if (!game) {
+      noMission.push({ ...identity, asWelcomer: standing });
+      continue;
+    }
 
     // A player never learns the welcomer before the reveal, even an admin looking at their own row.
     const welcomer =
-      record.personId !== null && record.personId === viewerPersonId && !game.revealSeenAt
-        ? null
-        : (game.welcomerName ?? "");
+      record.personId === viewerPersonId && !game.revealSeenAt ? null : (game.welcomerName ?? "");
     if (state === "playing") {
       const stats = activity.find(({ gameId }) => gameId === game.id);
       playing.push({
         ...identity,
         asWelcomer: standing,
-        signedIn: record.signedIn,
         gameId: game.id,
         welcomer,
         day: gameDay(game.startDate, now),

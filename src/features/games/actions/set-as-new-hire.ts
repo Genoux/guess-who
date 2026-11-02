@@ -12,19 +12,10 @@ export const setAsNewHire = action({
   name: "games.setAsNewHire",
   schema: setAsNewHireSchema,
   authorize: authorizeAdminPerson,
-  run: async ({ personId, startMission }, admin) => {
-    const created = await setAsNewHireRecord({
-      personId,
-      adminPersonId: admin.personId,
-      now: new Date(),
-      startMission,
-    });
-    logger.info("person set as new hire", {
-      startMission,
-      gameId: created.gameId,
-      adminPersonId: admin.personId,
-    });
-    return ok(created);
+  run: async ({ personId }, admin) => {
+    await setAsNewHireRecord({ personId });
+    logger.info("person set as new hire", { adminPersonId: admin.personId });
+    return ok();
   },
   revalidate: () => [ROUTES.admin],
 });

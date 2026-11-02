@@ -18,26 +18,30 @@ describe("updateMyCardSchema", () => {
     ).toEqual({ teamId: TEAM_ID, location: "Lisbon", fact: "A", ask: "B" });
   });
 
-  it("requires a team and every field, blank counting as empty", () => {
-    expect(messages({ teamId: "", location: "   ", fact: "", ask: "" })).toEqual({
-      teamId: "Pick your team.",
-      location: "Add where you're based.",
-      fact: "Add a random fact.",
-      ask: "Add something to ask you about.",
+  it("accepts a draft with no team and blank fields", () => {
+    expect(updateMyCardSchema.parse({ teamId: null, location: "  ", fact: "", ask: "" })).toEqual({
+      teamId: null,
+      location: "",
+      fact: "",
+      ask: "",
     });
   });
 
-  it("caps location at 60, fact at 140 and ask at 80 characters after trimming", () => {
+  it("still rejects a team that is not an id", () => {
+    expect(messages({ ...valid, teamId: "" })).toEqual({ teamId: "Pick your team." });
+  });
+
+  it("caps location at 25, fact at 120 and ask at 55 characters after trimming", () => {
     expect(
-      messages({ ...valid, location: "x".repeat(60), fact: "x".repeat(140), ask: "x".repeat(80) }),
+      messages({ ...valid, location: "x".repeat(25), fact: "x".repeat(120), ask: "x".repeat(55) }),
     ).toEqual({});
     expect(
-      messages({ ...valid, location: "x".repeat(61), fact: "x".repeat(141), ask: "x".repeat(81) }),
+      messages({ ...valid, location: "x".repeat(26), fact: "x".repeat(121), ask: "x".repeat(56) }),
     ).toEqual({
-      location: "Keep it to 60 characters.",
-      fact: "Keep it to 140 characters.",
-      ask: "Keep it to 80 characters.",
+      location: "Keep it to 25 characters.",
+      fact: "Keep it to 120 characters.",
+      ask: "Keep it to 55 characters.",
     });
-    expect(messages({ ...valid, location: ` ${"x".repeat(60)} ` })).toEqual({});
+    expect(messages({ ...valid, location: ` ${"x".repeat(25)} ` })).toEqual({});
   });
 });

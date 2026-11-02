@@ -1,3 +1,4 @@
+import { CARD_LIMITS } from "@/entities/card";
 import { TEAM_DEFINITIONS, type TeamName } from "@/entities/teams";
 import type { StickerPerson } from "./sticker-view";
 
@@ -10,6 +11,7 @@ const colorsOf = (name: TeamName) => {
 // The teams the sample people belong to; colors come from the one team definition.
 export const TEAMS = {
   Creative: colorsOf("Creative"),
+  "Client Services": colorsOf("Client Services"),
   Strategy: colorsOf("Strategy"),
   Talent: colorsOf("Talent"),
 };
@@ -48,6 +50,27 @@ export const ana: StickerPerson = {
   fact: "Bikes to every meeting, rain or not.",
   ask: "Learning the cello at 30",
   photoUrl: SAMPLE_PHOTO,
+};
+
+/** Long-worded sentences exactly at each card limit and the longest team name, to check that nothing is cut off. */
+export const longest: StickerPerson = {
+  name: "Maria Fernanda Albuquerque",
+  number: 12,
+  team: "Client Services",
+  ...TEAMS["Client Services"],
+  city: "Saint-Hubert, Québec, CAN",
+  fact: "Spent a whole summer cataloguing each bakery between Lisbon and Porto, then wrote extraordinary guides nobody asked for.",
+  ask: "Neighbourhood bakeries, overnight trains, cold plunges.",
+};
+
+const unbrokenText = (length: number) => "Wmwmnmwmw".repeat(Math.ceil(length / 9)).slice(0, length);
+
+/** One unbroken string at each card limit: it can only wrap mid-word, as a pasted link would. */
+export const unbroken: StickerPerson = {
+  ...longest,
+  city: unbrokenText(CARD_LIMITS.location),
+  fact: unbrokenText(CARD_LIMITS.fact),
+  ask: unbrokenText(CARD_LIMITS.ask),
 };
 
 /** A welcomer-written clue, as it reads on a face-up card. */

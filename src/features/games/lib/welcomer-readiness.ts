@@ -1,3 +1,5 @@
+import { type CardContent, isCardComplete } from "@/entities/card";
+
 /** Clues 2 to 4 are the teammate's to write; clue 1 is generated from their team. */
 export const CLUE_NUMBERS_TO_WRITE = [2, 3, 4] as const;
 
@@ -10,11 +12,9 @@ export type AsWelcomer =
   | { kind: "cluesMissing"; missing: number }
   | { kind: "cardNotDone" };
 
-type CardFields = { hasTeam: boolean; ask: string | null };
-
 /** The card comes first, then the three clues; a mission has no requirements of its own. */
-export function asWelcomer({ hasTeam, ask }: CardFields, cluesWritten: number): AsWelcomer {
-  if (!hasTeam || !ask?.trim()) return { kind: "cardNotDone" };
+export function asWelcomer(card: CardContent, cluesWritten: number): AsWelcomer {
+  if (!isCardComplete(card)) return { kind: "cardNotDone" };
   const missing = CLUE_NUMBERS_TO_WRITE.length - cluesWritten;
   return missing > 0 ? { kind: "cluesMissing", missing } : { kind: "canWelcome" };
 }

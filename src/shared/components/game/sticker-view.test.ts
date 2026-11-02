@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatStickerNumber,
+  getAskTextStep,
   getStickerView,
   type StickerPerson,
   stickerCelebration,
@@ -96,5 +97,26 @@ describe("stickerCelebration", () => {
     expect(stickerCelebration("collected", "maybe")).toBeNull();
     expect(stickerCelebration("maybe", "ruled")).toBeNull();
     expect(stickerCelebration("collected", "locked")).toBeNull();
+  });
+});
+
+describe("getAskTextStep", () => {
+  it("steps the small sticker's ask down early, as its box is short", () => {
+    expect(getAskTextStep("Night trains", "sm")).toBe("large");
+    expect(getAskTextStep("x".repeat(16), "sm")).toBe("large");
+    expect(getAskTextStep("x".repeat(17), "sm")).toBe("medium");
+    expect(getAskTextStep("x".repeat(32), "sm")).toBe("medium");
+    expect(getAskTextStep("x".repeat(33), "sm")).toBe("small");
+    expect(getAskTextStep("x".repeat(55), "sm")).toBe("small");
+  });
+
+  it("keeps the large sticker's ask big up to 32 characters", () => {
+    expect(getAskTextStep("x".repeat(32), "lg")).toBe("large");
+    expect(getAskTextStep("x".repeat(33), "lg")).toBe("medium");
+    expect(getAskTextStep("x".repeat(57), "lg")).toBe("small");
+  });
+
+  it("measures the text as written, not the padding around it", () => {
+    expect(getAskTextStep(`  ${"x".repeat(16)}  `, "sm")).toBe("large");
   });
 });

@@ -1,5 +1,5 @@
 import "server-only";
-import { asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { asc, eq, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { games, people, teams } from "@/db/schema";
 import { db } from "@/shared/lib/db";
@@ -7,7 +7,6 @@ import type { Game } from "../types";
 import type { WelcomerCandidate } from "./choose-welcomer";
 import type { GameActivity, PersonRecord } from "./to-people-board";
 
-const player = alias(people, "player");
 const welcomer = alias(people, "welcomer");
 
 const WRITTEN_CLUES =
@@ -49,79 +48,61 @@ const toGame = ({
 const toTeam = (name: string | null, color: string | null) =>
   name && color ? { name, color } : null;
 
-/** Everyone who signed in, with their mission if they have one, then the emails nobody has. */
+/** Everyone with a person row, signed in or only invited, with their mission if they have one. */
 export async function listPeople(): Promise<PersonRecord[]> {
-  const [signedIn, invited] = await Promise.all([
-    db
-      .select({
-        personId: people.id,
-        name: people.name,
-        email: people.email,
-        teamName: teams.name,
-        teamColor: teams.color,
-        ask: people.ask,
-        imageUrl: people.imageUrl,
-        newHire: people.newHire,
-        cluesWritten: WRITTEN_CLUES,
-        ...gameColumns,
-      })
-      .from(people)
-      .leftJoin(teams, eq(people.teamId, teams.id))
-      .leftJoin(games, eq(games.playerPersonId, people.id))
-      .leftJoin(welcomer, eq(games.welcomerPersonId, welcomer.id))
-      .where(isNotNull(people.clerkUserId)),
-    db
-      .select({
-        name: player.name,
-        imageUrl: player.imageUrl,
-        newHire: player.newHire,
-        email: games.playerEmail,
-        ...gameColumns,
-      })
-      .from(games)
-      .leftJoin(player, eq(games.playerPersonId, player.id))
-      .leftJoin(welcomer, eq(games.welcomerPersonId, welcomer.id))
-      .where(isNull(player.clerkUserId)),
-  ]);
-  return [
-    ...signedIn.map(
-      ({
-        personId,
-        name,
-        email,
-        teamName,
-        teamColor,
-        ask,
-        imageUrl,
-        newHire,
-        cluesWritten,
-        ...game
-      }) => ({
-        personId,
-        signedIn: true,
-        name,
-        email,
-        team: toTeam(teamName, teamColor),
-        ask,
-        imageUrl,
-        newHire,
-        cluesWritten,
-        game: toGame(game),
-      }),
-    ),
-    ...invited.map(({ name, imageUrl, newHire, email, ...game }) => ({
-      personId: null,
-      signedIn: false,
+  const rows = await db
+    .select({
+      personId: people.id,
+      clerkUserId: people.clerkUserId,
+      name: people.name,
+      email: people.email,
+      teamName: teams.name,
+      teamColor: teams.color,
+      teamId: people.teamId,
+      location: people.location,
+      fact: people.fact,
+      ask: people.ask,
+      imageUrl: people.imageUrl,
+      newHire: people.newHire,
+      cluesWritten: WRITTEN_CLUES,
+      ...gameColumns,
+    })
+    .from(people)
+    .leftJoin(teams, eq(people.teamId, teams.id))
+    .leftJoin(games, or(eq(games.playerPersonId, people.id), eq(games.playerEmail, people.email)))
+    .leftJoin(welcomer, eq(games.welcomerPersonId, welcomer.id));
+  return rows.map(
+    ({
+      clerkUserId,
+      teamName,
+      teamColor,
       name,
       email,
-      team: null,
-      ask: null,
+      personId,
+      teamId,
+      location,
+      fact,
+      ask,
       imageUrl,
-      newHire: newHire ?? true,
-      cluesWritten: null,
+      newHire,
+      cluesWritten,
+      ...game
+    }) => ({
+      personId,
+      signedIn: clerkUserId !== null,
+      name,
+      email,
+      team: toTeam(teamName, teamColor),
+      teamId,
+      location,
+      fact,
+      ask,
+      imageUrl,
+      newHire,
+      cluesWritten,
       game: toGame(game),
-    })),
-  ];
+    }),
+  );
 }
 
 /** Every visible teammate with the numbers of the clues they wrote. */
@@ -132,6 +113,8 @@ export async function listWelcomerCandidates(): Promise<WelcomerCandidate[]> {
       email: people.email,
       hidden: people.hidden,
       teamId: people.teamId,
+      location: people.location,
+      fact: people.fact,
       ask: people.ask,
       writtenClues: sql<number[]>`array(
         select "welcomer_clues"."number" from "welcomer_clues"

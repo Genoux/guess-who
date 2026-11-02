@@ -17,7 +17,7 @@ vi.mock("./game-records", () => ({
   revealExpiredGames: records.revealExpiredGames,
 }));
 vi.mock("./people-records", () => ({ listWelcomerCandidates: records.listWelcomerCandidates }));
-vi.mock("./find-active-welcomer-game", () => ({
+vi.mock("@/shared/lib/find-active-welcomer-game", () => ({
   findActiveWelcomerGame: records.findActiveWelcomerGame,
 }));
 
@@ -29,6 +29,8 @@ const candidate = (id: string, overrides = {}) => ({
   email: `${id}@inbeat.agency`,
   hidden: false,
   teamId: "team_1",
+  location: "Lisbon",
+  fact: "Rides night trains",
   ask: "Night trains",
   writtenClues: [2, 3, 4],
   ...overrides,
@@ -61,16 +63,24 @@ type Behaviour = {
   clashes?: number;
   /** The email or person already has a mission. */
   hasMission?: boolean;
+  /** The player has claimed their person row by signing in. */
+  signedIn?: boolean;
 };
 
 const WELCOMER_TEAM = [["Creative"]];
 
-const behave = ({ lostInserts = 0, clashes = 0, hasMission = false }: Behaviour = {}) => {
+const behave = ({
+  lostInserts = 0,
+  clashes = 0,
+  hasMission = false,
+  signedIn = true,
+}: Behaviour = {}) => {
   let lost = lostInserts;
   let clash = clashes;
   client.query.mockImplementation(async (config) => {
     const text = config.text.replaceAll('"', "");
     if (text.includes("pg_advisory_xact_lock")) return { rows: [] };
+    if (text.includes("for share")) return { rows: [[signedIn ? "user_player" : null]] };
     if (text.startsWith("insert into games")) {
       if (lost-- > 0) throw uniqueViolation;
       return { rows: [["game_1"]] };
@@ -147,10 +157,34 @@ describe("beginMissionRecord", () => {
     expect(insert()?.params).toContain("ben");
   });
 
-  it("picks for an invite with no person row yet, and links no player to the game", async () => {
-    await start({ playerPersonId: null });
-    expect(records.findActiveWelcomerGame).not.toHaveBeenCalled();
+  it("never picks the player, signed in or not", async () => {
+    behave({ signedIn: false });
+    records.listWelcomerCandidates.mockResolvedValue([candidate("player"), candidate("ben")]);
+    await start();
+    expect(insert()?.params).toContain("ben");
+    expect(insert()?.params).not.toContain("player");
+  });
+
+  it("links the player to the game when they have signed in by the time it is written", async () => {
+    await start();
+    expect(insert()?.params).toContain("player");
+  });
+
+  it("leaves the game unlinked while the player has not signed in", async () => {
+    behave({ signedIn: false });
+    await start();
     expect(insert()?.params).toEqual(expect.arrayContaining([null, "player@inbeat.agency", "ana"]));
+    expect(insert()?.params).not.toContain("player");
+  });
+
+  it("locks the player's row until commit, so a sign-in either shows or finds the game", async () => {
+    await start();
+    const sql = sentStatements(client).map((statement) => statement.sql);
+    const lock = sql.findIndex((text) => text.includes("pg_advisory_xact_lock"));
+    const claim = sql.findIndex((text) => text.includes("for share"));
+    const write = sql.findIndex((text) => text.startsWith("insert into games"));
+    expect(lock).toBeLessThan(claim);
+    expect(claim).toBeLessThan(write);
   });
 
   it("answers a conflict when nobody is eligible, and writes nothing", async () => {
@@ -179,11 +213,8 @@ describe("beginMissionRecord", () => {
     expect(insert()).toBeUndefined();
   });
 
-  it("runs the caller's step in the same transaction, and links the game to the person it returns", async () => {
-    const prepare = vi.fn(async () => "person_9");
-    await start({ playerPersonId: null, prepare });
-    expect(prepare).toHaveBeenCalledOnce();
-    expect(insert()?.params).toContain("person_9");
+  it("writes the game in one transaction", async () => {
+    await start();
     const sql = sentStatements(client).map((s) => s.sql.trim());
     expect(sql[0]).toBe("begin");
     expect(sql.at(-1)).toBe("commit");

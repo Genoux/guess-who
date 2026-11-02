@@ -3,7 +3,14 @@ import { applyPeopleMove } from "./people-moves";
 import type { PeopleBoard } from "./people-view";
 
 const can = { kind: "canWelcome" } as const;
-const base = { team: null, name: null, imageUrl: null, newHire: false };
+const base = {
+  team: null,
+  name: null,
+  imageUrl: null,
+  newHire: false,
+  signedIn: true,
+  hasWelcomed: false,
+};
 
 const board = (): PeopleBoard => ({
   playing: [
@@ -14,17 +21,16 @@ const board = (): PeopleBoard => ({
       email: "pia@x.com",
       gameId: "g-play",
       asWelcomer: can,
-      signedIn: true,
       welcomer: "Ana",
       day: 3,
       progress: { label: "1", activity: "just now" },
     },
     {
       ...base,
-      key: "g-inv",
+      key: "k1",
       email: "kim@gmail.com",
       gameId: "g-inv",
-      asWelcomer: null,
+      asWelcomer: can,
       signedIn: false,
       welcomer: "Ben",
       day: 1,
@@ -46,7 +52,7 @@ describe("applyPeopleMove", () => {
   it("turns on: No mission to Playing on day 1, first in line", () => {
     const next = applyPeopleMove(board(), { type: "turnOn", keys: ["n2"] });
     expect(keys(next.noMission)).toEqual(["n1"]);
-    expect(keys(next.playing)).toEqual(["n2", "p1", "g-inv"]);
+    expect(keys(next.playing)).toEqual(["n2", "p1", "k1"]);
     expect(next.playing[0]).toMatchObject({
       signedIn: true,
       day: 1,
@@ -60,34 +66,43 @@ describe("applyPeopleMove", () => {
 
   it("ends a mission: Playing back to No mission, with how they stand", () => {
     const next = applyPeopleMove(board(), { type: "end", gameId: "g-play" });
-    expect(keys(next.playing)).toEqual(["g-inv"]);
+    expect(keys(next.playing)).toEqual(["k1"]);
     expect(next.noMission.find(({ key }) => key === "p1")).toMatchObject({
       name: "Pia",
       asWelcomer: can,
     });
   });
 
-  it("ends an invite's mission: it has no No mission row, so it leaves the board", () => {
+  it("ends an invite's mission: back to No mission, still not signed in", () => {
     const next = applyPeopleMove(board(), { type: "end", gameId: "g-inv" });
-    expect(everyone(next)).not.toContain("g-inv");
-    expect(keys(next.noMission)).toEqual(["n1", "n2"]);
+    expect(keys(next.playing)).toEqual(["p1"]);
+    expect(next.noMission.find(({ key }) => key === "k1")).toMatchObject({
+      email: "kim@gmail.com",
+      signedIn: false,
+    });
   });
 
-  it("adds a new hire to Playing as an invite", () => {
+  it.each(["p1", "n1"])("removes %s from the board entirely", (key) => {
+    const next = applyPeopleMove(board(), { type: "remove", key });
+    expect(everyone(next)).toEqual(everyone(board()).filter((other) => other !== key));
+  });
+
+  it("adds a new hire to No mission as an invite, not started", () => {
     const next = applyPeopleMove(board(), { type: "add", email: "new@x.com" });
-    expect(next.playing[0]).toMatchObject({
+    expect(next.playing).toEqual(board().playing);
+    expect(next.noMission[0]).toMatchObject({
       email: "new@x.com",
       name: null,
       signedIn: false,
       newHire: true,
-      day: 1,
     });
   });
 
-  it("adds someone who already signed in by moving their No mission row to Playing", () => {
+  it("adds someone who already signed in by flagging their No mission row", () => {
     const next = applyPeopleMove(board(), { type: "add", email: "nia@x.com" });
-    expect(keys(next.noMission)).toEqual(["n2"]);
-    expect(next.playing[0]).toMatchObject({ key: "n1", signedIn: true, newHire: true });
+    expect(keys(next.noMission)).toEqual(["n1", "n2"]);
+    expect(next.noMission[0]).toMatchObject({ signedIn: true, newHire: true });
+    expect(next.playing).toEqual(board().playing);
   });
 
   it("changes an invite's email in place", () => {
@@ -99,14 +114,8 @@ describe("applyPeopleMove", () => {
     expect(next.playing.find(({ gameId }) => gameId === "g-inv")?.email).toBe("kim@new.com");
   });
 
-  it("sets someone as a new hire: No mission to Playing, flagged as a new hire", () => {
+  it("sets someone as a new hire without a mission: they stay in No mission with the tag", () => {
     const next = applyPeopleMove(board(), { type: "setNewHire", key: "n1" });
-    expect(keys(next.noMission)).toEqual(["n2"]);
-    expect(next.playing[0]).toMatchObject({ key: "n1", signedIn: true, newHire: true });
-  });
-
-  it("flags someone as a new hire without a mission: they stay in No mission with the tag", () => {
-    const next = applyPeopleMove(board(), { type: "flagNewHire", key: "n1" });
     expect(keys(next.noMission)).toEqual(["n1", "n2"]);
     expect(next.noMission[0]?.newHire).toBe(true);
     expect(next.noMission[1]?.newHire).toBe(false);
@@ -114,7 +123,7 @@ describe("applyPeopleMove", () => {
   });
 
   it("turning on a flagged new hire keeps them a new hire in Playing", () => {
-    const flagged = applyPeopleMove(board(), { type: "flagNewHire", key: "n1" });
+    const flagged = applyPeopleMove(board(), { type: "setNewHire", key: "n1" });
     const next = applyPeopleMove(flagged, { type: "turnOn", keys: ["n1"] });
     expect(next.playing[0]).toMatchObject({ key: "n1", newHire: true });
   });
@@ -132,7 +141,7 @@ describe("applyPeopleMove", () => {
       { type: "add", email: "nia@x.com" },
       { type: "add", email: "fresh@x.com" },
       { type: "setNewHire", key: "n2" },
-      { type: "flagNewHire", key: "n1" },
+      { type: "end", gameId: "g-inv" },
     ] as const;
     for (const move of moves) {
       const ids = everyone(applyPeopleMove(start, move));

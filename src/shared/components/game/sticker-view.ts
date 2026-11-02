@@ -39,6 +39,23 @@ export type StickerView = {
   initialsTone: "ink" | "white";
 };
 
+export type AskTextStep = "large" | "medium" | "small";
+
+// The locked face has a fixed box, so a longer ask steps down a size. The small sticker's box is
+// short: its smallest size holds the 55 character limit. Larger values only matter for asks saved
+// before that limit.
+const ASK_STEP_MAX_LENGTH: Record<StickerSize, { large: number; medium: number }> = {
+  sm: { large: 16, medium: 32 },
+  lg: { large: 32, medium: 56 },
+};
+
+export function getAskTextStep(ask: string, size: StickerSize): AskTextStep {
+  const { length } = ask.trim();
+  const max = ASK_STEP_MAX_LENGTH[size];
+  if (length <= max.large) return "large";
+  return length <= max.medium ? "medium" : "small";
+}
+
 export function formatStickerNumber(value: number | string): string {
   const text = String(value).trim();
   return /^\d$/.test(text) ? `0${text}` : text;

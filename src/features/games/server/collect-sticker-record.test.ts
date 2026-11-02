@@ -14,7 +14,14 @@ vi.mock("./game-records", () => records);
 
 import { collectStickerRecord } from "./collect-sticker-record";
 
-const teammate = { id: "teammate", hidden: false, teamId: "team_1", ask: "Night trains" };
+const teammate = {
+  id: "teammate",
+  hidden: false,
+  teamId: "team_1",
+  location: "Lisbon",
+  fact: "Rides night trains",
+  ask: "Night trains",
+};
 const input = { viewerPersonId: "viewer", personId: "teammate", note: "Loves trains" };
 
 beforeEach(() => {

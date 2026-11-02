@@ -2,15 +2,17 @@
 
 import { PencilIcon } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState, useTransition } from "react";
+import { CARD_LIMITS, isCardComplete } from "@/entities/card";
 import { GameBook } from "@/shared/components/game/game-book";
 import { GameButton } from "@/shared/components/game/game-button";
 import { gameCn } from "@/shared/components/game/game-cn";
 import { GameField } from "@/shared/components/game/game-field";
 import { gameToast } from "@/shared/components/game/game-toaster";
+import { SaveAnywayDialog } from "@/shared/components/game/save-anyway-dialog";
 import { Sticker } from "@/shared/components/game/sticker";
 import { formatStickerNumber, type StickerPerson } from "@/shared/components/game/sticker-view";
 import { updateMyCard } from "../actions/update-my-card";
-import { CARD_LIMITS, updateMyCardSchema } from "../schemas";
+import { type UpdateMyCardInput, updateMyCardSchema } from "../schemas";
 import type { CardAudience, CardFields, MyCard } from "../types";
 
 type FieldErrors = Partial<Record<keyof CardFields, string>>;
@@ -48,7 +50,8 @@ type CardEditorProps = {
 export function CardEditor({ card, preview = false }: CardEditorProps) {
   const [values, setValues] = useState(card.fields);
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [editing, setEditing] = useState(() => !updateMyCardSchema.safeParse(card.fields).success);
+  const [editing, setEditing] = useState(() => !isCardComplete(card.fields));
+  const [incompleteCard, setIncompleteCard] = useState<UpdateMyCardInput | null>(null);
   const [pending, startTransition] = useTransition();
   const switched = useRef(false);
   const editButton = useRef<HTMLButtonElement>(null);
@@ -85,9 +88,10 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
     setEditing(edit);
   };
 
+  // An incomplete card stays open for editing, as it does on load.
   const saved = (fields: CardFields) => {
     setValues(fields);
-    switchTo(false);
+    if (isCardComplete(fields)) switchTo(false);
     gameToast("Saved");
   };
 
@@ -99,10 +103,13 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
       return;
     }
     setErrors({});
+    if (isCardComplete(parsed.data)) save(parsed.data);
+    else setIncompleteCard(parsed.data);
+  }
+
+  function save(input: UpdateMyCardInput) {
     startTransition(async () => {
-      const result = preview
-        ? ({ ok: true, data: parsed.data } as const)
-        : await updateMyCard(parsed.data);
+      const result = preview ? ({ ok: true, data: input } as const) : await updateMyCard(input);
       if (!result.ok) {
         gameToast(result.errorId ? `${result.error} Ref ${result.errorId}` : result.error, {
           duration: 6000,
@@ -183,7 +190,7 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
                       color: option.color,
                     }))}
                     placeholder="Pick one"
-                    value={values.teamId}
+                    value={values.teamId ?? ""}
                     onValueChange={(teamId) => set("teamId")({ target: { value: teamId } })}
                     error={errors.teamId}
                   />
@@ -200,7 +207,9 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
                 <GameField
                   label="Random fact"
                   name="fact"
+                  multiline
                   maxLength={CARD_LIMITS.fact}
+                  showCount
                   value={values.fact}
                   onChange={set("fact")}
                   error={errors.fact}
@@ -208,7 +217,9 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
                 <GameField
                   label="Ask me about"
                   name="ask"
+                  multiline
                   maxLength={CARD_LIMITS.ask}
+                  showCount
                   value={values.ask}
                   onChange={set("ask")}
                   error={errors.ask}
@@ -223,6 +234,17 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
           </div>
         </div>
       </div>
+
+      <SaveAnywayDialog
+        open={incompleteCard !== null}
+        title="Save incomplete card?"
+        description="It won't show in the album until every field is filled in. Anyone who collected it will lose it until then."
+        onKeepEditing={() => setIncompleteCard(null)}
+        onSave={() => {
+          setIncompleteCard(null);
+          if (incompleteCard) save(incompleteCard);
+        }}
+      />
     </>
   );
 }

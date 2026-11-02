@@ -26,13 +26,12 @@ beforeEach(() => {
 });
 
 describe("turnOnMissionsRecord", () => {
-  it("reads only the chosen people who signed in, have no mission, and can welcome", async () => {
+  it("reads only the chosen people who have no mission and can welcome, signed in or not", async () => {
     client.query.mockResolvedValueOnce({ rows: [] });
     await turnOn(["ana", "ben"]);
     const select = statement("select");
-    expect(select?.sql).toMatch(
-      /where \(people\.id in \(\$1, \$2\) and people\.clerk_user_id is not null and /,
-    );
+    expect(select?.sql).toMatch(/where \(people\.id in \(\$1, \$2\) and \(people\.new_hire = /);
+    expect(select?.sql).not.toMatch(/clerk_user_id is not null/);
     expect(select?.sql).toMatch(
       /games\.player_person_id = people\.id or games\.player_email = people\.email/,
     );
@@ -44,7 +43,9 @@ describe("turnOnMissionsRecord", () => {
     await turnOn(["ana"]);
     const sql = statement("select")?.sql ?? "";
     expect(sql).toMatch(/people\.team_id is not null/);
-    expect(sql).toMatch(/btrim\(coalesce\(people\.ask, ''\)\) <> ''/);
+    for (const column of ["location", "fact", "ask"]) {
+      expect(sql).toContain(`btrim(coalesce(people.${column}, '')) <> ''`);
+    }
     expect(sql).toMatch(
       /from welcomer_clues where welcomer_clues\.person_id = people\.id and btrim\(welcomer_clues\.text\) <> ''\) = \$\d+/,
     );
@@ -54,7 +55,7 @@ describe("turnOnMissionsRecord", () => {
     client.query.mockResolvedValueOnce({ rows: [] });
     await turnOn(["ana"]);
     const select = statement("select");
-    expect(select?.sql).toMatch(/\(people\.new_hire = \$\d+ or \(people\.team_id is not null/);
+    expect(select?.sql).toMatch(/\(people\.new_hire = \$\d+ or \(\(people\.team_id is not null/);
     expect(select?.params).toContain(true);
   });
 
@@ -76,6 +77,17 @@ describe("turnOnMissionsRecord", () => {
       { playerEmail: "ana@inbeat.agency", playerPersonId: "ana", createdBy: "admin", now },
       { playerEmail: "ben@inbeat.agency", playerPersonId: "ben", createdBy: "admin", now },
     ]);
+  });
+
+  it("starts someone invited who has not signed in, by their own person id", async () => {
+    client.query.mockResolvedValueOnce({ rows: [["kim", "kim@gmail.com"]] });
+    await expect(turnOn(["kim"])).resolves.toEqual({ started: 1, skippedNoWelcomer: 0 });
+    expect(begin.beginMissionRecord).toHaveBeenCalledWith({
+      playerEmail: "kim@gmail.com",
+      playerPersonId: "kim",
+      createdBy: "admin",
+      now,
+    });
   });
 
   it("skips and counts whoever finds no free welcomer, and starts the rest", async () => {

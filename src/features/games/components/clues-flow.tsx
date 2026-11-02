@@ -11,6 +11,7 @@ import { GameStage } from "@/shared/components/game/game-stage";
 import { gameToast } from "@/shared/components/game/game-toaster";
 import { GameTooltip } from "@/shared/components/game/game-tooltip";
 import { Reveal } from "@/shared/components/game/reveal";
+import { SaveAnywayDialog } from "@/shared/components/game/save-anyway-dialog";
 import { Stepper } from "@/shared/components/game/stepper";
 import { writeClue } from "../actions/write-clue";
 import { canAdvanceFrom, clueNeedsTeam, teamMissing } from "../lib/clue-flow";
@@ -23,6 +24,8 @@ import { ClueWriterCard } from "./clue-writer-card";
 import { InertWhenLeaving, SLIDE_MOTION, STEP_MOTION } from "./step-motion";
 
 const DONE_ROTATIONS = [-4, 2, -1, 4];
+
+const INCOMPLETE_CLUES_COPY = "You can't be picked as a welcomer until all three are written.";
 
 const STEPS = ["write", "done"] as const;
 type Step = (typeof STEPS)[number];
@@ -52,10 +55,13 @@ export function CluesFlow({ desk, nav, preview = false }: CluesFlowProps) {
   const [pending, startTransition] = useTransition();
   const clue = desk.clues[index];
   const who = desk.playerNamed ? desk.playerFirstName : "the new hire";
+  const [confirmingIncomplete, setConfirmingIncomplete] = useState(false);
+  // A cleared clue counts as a change: saving a blank text removes it.
   const unsaved = desk.clues.flatMap((c, i) => {
     const text = drafts[i]?.trim() ?? "";
-    return c.editable && text && text !== (c.text ?? "") ? [{ number: c.number, text }] : [];
+    return c.editable && text !== (c.text ?? "") ? [{ number: c.number, text }] : [];
   });
+  const cluesComplete = desk.clues.every((c, i) => !c.editable || drafts[i]?.trim());
 
   // Back from clue 1 returns to the clue view when editing; opened on the writer, there is nowhere to go.
   const [writeFrom, setWriteFrom] = useState<Step | null>(null);
@@ -77,9 +83,15 @@ export function CluesFlow({ desk, nav, preview = false }: CluesFlowProps) {
     setIndex(next);
   };
 
+  // Clues save together on the last step, so that is where an incomplete set is confirmed.
   const next = () => {
     if (!clue || !canAdvanceFrom(desk.clues, index)) return;
     if (index < desk.clues.length - 1) return goTo(index + 1);
+    if (unsaved.length > 0 && !cluesComplete) return setConfirmingIncomplete(true);
+    finish();
+  };
+
+  const finish = () => {
     if (unsaved.length === 0) return goToStep("done");
     save();
   };
@@ -106,7 +118,6 @@ export function CluesFlow({ desk, nav, preview = false }: CluesFlowProps) {
       if (!clue) return null;
       const hint = CLUE_HINTS[clue.number];
       const last = index === desk.clues.length - 1;
-      const blank = clue.editable && !drafts[index]?.trim();
       const needsTeam = clueNeedsTeam(clue);
       return (
         <GameStage className="gap-8 pt-4">
@@ -163,14 +174,14 @@ export function CluesFlow({ desk, nav, preview = false }: CluesFlowProps) {
               <ArrowLeftIcon />
             </GameButton>
             {last ? (
-              <GameButton disabled={pending || blank || needsTeam} onClick={next}>
+              <GameButton disabled={pending || needsTeam} onClick={next}>
                 Done
               </GameButton>
             ) : (
               <GameButton
                 size="round"
                 aria-label="Next clue"
-                disabled={pending || blank || needsTeam}
+                disabled={pending || needsTeam}
                 onClick={next}
               >
                 <ArrowRightIcon />
@@ -188,12 +199,14 @@ export function CluesFlow({ desk, nav, preview = false }: CluesFlowProps) {
             tabIndex={-1}
             className="font-game-serif text-3xl sm:text-hero outline-none"
           >
-            Your clues are set.
+            {cluesComplete ? "Your clues are set." : "Your clues aren't finished."}
           </h1>
           <p className="max-w-130 text-balance text-game-muted text-base sm:text-lead">
-            {desk.welcoming
-              ? `${desk.playerFirstName} gets one every three days.`
-              : "If you're picked as a new hire's secret welcomer, they get one every three days."}
+            {!cluesComplete
+              ? INCOMPLETE_CLUES_COPY
+              : desk.welcoming
+                ? `${desk.playerFirstName} gets one every three days.`
+                : "If you're picked as a new hire's secret welcomer, they get one every three days."}
           </p>
         </div>
         <ul aria-label="Your clues" className="flex flex-wrap justify-center gap-5">
@@ -258,6 +271,16 @@ export function CluesFlow({ desk, nav, preview = false }: CluesFlowProps) {
           </motion.div>
         </AnimatePresence>
       </div>
+      <SaveAnywayDialog
+        open={confirmingIncomplete}
+        title="Save incomplete clues?"
+        description={INCOMPLETE_CLUES_COPY}
+        onKeepEditing={() => setConfirmingIncomplete(false)}
+        onSave={() => {
+          setConfirmingIncomplete(false);
+          finish();
+        }}
+      />
     </GameShell>
   );
 }

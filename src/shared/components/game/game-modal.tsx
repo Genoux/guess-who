@@ -16,7 +16,7 @@ type GameModalProps = {
   className?: string;
 };
 
-/** Centered game dialog: a big question and the actions. */
+/** Centered game dialog: a question and the actions. */
 export function GameModal({
   open,
   onOpenChange,
@@ -55,9 +55,11 @@ export function GameModal({
                 transition={TRANSITION.enter}
               >
                 <div className="flex flex-col items-center gap-1.5">
-                  <Dialog.Title className="font-game-serif text-hero-md">{title}</Dialog.Title>
+                  <Dialog.Title className="text-balance font-game-serif text-clue">
+                    {title}
+                  </Dialog.Title>
                   {description ? (
-                    <Dialog.Description className="max-w-130 text-balance text-game-muted text-lead">
+                    <Dialog.Description className="max-w-130 text-pretty text-base text-game-muted">
                       {description}
                     </Dialog.Description>
                   ) : null}

@@ -1,8 +1,8 @@
 import "server-only";
+import { findActiveWelcomerGame } from "@/shared/lib/find-active-welcomer-game";
 import { getViewerPerson } from "@/shared/lib/viewer-person";
 import { buildDeskClues, type DeskClue } from "../lib/desk-clues";
 import { firstName } from "../lib/first-name";
-import { findActiveWelcomerGame } from "../server/find-active-welcomer-game";
 import { findPersonById, listTeams, listWelcomerClues } from "../server/game-records";
 
 export type CluesDesk = {

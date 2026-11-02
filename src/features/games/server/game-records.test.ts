@@ -8,7 +8,6 @@ import {
   countAlbum,
   findGameById,
   findLatestPlayerGame,
-  findLatestWelcomerGame,
   hasCollected,
   hasGuessed,
   listActiveWelcomerIds,
@@ -34,11 +33,6 @@ describe("game lookups", () => {
       /from games where games\.player_person_id = \$1 order by \(games\.status = 'active'\) desc, games\.created_at desc limit \$2/,
     );
     expect(last().params).toEqual(["player", 1]);
-  });
-
-  it("finds the welcomer's game the same way", async () => {
-    await findLatestWelcomerGame("welcomer");
-    expect(last().sql).toMatch(/where games\.welcomer_person_id = \$1 order by \(games\.status/);
   });
 });
 
@@ -132,7 +126,7 @@ describe("countAlbum", () => {
     await expect(countAlbum("viewer", null)).resolves.toEqual({ collected: 5, total: 19 });
     const [total, collected] = sentStatements(client).slice(-2);
     expect(total?.sql).toMatch(
-      /select count\(\*\) from people where \(people\.id <> \$1 and people\.hidden = \$2 and people\.team_id is not null and btrim\(coalesce\(people\.ask, ''\)\) <> ''\)/,
+      /select count\(\*\) from people where \(people\.id <> \$1 and people\.hidden = \$2 and \(people\.team_id is not null and btrim\(coalesce\(people\.location, ''\)\) <> '' and btrim\(coalesce\(people\.fact, ''\)\) <> '' and btrim\(coalesce\(people\.ask, ''\)\) <> ''\)\)/,
     );
     expect(collected?.sql).toMatch(
       /from collections inner join people on collections\.person_id = people\.id where \(collections\.collector_person_id = \$1 and /,

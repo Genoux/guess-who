@@ -6,7 +6,7 @@ import { isInAlbum } from "./is-in-album";
 type CollectCheck = {
   viewerPersonId: string;
   /** The teammate to collect; undefined when the id matches nobody. */
-  person: Pick<Person, "id" | "hidden" | "teamId" | "ask"> | undefined;
+  person: Pick<Person, "id" | "hidden" | "teamId" | "location" | "fact" | "ask"> | undefined;
   alreadyCollected: boolean;
   /** The welcomer of the viewer's running mission: always collectable, so the mission stays winnable. */
   activeWelcomerId: string | null;

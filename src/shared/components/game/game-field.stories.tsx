@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { useState } from "react";
 import { TEAMS } from "./fixtures";
 import { GameField, type GameFieldProps } from "./game-field";
 
@@ -34,6 +35,22 @@ export const Textarea: Story = {
     help: "Only you see this.",
   },
 };
+
+function CountedTextarea() {
+  const [value, setValue] = useState("Bakes bread at 5am.");
+  return (
+    <GameField
+      multiline
+      label="Random fact"
+      maxLength={65}
+      showCount
+      value={value}
+      onChange={(event) => setValue(event.target.value)}
+    />
+  );
+}
+
+export const WithCount: Story = { render: () => <CountedTextarea /> };
 
 export const Select: Story = {
   args: {

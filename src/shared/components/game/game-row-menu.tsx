@@ -4,7 +4,7 @@ import { EllipsisVerticalIcon } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { gameCn } from "./game-cn";
 
-export type GameRowMenuItem = { label: string; onSelect: () => void };
+export type GameRowMenuItem = { label: string; onSelect: () => void; destructive?: boolean };
 
 type GameRowMenuProps = {
   /** Names the trigger for screen readers, e.g. "Actions for Maya Chen". */
@@ -37,7 +37,10 @@ export function GameRowMenu({ label, items, className }: GameRowMenuProps) {
             <DropdownMenu.Item
               key={item.label}
               onSelect={item.onSelect}
-              className="flex h-10 cursor-pointer items-center rounded-game-md px-3.5 font-medium text-button-sm outline-none data-highlighted:bg-game-sidebar"
+              className={gameCn(
+                "flex h-10 cursor-pointer items-center rounded-game-md px-3.5 font-medium text-button-sm outline-none data-highlighted:bg-game-sidebar",
+                item.destructive && "text-game-error",
+              )}
             >
               {item.label}
             </DropdownMenu.Item>

@@ -6,7 +6,7 @@ const client = vi.hoisted(() => ({ query: vi.fn(async () => ({ rows: [] as unkno
 vi.mock("@/shared/lib/db", async () => (await import("@/test/fake-db")).fakeDbModule(client));
 
 const records = vi.hoisted(() => ({ findActiveWelcomerGame: vi.fn() }));
-vi.mock("./find-active-welcomer-game", () => records);
+vi.mock("@/shared/lib/find-active-welcomer-game", () => records);
 
 import { writeClueRecord } from "./write-clue-record";
 
@@ -38,9 +38,24 @@ describe("writeClueRecord", () => {
     );
   });
 
+  it("deletes the clue when the text is blank, instead of storing it", async () => {
+    await write({ text: "" });
+    const [statement] = sentStatements(client);
+    expect(statement?.sql).toMatch(
+      /delete from welcomer_clues where \(welcomer_clues\.person_id = \$1 and welcomer_clues\.number = \$2\)/,
+    );
+    expect(statement?.params).toEqual(["teammate", 2]);
+  });
+
   it("refuses to change a clue while they welcome a started mission", async () => {
     records.findActiveWelcomerGame.mockResolvedValue({ id: "game_1" });
     await expect(write()).rejects.toSatisfy((err) => isAppError(err, "forbidden"));
+    expect(client.query).not.toHaveBeenCalled();
+  });
+
+  it("refuses to clear a clue while they welcome a started mission", async () => {
+    records.findActiveWelcomerGame.mockResolvedValue({ id: "game_1" });
+    await expect(write({ text: "" })).rejects.toSatisfy((err) => isAppError(err, "forbidden"));
     expect(client.query).not.toHaveBeenCalled();
   });
 

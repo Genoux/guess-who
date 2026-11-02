@@ -55,7 +55,7 @@ export function CardDetailFacts({ facts }: { facts: readonly CardDetailFact[] })
       {shown.map((fact) => (
         <div key={fact.label} className="contents">
           <dt className={labelClass}>{fact.label}</dt>
-          <dd className="text-pretty text-lead">{fact.value}</dd>
+          <dd className="text-pretty text-lead wrap-anywhere">{fact.value}</dd>
         </div>
       ))}
     </dl>

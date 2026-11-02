@@ -1,6 +1,6 @@
 import "server-only";
+import { findActiveWelcomerGame } from "@/shared/lib/find-active-welcomer-game";
 import { getViewerPerson } from "@/shared/lib/viewer-person";
-import { findActiveWelcomerGame } from "../server/find-active-welcomer-game";
 
 /** Whether the viewer is welcoming a new hire right now: it adds the Welcomer tab. */
 export async function getIsWelcomer(): Promise<boolean> {

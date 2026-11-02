@@ -10,6 +10,9 @@ const person = (overrides: Partial<PersonRecord> = {}): PersonRecord => ({
   name: "Sam Taylor",
   email: "sam@inbeat.agency",
   team: { name: "Creative", color: "#46BDF0" },
+  teamId: "team_1",
+  location: "Lisbon",
+  fact: "Rides night trains",
   ask: "Night trains",
   imageUrl: "/demo/avatars/sam-taylor.webp",
   newHire: false,
@@ -30,17 +33,25 @@ const base = {
 
 const invite = (id: string, email: string): PersonRecord =>
   person({
-    personId: null,
+    personId: id,
     signedIn: false,
     name: null,
     email,
     team: null,
+    teamId: null,
+    location: null,
+    fact: null,
     ask: null,
     imageUrl: null,
     newHire: true,
-    cluesWritten: null,
+    cluesWritten: 0,
     game: { ...base, id },
   });
+
+const invitedNotStarted = (id: string, email: string): PersonRecord => ({
+  ...invite(id, email),
+  game: null,
+});
 
 const board = (
   people: PersonRecord[],
@@ -94,16 +105,42 @@ describe("toPeopleBoard playing", () => {
 });
 
 describe("toPeopleBoard invites", () => {
-  it("lists an email nobody signed in with in Playing, by its email, keyed by its game", () => {
-    const { playing } = board([invite("i", "kim@gmail.com")]);
+  it("lists a started invite in Playing, by its email, not signed in", () => {
+    const { playing, noMission } = board([invite("i", "kim@gmail.com")]);
+    expect(noMission).toEqual([]);
     expect(playing[0]).toMatchObject({
       key: "i",
+      gameId: "i",
       name: null,
       email: "kim@gmail.com",
       team: null,
       signedIn: false,
-      asWelcomer: null,
     });
+  });
+
+  it("lists an invite whose mission is not started in No mission, new hire, not signed in", () => {
+    const { playing, noMission } = board([invitedNotStarted("i", "kim@gmail.com")]);
+    expect(playing).toEqual([]);
+    expect(noMission).toEqual([
+      expect.objectContaining({
+        key: "i",
+        email: "kim@gmail.com",
+        newHire: true,
+        signedIn: false,
+        asWelcomer: { kind: "cardNotDone" },
+      }),
+    ]);
+  });
+
+  it("puts each person in exactly one view, invites included", () => {
+    const { playing, noMission, done } = board([
+      invite("a", "a@x.com"),
+      invitedNotStarted("b", "b@x.com"),
+      person({ personId: "c", game: { ...base, id: "c", status: "revealed" } }),
+    ]);
+    expect(playing.map(({ key }) => key)).toEqual(["a"]);
+    expect(noMission.map(({ key }) => key)).toEqual(["b"]);
+    expect(done.map(({ key }) => key)).toEqual(["c"]);
   });
 
   it("marks a signed-in player as signed in", () => {
@@ -162,7 +199,9 @@ describe("toPeopleBoard no mission", () => {
       board([person(overrides)]).noMission[0]?.asWelcomer;
     expect(standing({})).toEqual({ kind: "canWelcome" });
     expect(standing({ cluesWritten: 1 })).toEqual({ kind: "cluesMissing", missing: 2 });
-    expect(standing({ team: null })).toEqual({ kind: "cardNotDone" });
+    expect(standing({ teamId: null })).toEqual({ kind: "cardNotDone" });
+    expect(standing({ location: null })).toEqual({ kind: "cardNotDone" });
+    expect(standing({ fact: " " })).toEqual({ kind: "cardNotDone" });
     expect(standing({ ask: " " })).toEqual({ kind: "cardNotDone" });
   });
 });
@@ -225,5 +264,26 @@ describe("toPeopleBoard done", () => {
   it("counts a mission that ran past day 14 as done", () => {
     const { done } = board([person({ game: { ...base, startDate: "2026-10-01" } })]);
     expect(done[0]?.outcome.label).toBe("Revealed on day 14");
+  });
+
+  it("marks anyone who welcomed a mission, running or finished, and no one else", () => {
+    const { noMission, playing, done } = board([
+      person({ personId: "ana", email: "ana@inbeat.agency" }),
+      person({ personId: "ben", email: "ben@inbeat.agency" }),
+      person({ personId: "cam", email: "cam@inbeat.agency" }),
+      person({ personId: "kim", email: "kim@gmail.com", game: { ...base, id: "kim" } }),
+      person({
+        personId: "lou",
+        email: "lou@gmail.com",
+        game: { ...base, id: "lou", welcomerPersonId: "cam", startDate: "2026-10-01" },
+      }),
+    ]);
+    expect(noMission.map(({ key, hasWelcomed }) => [key, hasWelcomed])).toEqual([
+      ["ana", true],
+      ["ben", false],
+      ["cam", true],
+    ]);
+    expect(playing[0]?.hasWelcomed).toBe(false);
+    expect(done[0]?.hasWelcomed).toBe(false);
   });
 });

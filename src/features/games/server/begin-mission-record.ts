@@ -4,8 +4,8 @@ import { and, eq, or, sql } from "drizzle-orm";
 import { clues, games, people, teams, welcomerClues } from "@/db/schema";
 import { todayInGameZone } from "@/entities/game-schedule";
 import { db } from "@/shared/lib/db";
+import { findActiveWelcomerGame } from "@/shared/lib/find-active-welcomer-game";
 import { chooseWelcomer, NO_WELCOMER_FREE } from "./choose-welcomer";
-import { findActiveWelcomerGame } from "./find-active-welcomer-game";
 import { listActiveWelcomerIds, revealExpiredGames } from "./game-records";
 import { listWelcomerCandidates } from "./people-records";
 
@@ -14,16 +14,11 @@ export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type BeginMissionInput = {
   /** Normalized. */
   playerEmail: string;
-  /** The player's person row; null for an invite that has none yet. */
-  playerPersonId: string | null;
+  /** The player's person row, whether or not they have signed in. */
+  playerPersonId: string;
   createdBy: string | null;
   now: Date;
   random?: () => number;
-  /**
-   * Runs in the start transaction, so a refused start undoes it. Returns the person the game is
-   * linked to, which an invite that has not signed in leaves null until their first sign-in.
-   */
-  prepare?: (tx: Transaction) => Promise<string | null>;
 };
 
 // A lost race on the welcomer index, or a pick that turned out to welcome the player's own
@@ -78,14 +73,13 @@ export async function beginMissionRecord({
   createdBy,
   now,
   random,
-  prepare,
 }: BeginMissionInput) {
   // The active-welcomer index holds a welcomer until their game is revealed, so a mission that
   // ran past day 14 must end before its welcomer can be picked again.
   await revealExpiredGames(now);
 
   for (let pick = 1; pick <= MAX_PICKS; pick++) {
-    const welcomed = playerPersonId ? await findActiveWelcomerGame(playerPersonId, now) : null;
+    const welcomed = await findActiveWelcomerGame(playerPersonId, now);
     const [candidates, busyWelcomerIds] = await Promise.all([
       listWelcomerCandidates(),
       listActiveWelcomerIds(now),
@@ -104,7 +98,6 @@ export async function beginMissionRecord({
         createdBy,
         welcomerPersonId: welcomer.id,
         startDate: todayInGameZone(now),
-        prepare,
       });
     } catch (err) {
       if (!isUniqueViolation(err) && !(err instanceof MutualWelcoming)) throw err;
@@ -113,8 +106,10 @@ export async function beginMissionRecord({
   throw new AppError("conflict", "welcomer taken twice", { safeMessage: NO_WELCOMER_FREE });
 }
 
-type InsertInput = Pick<BeginMissionInput, "playerEmail" | "playerPersonId" | "createdBy"> &
-  Pick<BeginMissionInput, "prepare"> & { welcomerPersonId: string; startDate: string };
+type InsertInput = Pick<BeginMissionInput, "playerEmail" | "playerPersonId" | "createdBy"> & {
+  welcomerPersonId: string;
+  startDate: string;
+};
 
 async function insertStartedGame({
   playerEmail,
@@ -122,23 +117,27 @@ async function insertStartedGame({
   createdBy,
   welcomerPersonId,
   startDate,
-  prepare,
 }: InsertInput) {
   return db.transaction(async (tx) => {
     await lockMissionStarts(tx);
-    if (playerPersonId && (await welcomesEachOther(tx, { playerPersonId, welcomerPersonId }))) {
+    if (await welcomesEachOther(tx, { playerPersonId, welcomerPersonId })) {
       throw new MutualWelcoming();
     }
+
+    // The share lock holds the player's row until commit. A first sign-in claims the row and then
+    // links games by email, so it either waits here and finds this game, or committed first and
+    // is seen here.
+    const [player] = await tx
+      .select({ clerkUserId: people.clerkUserId })
+      .from(people)
+      .where(eq(people.id, playerPersonId))
+      .for("share");
+    if (!player) throw new AppError("not_found", "player person missing");
 
     const [existing] = await tx
       .select({ id: games.id })
       .from(games)
-      .where(
-        or(
-          eq(games.playerEmail, playerEmail),
-          playerPersonId ? eq(games.playerPersonId, playerPersonId) : undefined,
-        ),
-      )
+      .where(or(eq(games.playerEmail, playerEmail), eq(games.playerPersonId, playerPersonId)))
       .limit(1);
     if (existing) {
       throw new AppError("conflict", "email already has a mission", {
@@ -151,12 +150,11 @@ async function insertStartedGame({
       .from(people)
       .leftJoin(teams, eq(people.teamId, teams.id))
       .where(eq(people.id, welcomerPersonId));
-    const linkedPersonId = prepare ? await prepare(tx) : playerPersonId;
     const [game] = await tx
       .insert(games)
       .values({
         playerEmail,
-        playerPersonId: linkedPersonId,
+        playerPersonId: player.clerkUserId ? playerPersonId : null,
         welcomerPersonId,
         startDate,
         welcomerTeamName: welcomerTeam?.name ?? null,
