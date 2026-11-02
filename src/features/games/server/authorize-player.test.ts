@@ -6,7 +6,6 @@ const mocks = vi.hoisted(() => ({
   authorizeMember: vi.fn(),
   findPersonByClerkUserId: vi.fn(),
   findLatestPlayerGame: vi.fn(),
-  findLatestWelcomerGame: vi.fn(),
   finalizeExpiredGameRecord: vi.fn(async (game: unknown) => game),
 }));
 vi.mock("@/shared/lib/auth", () => ({ authorizeMember: mocks.authorizeMember }));
@@ -15,7 +14,6 @@ vi.mock("@/shared/lib/person-records", () => ({
 }));
 vi.mock("./game-records", () => ({
   findLatestPlayerGame: mocks.findLatestPlayerGame,
-  findLatestWelcomerGame: mocks.findLatestWelcomerGame,
 }));
 vi.mock("@/shared/lib/finalize-expired-game-record", () => ({
   finalizeExpiredGameRecord: mocks.finalizeExpiredGameRecord,
@@ -39,7 +37,6 @@ const signInAs = (personId: string) => {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.findLatestPlayerGame.mockResolvedValue(game);
-  mocks.findLatestWelcomerGame.mockResolvedValue(game);
 });
 
 describe("authorizePlayer", () => {

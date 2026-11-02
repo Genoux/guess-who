@@ -364,12 +364,16 @@ export async function seedDemoGame(
         email,
         name: email.split("@")[0]?.replace(/[._-]+/g, " ") ?? email,
         teamId: teamIds.get("Talent"),
+        location: "Montréal",
+        fact: "Has a drawer of mismatched socks, on purpose.",
         ask: "Ask me anything",
       })
       .onConflictDoUpdate({
         target: schema.people.email,
         set: {
           teamId: sql`coalesce(${schema.people.teamId}, excluded.team_id)`,
+          location: sql`coalesce(nullif(${schema.people.location}, ''), excluded.location)`,
+          fact: sql`coalesce(nullif(${schema.people.fact}, ''), excluded.fact)`,
           ask: sql`coalesce(nullif(${schema.people.ask}, ''), excluded.ask)`,
           hidden: false,
         },

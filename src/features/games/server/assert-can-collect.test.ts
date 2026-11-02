@@ -4,7 +4,14 @@ import { assertCanCollect } from "./assert-can-collect";
 
 const allowed = {
   viewerPersonId: "viewer",
-  person: { id: "teammate", hidden: false, teamId: "team_1", ask: "Night trains" },
+  person: {
+    id: "teammate",
+    hidden: false,
+    teamId: "team_1",
+    location: "Lisbon",
+    fact: "Rides night trains",
+    ask: "Night trains",
+  },
   alreadyCollected: false,
   activeWelcomerId: null,
 };
@@ -32,7 +39,14 @@ describe("assertCanCollect", () => {
   });
 
   it("lets the viewer collect their own welcomer even when that card slipped out of the album", () => {
-    const slipped = { id: "welcomer", hidden: true, teamId: null, ask: null };
+    const slipped = {
+      id: "welcomer",
+      hidden: true,
+      teamId: null,
+      location: null,
+      fact: null,
+      ask: null,
+    };
     expect(() => assertCanCollect({ ...allowed, person: slipped })).toThrow(failsWith("not_found"));
     expect(() =>
       assertCanCollect({ ...allowed, person: slipped, activeWelcomerId: "welcomer" }),

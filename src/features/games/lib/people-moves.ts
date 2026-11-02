@@ -4,44 +4,41 @@ import type { NoMissionRowView, PeopleBoard, PlayingRowView } from "./people-vie
 export type PeopleMove =
   | { type: "turnOn"; keys: readonly string[] }
   | { type: "setNewHire"; key: string }
-  | { type: "flagNewHire"; key: string }
   | { type: "end"; gameId: string }
+  | { type: "remove"; key: string }
   | { type: "add"; email: string }
   | { type: "changeEmail"; gameId: string; email: string };
 
 /** The welcomer is picked on the server; until it answers the row has no name for it. */
 const PICKING_WELCOMER = "";
 
-const toPlaying = (
-  row: Pick<NoMissionRowView, "key" | "name" | "email" | "team" | "imageUrl" | "asWelcomer">,
-  newHire: boolean,
-): PlayingRowView => ({
+const toPlaying = (row: NoMissionRowView): PlayingRowView => ({
   ...row,
-  newHire,
   gameId: `pending-${row.key}`,
-  signedIn: true,
   welcomer: PICKING_WELCOMER,
   day: 1,
   progress: { label: "0", activity: "Not yet" },
 });
 
-const toNoMission = (
-  row: Pick<
-    PlayingRowView,
-    "key" | "name" | "email" | "team" | "imageUrl" | "newHire" | "asWelcomer"
-  >,
-): NoMissionRowView | null =>
-  row.asWelcomer
-    ? {
-        key: row.key,
-        name: row.name,
-        email: row.email,
-        team: row.team,
-        imageUrl: row.imageUrl,
-        newHire: row.newHire,
-        asWelcomer: row.asWelcomer,
-      }
-    : null;
+const invitedRow = (email: string): NoMissionRowView => ({
+  key: `pending-${email}`,
+  name: null,
+  email,
+  team: null,
+  imageUrl: null,
+  newHire: true,
+  signedIn: false,
+  welcoming: false,
+  asWelcomer: { kind: "cardNotDone" },
+});
+
+const toNoMission = ({
+  gameId: _gameId,
+  welcomer: _welcomer,
+  day: _day,
+  progress: _progress,
+  ...row
+}: PlayingRowView): NoMissionRowView => row;
 
 /**
  * The board after one move. Every move takes a person out of one view and puts them in another
@@ -55,19 +52,10 @@ export function applyPeopleMove(board: PeopleBoard, move: PeopleMove): PeopleBoa
       return {
         ...board,
         noMission: board.noMission.filter(({ key }) => !move.keys.includes(key)),
-        playing: [...chosen.map((row) => toPlaying(row, row.newHire)), ...board.playing],
+        playing: [...chosen.map(toPlaying), ...board.playing],
       };
     }
-    case "setNewHire": {
-      const chosen = board.noMission.find(({ key }) => key === move.key);
-      if (!chosen) return board;
-      return {
-        ...board,
-        noMission: board.noMission.filter(({ key }) => key !== move.key),
-        playing: [toPlaying(chosen, true), ...board.playing],
-      };
-    }
-    case "flagNewHire":
+    case "setNewHire":
       return {
         ...board,
         noMission: board.noMission.map((row) =>
@@ -76,37 +64,28 @@ export function applyPeopleMove(board: PeopleBoard, move: PeopleMove): PeopleBoa
       };
     case "end": {
       const row = board.playing.find(({ gameId }) => gameId === move.gameId);
-      const back = row ? toNoMission(row) : null;
       return {
         ...board,
         playing: board.playing.filter(({ gameId }) => gameId !== move.gameId),
-        noMission: back ? [...board.noMission, back] : board.noMission,
+        noMission: row ? [...board.noMission, toNoMission(row)] : board.noMission,
       };
     }
-    case "add": {
-      const known = board.noMission.find(({ email }) => email === move.email);
-      if (known) {
-        return {
-          ...board,
-          noMission: board.noMission.filter(({ key }) => key !== known.key),
-          playing: [toPlaying(known, true), ...board.playing],
-        };
-      }
-      const invite: PlayingRowView = {
-        key: `pending-${move.email}`,
-        gameId: `pending-${move.email}`,
-        name: null,
-        email: move.email,
-        team: null,
-        imageUrl: null,
-        newHire: true,
-        asWelcomer: null,
-        signedIn: false,
-        welcomer: PICKING_WELCOMER,
-        day: 1,
-        progress: { label: "0", activity: "Not yet" },
+    case "remove":
+      return {
+        playing: board.playing.filter(({ key }) => key !== move.key),
+        noMission: board.noMission.filter(({ key }) => key !== move.key),
+        done: board.done.filter(({ key }) => key !== move.key),
       };
-      return { ...board, playing: [invite, ...board.playing] };
+    case "add": {
+      const known = board.noMission.some(({ email }) => email === move.email);
+      return {
+        ...board,
+        noMission: known
+          ? board.noMission.map((row) =>
+              row.email === move.email ? { ...row, newHire: true } : row,
+            )
+          : [invitedRow(move.email), ...board.noMission],
+      };
     }
     case "changeEmail":
       return {

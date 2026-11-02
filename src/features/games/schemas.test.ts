@@ -6,6 +6,7 @@ import {
   setAsNewHireSchema,
   TURN_ON_MISSIONS_MAX,
   turnOnMissionsSchema,
+  writeClueSchema,
 } from "./schemas";
 
 const ID = "6f0c1d2e-3b4a-4c5d-8e9f-0a1b2c3d4e5f";
@@ -65,12 +66,21 @@ describe("turnOnMissionsSchema", () => {
 
 describe("setAsNewHireSchema", () => {
   it("needs a person id", () => {
-    expect(setAsNewHireSchema.safeParse({ personId: ID, startMission: true }).success).toBe(true);
-    expect(setAsNewHireSchema.safeParse({ personId: "x", startMission: true }).success).toBe(false);
+    expect(setAsNewHireSchema.safeParse({ personId: ID }).success).toBe(true);
+    expect(setAsNewHireSchema.safeParse({ personId: "x" }).success).toBe(false);
+  });
+});
+
+describe("writeClueSchema", () => {
+  it("trims the text and lets it be blank, which clears the clue", () => {
+    expect(writeClueSchema.parse({ number: 2, text: "  Never owned a car. " }).text).toBe(
+      "Never owned a car.",
+    );
+    expect(writeClueSchema.parse({ number: 3, text: "   " }).text).toBe("");
   });
 
-  it("says whether to start the mission now", () => {
-    expect(setAsNewHireSchema.safeParse({ personId: ID, startMission: false }).success).toBe(true);
-    expect(setAsNewHireSchema.safeParse({ personId: ID }).success).toBe(false);
+  it("caps the text and only takes clues 2 to 4", () => {
+    expect(writeClueSchema.safeParse({ number: 2, text: "x".repeat(161) }).success).toBe(false);
+    expect(writeClueSchema.safeParse({ number: 1, text: "x" }).success).toBe(false);
   });
 });

@@ -11,17 +11,24 @@ import { Reveal } from "@/shared/components/game/reveal";
 import { addNewHire } from "../actions/add-new-hire";
 import { changeInviteEmail } from "../actions/change-invite-email";
 import { endMission } from "../actions/end-mission";
+import { removePerson } from "../actions/remove-person";
 import { setAsNewHire } from "../actions/set-as-new-hire";
 import { turnOnMissions } from "../actions/turn-on-missions";
 import { firstName } from "../lib/first-name";
 import { BOOK_DELAY_S } from "../lib/people-motion";
 import { applyPeopleMove, type PeopleMove } from "../lib/people-moves";
-import type { NoMissionRowView, PeopleBoard, PlayingRowView } from "../lib/people-view";
+import type {
+  NoMissionRowView,
+  PeopleBoard,
+  PersonIdentity,
+  PlayingRowView,
+} from "../lib/people-view";
 import { EndMissionDialog } from "./end-mission-dialog";
 import { NewHireEmailForm } from "./new-hire-email-form";
 import { PeopleDone } from "./people-done";
 import { PeopleNoMission } from "./people-no-mission";
 import { PeoplePlaying } from "./people-playing";
+import { RemovePersonDialog } from "./remove-person-dialog";
 import { SetNewHireDialog } from "./set-new-hire-dialog";
 
 type PeopleView = "playing" | "noMission" | "done";
@@ -68,7 +75,8 @@ export function PeopleScreen({
   const [view, setView] = useState<PeopleView>("playing");
   const [emailDialog, setEmailDialog] = useState<EmailDialog>(null);
   const [ending, setEnding] = useState<PlayingRowView | null>(null);
-  const [choosing, setChoosing] = useState<NoMissionRowView | null>(null);
+  const [flagging, setFlagging] = useState<NoMissionRowView | null>(null);
+  const [removing, setRemoving] = useState<PersonIdentity | null>(null);
   // Nothing is saved in the preview, so its settled board is kept here.
   const [previewBoard, setPreviewBoard] = useState(serverBoard);
   const [board, applyMove] = useOptimistic(preview ? previewBoard : serverBoard, applyPeopleMove);
@@ -117,16 +125,13 @@ export function PeopleScreen({
     });
   }
 
-  function setNewHire(row: NoMissionRowView, startMission: boolean) {
-    setChoosing(null);
+  function setNewHire(row: NoMissionRowView) {
+    setFlagging(null);
     perform({
-      move: { type: startMission ? "setNewHire" : "flagNewHire", key: row.key },
-      run: () => setAsNewHire({ personId: row.key, startMission }),
-      previewData: { gameId: startMission ? `pending-${row.key}` : null },
-      message: () =>
-        startMission
-          ? `${shortName(row)} is now a new hire. Their mission started.`
-          : `${shortName(row)} is now a new hire. Turn on their mission when it's time.`,
+      move: { type: "setNewHire", key: row.key },
+      run: () => setAsNewHire({ personId: row.key }),
+      previewData: undefined,
+      message: () => `${shortName(row)} is now a new hire. Turn on their mission when it's time.`,
     });
   }
 
@@ -137,6 +142,16 @@ export function PeopleScreen({
       run: () => endMission({ gameId: row.gameId }),
       previewData: undefined,
       message: () => `${shortName(row)}'s mission ended.`,
+    });
+  }
+
+  function remove(row: PersonIdentity) {
+    setRemoving(null);
+    perform({
+      move: { type: "remove", key: row.key },
+      run: () => removePerson({ personId: row.key }),
+      previewData: undefined,
+      message: () => `${shortName(row)} was removed.`,
     });
   }
 
@@ -152,12 +167,12 @@ export function PeopleScreen({
       });
       return;
     }
-    setView("playing");
+    setView("noMission");
     perform({
       move: { type: "add", email },
       run: () => addNewHire({ email }),
       previewData: undefined,
-      message: () => "Added. Their mission started.",
+      message: () => "Added. Turn on their mission when it's time.",
     });
   }
 
@@ -189,9 +204,14 @@ export function PeopleScreen({
           />
         ) : null}
         {view === "noMission" ? (
-          <PeopleNoMission rows={board.noMission} onTurnOn={turnOn} onSetNewHire={setChoosing} />
+          <PeopleNoMission
+            rows={board.noMission}
+            onTurnOn={turnOn}
+            onSetNewHire={setFlagging}
+            onRemove={setRemoving}
+          />
         ) : null}
-        {view === "done" ? <PeopleDone rows={board.done} /> : null}
+        {view === "done" ? <PeopleDone rows={board.done} onRemove={setRemoving} /> : null}
       </Reveal>
 
       <GameModal
@@ -207,8 +227,8 @@ export function PeopleScreen({
         />
       </GameModal>
 
-      <SetNewHireDialog row={choosing} onChoose={setNewHire} onClose={() => setChoosing(null)} />
-
+      <SetNewHireDialog row={flagging} onConfirm={setNewHire} onClose={() => setFlagging(null)} />
+      <RemovePersonDialog row={removing} onConfirm={remove} onClose={() => setRemoving(null)} />
       <EndMissionDialog row={ending} onEnd={end} onClose={() => setEnding(null)} />
     </>
   );

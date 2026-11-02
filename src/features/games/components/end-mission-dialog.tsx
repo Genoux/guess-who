@@ -20,7 +20,7 @@ export function EndMissionDialog({ row, onEnd, onClose }: EndMissionDialogProps)
       open={row !== null}
       onOpenChange={(open) => !open && onClose()}
       title={`End ${row ? firstName(row.name ?? row.email) : ""}'s mission?`}
-      description="Their welcomer and guesses are reset. Their album stays."
+      description="Their guesses and clues are cleared. Their album and notes stay. Starting again picks a new welcomer, and day 1 is the start day."
     >
       <div className="flex w-full flex-col items-center gap-4">
         <GameButton className="w-full" onClick={onClose}>

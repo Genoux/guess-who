@@ -20,7 +20,7 @@ const CARD: MyCard = {
   stickerNumber: 12,
   imageUrl: null,
   audience: "teammate",
-  fields: { teamId: "", location: "", fact: "", ask: "" },
+  fields: { teamId: null, location: "", fact: "", ask: "" },
   teams: TEAM_DEFINITIONS.map(({ name, color, tint }, index) => ({
     id: `00000000-0000-4000-8000-00000000000${index + 1}`,
     name,

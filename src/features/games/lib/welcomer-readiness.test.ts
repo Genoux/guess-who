@@ -17,12 +17,12 @@ describe("cluesReady", () => {
 });
 
 describe("asWelcomer", () => {
-  const finished = { hasTeam: true, ask: "Night trains" };
+  const finished = { teamId: "team_1", location: "Lisbon", fact: "Rides trains", ask: "Trains" };
 
-  it("puts the card first: no team or no ask line means it is not done", () => {
-    expect(asWelcomer({ hasTeam: false, ask: "Night trains" }, 3)).toEqual({ kind: "cardNotDone" });
-    expect(asWelcomer({ hasTeam: true, ask: "  " }, 3)).toEqual({ kind: "cardNotDone" });
-    expect(asWelcomer({ hasTeam: true, ask: null }, 0)).toEqual({ kind: "cardNotDone" });
+  it("puts the card first: a missing or blank field means it is not done", () => {
+    for (const missing of [{ teamId: null }, { location: null }, { fact: "  " }, { ask: null }]) {
+      expect(asWelcomer({ ...finished, ...missing }, 3)).toEqual({ kind: "cardNotDone" });
+    }
   });
 
   it("counts the clues still missing once the card is done", () => {

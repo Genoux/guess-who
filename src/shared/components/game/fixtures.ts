@@ -50,5 +50,16 @@ export const ana: StickerPerson = {
   photoUrl: SAMPLE_PHOTO,
 };
 
+/** Every text at its limit (60, 140 and 80 characters), to check that nothing is cut off. */
+export const longest: StickerPerson = {
+  name: "Maria Fernanda Albuquerque",
+  number: 12,
+  team: "Strategy",
+  ...TEAMS.Strategy,
+  city: "A mountain village outside Lisbon, in the north of Portugal",
+  fact: "Spent a whole summer cataloguing every bakery between Lisbon and Porto, then wrote an opinionated guide that nobody asked for at all. Truly.",
+  ask: "Sourdough, night trains, cold plunges, and learning the cello badly but happily.",
+};
+
 /** A welcomer-written clue, as it reads on a face-up card. */
 export const welcomerClue = "Has never owned a car, and never plans to.";

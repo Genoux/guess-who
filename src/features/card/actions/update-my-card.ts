@@ -11,6 +11,6 @@ export const updateMyCard = action({
   name: "card.update",
   schema: updateMyCardSchema,
   authorize: authorizeCardEditor,
-  run: async (input, editor) => ok(await updateCardRecord(input, editor.personId)),
+  run: async (input, editor) => ok(await updateCardRecord(input, editor.personId, new Date())),
   revalidate: () => [ROUTES.card],
 });

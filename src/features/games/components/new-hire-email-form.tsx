@@ -6,7 +6,7 @@ import { GameModalActions } from "@/shared/components/game/game-modal-actions";
 import { addNewHireSchema } from "../schemas";
 
 const ADD_HELP =
-  "They'll get a Mission tab when they sign in with Slack and can start right away. Their card and clues come after.";
+  "They'll show up in No mission. Turn on their mission when it's time; their card and clues come after.";
 const CHANGE_HELP = "Use the email their Slack account uses.";
 
 type NewHireEmailFormProps = {

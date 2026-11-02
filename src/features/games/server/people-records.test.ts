@@ -14,65 +14,55 @@ beforeEach(() => {
 });
 
 describe("listPeople", () => {
-  it("lists the signed-in people with team, card and mission, then the emails nobody signed in with", async () => {
-    client.query
-      .mockResolvedValueOnce({
-        rows: [
-          [
-            "sam",
-            "Sam Taylor",
-            "sam@inbeat.agency",
-            "Creative",
-            "#46BDF0",
-            "Night trains",
-            "/demo/avatars/sam-taylor.webp",
-            false,
-            "2",
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-          ],
-          [
-            "ana",
-            "Ana Ferreira",
-            "ana@inbeat.agency",
-            null,
-            null,
-            null,
-            null,
-            true,
-            "0",
-            "game_1",
-            "active",
-            "ben",
-            "2026-10-26",
-            null,
-            null,
-            "Ben Carter",
-          ],
+  it("lists everyone with team, card and mission, signed in or only invited", async () => {
+    client.query.mockResolvedValueOnce({
+      rows: [
+        [
+          "sam",
+          "user_sam",
+          "Sam Taylor",
+          "sam@inbeat.agency",
+          "Creative",
+          "#46BDF0",
+          "team_1",
+          "Lisbon",
+          "Rides night trains",
+          "Night trains",
+          "/demo/avatars/sam-taylor.webp",
+          false,
+          "2",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
         ],
-      })
-      .mockResolvedValueOnce({
-        rows: [
-          [
-            null,
-            null,
-            true,
-            "kim@gmail.com",
-            "game_2",
-            "active",
-            "ben",
-            "2026-10-27",
-            null,
-            null,
-            "Ben Carter",
-          ],
+        [
+          "kim",
+          null,
+          "kim",
+          "kim@gmail.com",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          true,
+          "0",
+          "game_2",
+          "active",
+          "ben",
+          "2026-10-27",
+          null,
+          null,
+          "Ben Carter",
         ],
-      });
+      ],
+    });
     await expect(listPeople()).resolves.toEqual([
       {
         personId: "sam",
@@ -80,6 +70,9 @@ describe("listPeople", () => {
         name: "Sam Taylor",
         email: "sam@inbeat.agency",
         team: { name: "Creative", color: "#46BDF0" },
+        teamId: "team_1",
+        location: "Lisbon",
+        fact: "Rides night trains",
         ask: "Night trains",
         imageUrl: "/demo/avatars/sam-taylor.webp",
         newHire: false,
@@ -87,35 +80,18 @@ describe("listPeople", () => {
         game: null,
       },
       {
-        personId: "ana",
-        signedIn: true,
-        name: "Ana Ferreira",
-        email: "ana@inbeat.agency",
+        personId: "kim",
+        signedIn: false,
+        name: "kim",
+        email: "kim@gmail.com",
         team: null,
+        teamId: null,
+        location: null,
+        fact: null,
         ask: null,
         imageUrl: null,
         newHire: true,
         cluesWritten: 0,
-        game: {
-          id: "game_1",
-          status: "active",
-          welcomerPersonId: "ben",
-          welcomerName: "Ben Carter",
-          startDate: "2026-10-26",
-          foundAt: null,
-          revealSeenAt: null,
-        },
-      },
-      {
-        personId: null,
-        signedIn: false,
-        name: null,
-        email: "kim@gmail.com",
-        team: null,
-        ask: null,
-        imageUrl: null,
-        newHire: true,
-        cluesWritten: null,
         game: {
           id: "game_2",
           status: "active",
@@ -129,18 +105,15 @@ describe("listPeople", () => {
     ]);
   });
 
-  it("reads people who signed in, with team and game, and games whose player has not", async () => {
+  it("reads every person row, with a game linked by player or by email, in one query", async () => {
     await listPeople();
-    const [signedIn, invited] = sentStatements(client);
-    expect(signedIn?.sql).toMatch(
-      /from people left join teams on people\.team_id = teams\.id left join games on games\.player_person_id = people\.id left join people welcomer on games\.welcomer_person_id = welcomer\.id where people\.clerk_user_id is not null/,
+    expect(sentStatements(client)).toHaveLength(1);
+    const [people] = sentStatements(client);
+    expect(people?.sql).toMatch(
+      /from people left join teams on people\.team_id = teams\.id left join games on \(games\.player_person_id = people\.id or games\.player_email = people\.email\) left join people welcomer on games\.welcomer_person_id = welcomer\.id$/,
     );
-    expect(signedIn?.sql).toMatch(
-      /from welcomer_clues where welcomer_clues\.person_id = people\.id/,
-    );
-    expect(invited?.sql).toMatch(
-      /from games left join people player on games\.player_person_id = player\.id left join people welcomer on games\.welcomer_person_id = welcomer\.id where player\.clerk_user_id is null/,
-    );
+    expect(people?.sql).not.toMatch(/ where people\.|clerk_user_id is/);
+    expect(people?.sql).toMatch(/from welcomer_clues where welcomer_clues\.person_id = people\.id/);
   });
 });
 
@@ -148,8 +121,17 @@ describe("listWelcomerCandidates", () => {
   it("lists visible people with the clues they wrote, team or not", async () => {
     client.query.mockResolvedValueOnce({
       rows: [
-        ["ana", "ana@inbeat.agency", false, "team_1", "Night trains", [2, 3, 4]],
-        ["ben", "ben@inbeat.agency", false, null, null, []],
+        [
+          "ana",
+          "ana@inbeat.agency",
+          false,
+          "team_1",
+          "Lisbon",
+          "Rides trains",
+          "Night trains",
+          [2, 3, 4],
+        ],
+        ["ben", "ben@inbeat.agency", false, null, null, null, null, []],
       ],
     });
     await expect(listWelcomerCandidates()).resolves.toEqual([
@@ -158,6 +140,8 @@ describe("listWelcomerCandidates", () => {
         email: "ana@inbeat.agency",
         hidden: false,
         teamId: "team_1",
+        location: "Lisbon",
+        fact: "Rides trains",
         ask: "Night trains",
         writtenClues: [2, 3, 4],
       },
@@ -166,6 +150,8 @@ describe("listWelcomerCandidates", () => {
         email: "ben@inbeat.agency",
         hidden: false,
         teamId: null,
+        location: null,
+        fact: null,
         ask: null,
         writtenClues: [],
       },

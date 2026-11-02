@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatStickerNumber,
+  getAskTextStep,
   getStickerView,
   type StickerPerson,
   stickerCelebration,
@@ -96,5 +97,20 @@ describe("stickerCelebration", () => {
     expect(stickerCelebration("collected", "maybe")).toBeNull();
     expect(stickerCelebration("maybe", "ruled")).toBeNull();
     expect(stickerCelebration("collected", "locked")).toBeNull();
+  });
+});
+
+describe("getAskTextStep", () => {
+  it("steps the locked ask down as it gets longer", () => {
+    expect(getAskTextStep("Night trains")).toBe("large");
+    expect(getAskTextStep("x".repeat(32))).toBe("large");
+    expect(getAskTextStep("x".repeat(33))).toBe("medium");
+    expect(getAskTextStep("x".repeat(56))).toBe("medium");
+    expect(getAskTextStep("x".repeat(57))).toBe("small");
+    expect(getAskTextStep("x".repeat(80))).toBe("small");
+  });
+
+  it("measures the text as written, not the padding around it", () => {
+    expect(getAskTextStep(`  ${"x".repeat(32)}  `)).toBe("large");
   });
 });

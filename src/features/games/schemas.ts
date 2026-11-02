@@ -29,11 +29,7 @@ export const markRevealSeenSchema = z.object({});
 
 export const writeClueSchema = z.object({
   number: z.union([z.literal(2), z.literal(3), z.literal(4)]),
-  text: z
-    .string()
-    .trim()
-    .min(1, "Write a clue first.")
-    .max(CLUE_MAX, `Keep it under ${CLUE_MAX} characters.`),
+  text: z.string().trim().max(CLUE_MAX, `Keep it under ${CLUE_MAX} characters.`),
 });
 
 export const devStateSchema = z.object({ scenario: z.enum(DEV_SCENARIO_IDS) });
@@ -48,9 +44,11 @@ export const addNewHireSchema = z.object({ email: playerEmail });
 
 export const changeInviteEmailSchema = z.object({ gameId: z.uuid(), email: playerEmail });
 
-export const setAsNewHireSchema = z.object({ personId: z.uuid(), startMission: z.boolean() });
+export const setAsNewHireSchema = z.object({ personId: z.uuid() });
 
 export const endMissionSchema = z.object({ gameId: z.uuid() });
+
+export const removePersonSchema = z.object({ personId: z.uuid() });
 
 /** More than the team has people today; a guard against an absurd request, not a product limit. */
 export const TURN_ON_MISSIONS_MAX = 500;

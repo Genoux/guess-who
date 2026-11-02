@@ -18,13 +18,17 @@ describe("updateMyCardSchema", () => {
     ).toEqual({ teamId: TEAM_ID, location: "Lisbon", fact: "A", ask: "B" });
   });
 
-  it("requires a team and every field, blank counting as empty", () => {
-    expect(messages({ teamId: "", location: "   ", fact: "", ask: "" })).toEqual({
-      teamId: "Pick your team.",
-      location: "Add where you're based.",
-      fact: "Add a random fact.",
-      ask: "Add something to ask you about.",
+  it("accepts a draft with no team and blank fields", () => {
+    expect(updateMyCardSchema.parse({ teamId: null, location: "  ", fact: "", ask: "" })).toEqual({
+      teamId: null,
+      location: "",
+      fact: "",
+      ask: "",
     });
+  });
+
+  it("still rejects a team that is not an id", () => {
+    expect(messages({ ...valid, teamId: "" })).toEqual({ teamId: "Pick your team." });
   });
 
   it("caps location at 60, fact at 140 and ask at 80 characters after trimming", () => {

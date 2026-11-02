@@ -1,5 +1,6 @@
 import "server-only";
 import { AppError } from "@inbeat/core/errors";
+import { WELCOMING_LOCKED_MESSAGE } from "@/entities/new-hire";
 
 /** Clue 1 is the teammate's team and is never written by hand. */
 const FIRST_WRITABLE_CLUE = 2;
@@ -18,7 +19,7 @@ export function assertCanWriteClue({ number, welcoming }: ClueWriteCheck) {
   if (number < FIRST_WRITABLE_CLUE) throw new AppError("forbidden", "clue is generated");
   if (welcoming) {
     throw new AppError("forbidden", "clues are locked while their mission is playing", {
-      safeMessage: "Locked while the new hire is playing.",
+      safeMessage: WELCOMING_LOCKED_MESSAGE,
     });
   }
 }

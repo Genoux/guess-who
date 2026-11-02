@@ -4,8 +4,8 @@ import { and, eq, or, sql } from "drizzle-orm";
 import { clues, games, people, teams, welcomerClues } from "@/db/schema";
 import { todayInGameZone } from "@/entities/game-schedule";
 import { db } from "@/shared/lib/db";
+import { findActiveWelcomerGame } from "@/shared/lib/find-active-welcomer-game";
 import { chooseWelcomer, NO_WELCOMER_FREE } from "./choose-welcomer";
-import { findActiveWelcomerGame } from "./find-active-welcomer-game";
 import { listActiveWelcomerIds, revealExpiredGames } from "./game-records";
 import { listWelcomerCandidates } from "./people-records";
 
@@ -19,11 +19,6 @@ type BeginMissionInput = {
   createdBy: string | null;
   now: Date;
   random?: () => number;
-  /**
-   * Runs in the start transaction, so a refused start undoes it. Returns the person the game is
-   * linked to, which an invite that has not signed in leaves null until their first sign-in.
-   */
-  prepare?: (tx: Transaction) => Promise<string | null>;
 };
 
 // A lost race on the welcomer index, or a pick that turned out to welcome the player's own
@@ -78,7 +73,6 @@ export async function beginMissionRecord({
   createdBy,
   now,
   random,
-  prepare,
 }: BeginMissionInput) {
   // The active-welcomer index holds a welcomer until their game is revealed, so a mission that
   // ran past day 14 must end before its welcomer can be picked again.
@@ -104,7 +98,6 @@ export async function beginMissionRecord({
         createdBy,
         welcomerPersonId: welcomer.id,
         startDate: todayInGameZone(now),
-        prepare,
       });
     } catch (err) {
       if (!isUniqueViolation(err) && !(err instanceof MutualWelcoming)) throw err;
@@ -113,8 +106,10 @@ export async function beginMissionRecord({
   throw new AppError("conflict", "welcomer taken twice", { safeMessage: NO_WELCOMER_FREE });
 }
 
-type InsertInput = Pick<BeginMissionInput, "playerEmail" | "playerPersonId" | "createdBy"> &
-  Pick<BeginMissionInput, "prepare"> & { welcomerPersonId: string; startDate: string };
+type InsertInput = Pick<BeginMissionInput, "playerEmail" | "playerPersonId" | "createdBy"> & {
+  welcomerPersonId: string;
+  startDate: string;
+};
 
 async function insertStartedGame({
   playerEmail,
@@ -122,7 +117,6 @@ async function insertStartedGame({
   createdBy,
   welcomerPersonId,
   startDate,
-  prepare,
 }: InsertInput) {
   return db.transaction(async (tx) => {
     await lockMissionStarts(tx);
@@ -151,12 +145,11 @@ async function insertStartedGame({
       .from(people)
       .leftJoin(teams, eq(people.teamId, teams.id))
       .where(eq(people.id, welcomerPersonId));
-    const linkedPersonId = prepare ? await prepare(tx) : playerPersonId;
     const [game] = await tx
       .insert(games)
       .values({
         playerEmail,
-        playerPersonId: linkedPersonId,
+        playerPersonId,
         welcomerPersonId,
         startDate,
         welcomerTeamName: welcomerTeam?.name ?? null,

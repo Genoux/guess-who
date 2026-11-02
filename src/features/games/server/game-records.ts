@@ -14,6 +14,7 @@ import {
 } from "@/db/schema";
 import { lastExpiredStartDate } from "@/entities/game-schedule";
 import { clearNewHire } from "@/shared/lib/clear-new-hire";
+import { completeCardCondition } from "@/shared/lib/complete-card-condition";
 import { db } from "@/shared/lib/db";
 import type { ClueRow, Collection, Game } from "../types";
 
@@ -25,17 +26,6 @@ export async function findLatestPlayerGame(personId: string): Promise<Game | und
     .select()
     .from(games)
     .where(eq(games.playerPersonId, personId))
-    .orderBy(activeFirst, desc(games.createdAt))
-    .limit(1);
-  return game;
-}
-
-/** The person's game as welcomer: the active one, else the most recent. */
-export async function findLatestWelcomerGame(personId: string): Promise<Game | undefined> {
-  const [game] = await db
-    .select()
-    .from(games)
-    .where(eq(games.welcomerPersonId, personId))
     .orderBy(activeFirst, desc(games.createdAt))
     .limit(1);
   return game;
@@ -154,14 +144,13 @@ export async function hasGuessed(gameId: string, personId: string): Promise<bool
   return row !== undefined;
 }
 
-// The same rule as `isInAlbum`, in SQL, plus the welcomer of the viewer's running mission, who is
+// `isInAlbum` in SQL, plus the welcomer of the viewer's running mission, who is
 // always in the album so the mission stays winnable.
 const albumCondition = (viewerPersonId: string, runningWelcomerId: string | null) => {
   const filledCard = and(
     ne(people.id, viewerPersonId),
     eq(people.hidden, false),
-    isNotNull(people.teamId),
-    sql`btrim(coalesce(${people.ask}, '')) <> ''`,
+    completeCardCondition,
   );
   return runningWelcomerId ? or(filledCard, eq(people.id, runningWelcomerId)) : filledCard;
 };

@@ -6,7 +6,10 @@ import { isInAlbum } from "./is-in-album";
 
 export const NO_WELCOMER_FREE = "No welcomer is free right now. Try again tomorrow.";
 
-export type WelcomerCandidate = Pick<Person, "id" | "email" | "hidden" | "teamId" | "ask"> & {
+export type WelcomerCandidate = Pick<
+  Person,
+  "id" | "email" | "hidden" | "teamId" | "location" | "fact" | "ask"
+> & {
   /** Numbers of the clues (2 to 4) with text. */
   writtenClues: readonly number[];
 };
@@ -21,7 +24,7 @@ type EligibleInput<T extends WelcomerCandidate> = {
 };
 
 /**
- * Teammates with a finished card and all three clues written, who are not welcoming a mission,
+ * Teammates with a complete card and all three clues written, who are not welcoming a mission,
  * nor are the player, nor the person the player welcomes.
  */
 export function eligibleWelcomers<T extends WelcomerCandidate>({

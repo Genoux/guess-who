@@ -17,7 +17,7 @@ vi.mock("./game-records", () => ({
   revealExpiredGames: records.revealExpiredGames,
 }));
 vi.mock("./people-records", () => ({ listWelcomerCandidates: records.listWelcomerCandidates }));
-vi.mock("./find-active-welcomer-game", () => ({
+vi.mock("@/shared/lib/find-active-welcomer-game", () => ({
   findActiveWelcomerGame: records.findActiveWelcomerGame,
 }));
 
@@ -29,6 +29,8 @@ const candidate = (id: string, overrides = {}) => ({
   email: `${id}@inbeat.agency`,
   hidden: false,
   teamId: "team_1",
+  location: "Lisbon",
+  fact: "Rides night trains",
   ask: "Night trains",
   writtenClues: [2, 3, 4],
   ...overrides,
@@ -179,11 +181,8 @@ describe("beginMissionRecord", () => {
     expect(insert()).toBeUndefined();
   });
 
-  it("runs the caller's step in the same transaction, and links the game to the person it returns", async () => {
-    const prepare = vi.fn(async () => "person_9");
-    await start({ playerPersonId: null, prepare });
-    expect(prepare).toHaveBeenCalledOnce();
-    expect(insert()?.params).toContain("person_9");
+  it("writes the game in one transaction, unlinked when the player has no person yet", async () => {
+    await start({ playerPersonId: null });
     const sql = sentStatements(client).map((s) => s.sql.trim());
     expect(sql[0]).toBe("begin");
     expect(sql.at(-1)).toBe("commit");

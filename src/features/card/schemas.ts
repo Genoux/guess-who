@@ -2,19 +2,18 @@ import { z } from "zod";
 
 export const CARD_LIMITS = { location: 60, fact: 140, ask: 80 } as const;
 
-const cardText = (max: number, empty: string) =>
+const cardText = (max: number) =>
   z
     .string()
     .trim()
-    .min(1, { error: empty })
     .max(max, { error: `Keep it to ${max} characters.` });
 
-/** The teammate's own sticker; shared by the form and the action. */
+/** The teammate's own sticker. Drafts save: `isCardComplete` decides what a blank field costs. */
 export const updateMyCardSchema = z.object({
-  teamId: z.uuid({ error: "Pick your team." }),
-  location: cardText(CARD_LIMITS.location, "Add where you're based."),
-  fact: cardText(CARD_LIMITS.fact, "Add a random fact."),
-  ask: cardText(CARD_LIMITS.ask, "Add something to ask you about."),
+  teamId: z.uuid({ error: "Pick your team." }).nullable(),
+  location: cardText(CARD_LIMITS.location),
+  fact: cardText(CARD_LIMITS.fact),
+  ask: cardText(CARD_LIMITS.ask),
 });
 
 export type UpdateMyCardInput = z.output<typeof updateMyCardSchema>;

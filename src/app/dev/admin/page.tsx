@@ -74,6 +74,9 @@ const person = (
   name,
   email: `${slug(name)}@inbeat.agency`,
   team: card && team ? { name: team, color: teamOf(team)?.color ?? "#edede8" } : null,
+  teamId: card && team ? team : null,
+  location: card ? "Lisbon" : null,
+  fact: card ? "Rides night trains" : null,
   ask: card ? "Night trains" : null,
   // The demo cast has portraits; the rest of the crowd shows initials, so both are on screen.
   imageUrl: DEMO_PORTRAIT_SOURCES[name] ? avatarUrlOf(name) : null,
@@ -84,16 +87,24 @@ const person = (
 });
 
 const invite = (id: string, email: string, welcomerName: string): PersonRecord => ({
-  personId: null,
+  personId: id,
   signedIn: false,
   name: null,
   email,
   team: null,
+  teamId: null,
+  location: null,
+  fact: null,
   ask: null,
   imageUrl: null,
   newHire: true,
-  cluesWritten: null,
+  cluesWritten: 0,
   game: playing(id, welcomerName, "2026-10-28"),
+});
+
+const invitedNotStarted = (id: string, email: string): PersonRecord => ({
+  ...invite(id, email, ""),
+  game: null,
 });
 
 const NAMED: PersonRecord[] = [
@@ -112,6 +123,7 @@ const NAMED: PersonRecord[] = [
   }),
   invite("jordan", "jordan.lee@example.com", "Sam Rivera"),
   invite("dev", "dev.patel@example.com", "Grace Liu"),
+  invitedNotStarted("riley", "riley.kane@example.com"),
   person("Diego Alvarez", "Creative", {
     game: finished(
       "diego",

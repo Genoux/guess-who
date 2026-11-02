@@ -1,4 +1,5 @@
 export const LOCKED_MESSAGE = "Finish your mission first.";
+export const WELCOMING_LOCKED_MESSAGE = "Locked while the new hire is playing.";
 
 /**
  * The rite of passage: a new hire earns their card and clues by playing, so while `new_hire` is

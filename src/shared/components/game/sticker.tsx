@@ -10,6 +10,8 @@ import { gameCn } from "./game-cn";
 import { TRANSITION } from "./game-motion";
 import { StickerStampMark } from "./sticker-stamp";
 import {
+  type AskTextStep,
+  getAskTextStep,
   getStickerView,
   type StickerMode,
   type StickerPerson,
@@ -57,6 +59,12 @@ const artVariants = cva("relative flex min-h-0 flex-1 overflow-hidden", {
     size: { sm: "rounded-card-art", lg: "rounded-card-art-lg" },
   },
 });
+
+// Sized so an 80 character ask fits the locked face's box on both stickers; see `getAskTextStep`.
+const ASK_TEXT: Record<StickerSize, Record<AskTextStep, string>> = {
+  sm: { large: "text-quote", medium: "text-quote", small: "text-small" },
+  lg: { large: "text-name-lg", medium: "text-clue", small: "text-heading" },
+};
 
 const nameVariants = cva("max-w-full truncate font-game-serif", {
   variants: {
@@ -198,8 +206,8 @@ export function Sticker({
           </div>
           <span
             className={gameCn(
-              "line-clamp-5 font-game-serif",
-              size === "lg" ? "text-name-lg" : "text-quote",
+              "break-words font-game-serif",
+              ASK_TEXT[size][getAskTextStep(person.ask)],
             )}
           >
             {person.ask}
@@ -247,13 +255,13 @@ export function Sticker({
           <div className="flex flex-none flex-col items-start gap-3 border-game-border border-t px-1.5 pt-3 pb-1 text-left">
             {/* The locked face already printed the ask; open, the fact is the new part. */}
             {person.fact ? (
-              <p className="line-clamp-2 text-balance font-game-serif text-quote">{person.fact}</p>
+              <p className="text-balance break-words font-game-serif text-small">{person.fact}</p>
             ) : null}
             <div className="flex flex-col gap-0.5">
               <span className="font-game-mono text-caption text-game-muted uppercase">
                 Ask me about
               </span>
-              <p className="line-clamp-1 text-game-muted text-sm">{person.ask}</p>
+              <p className="break-words text-game-muted text-small">{person.ask}</p>
             </div>
           </div>
         ) : null}

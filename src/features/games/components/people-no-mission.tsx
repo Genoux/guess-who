@@ -43,12 +43,14 @@ type PeopleNoMissionProps = {
   rows: readonly NoMissionRowView[];
   /** Turns missions on for these people; they move to Playing at once. */
   onTurnOn: (keys: readonly string[]) => void;
-  /** Makes them a new hire, with no card or clues asked; they move to Playing at once. */
+  /** Asks to make them a new hire (confirmed first); they stay here, tagged. */
   onSetNewHire: (row: NoMissionRowView) => void;
+  /** Asks to remove them and all their data (confirmed first), unless they welcome a running mission. */
+  onRemove: (row: NoMissionRowView) => void;
 };
 
-/** Everyone signed in with no mission: search, filter, and a select mode that turns missions on. */
-export function PeopleNoMission({ rows, onTurnOn, onSetNewHire }: PeopleNoMissionProps) {
+/** Everyone with no mission, invites included: search, filter, and a select mode that turns missions on. */
+export function PeopleNoMission({ rows, onTurnOn, onSetNewHire, onRemove }: PeopleNoMissionProps) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<PeopleFilter>("all");
   const [limit, setLimit] = useState(PAGE_SIZE);
@@ -150,6 +152,7 @@ export function PeopleNoMission({ rows, onTurnOn, onSetNewHire }: PeopleNoMissio
                       email={row.email}
                       team={row.team}
                       imageUrl={row.imageUrl}
+                      notSignedIn={!row.signedIn}
                       leading={
                         selecting ? (
                           <span title={canTurnOn(row) ? undefined : NEEDS_CARD_AND_CLUES}>
@@ -190,6 +193,15 @@ export function PeopleNoMission({ rows, onTurnOn, onSetNewHire }: PeopleNoMissio
                           ...(row.newHire
                             ? []
                             : [{ label: "Set as new hire", onSelect: () => onSetNewHire(row) }]),
+                          ...(row.welcoming
+                            ? []
+                            : [
+                                {
+                                  label: "Remove",
+                                  onSelect: () => onRemove(row),
+                                  destructive: true,
+                                },
+                              ]),
                         ]}
                       />
                     )}
