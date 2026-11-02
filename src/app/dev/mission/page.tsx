@@ -23,7 +23,11 @@ const clues: MissionClue[] = [
   { number: 4, state: "down", unlocksInDays: 5, text: null },
 ];
 
-const welcomer = { firstName: "Ana", person: ana } as const;
+const welcomer = {
+  personId: "3f2b8c1e-5d4a-4e7b-9c1d-2a6f8e0b7d11",
+  firstName: "Ana",
+  person: ana,
+} as const;
 
 // Marking the reveal seen fails without a game here, so every visit plays it again.
 const ENDINGS = {

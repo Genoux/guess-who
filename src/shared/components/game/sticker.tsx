@@ -1,13 +1,15 @@
 "use client";
 
 import { cva } from "class-variance-authority";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, type Transition, useReducedMotion } from "motion/react";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { celebrate, originFromElement } from "@/shared/lib/celebrate";
 import { CardBacking, cardSurfaceVariants } from "./card-surface";
 import { Flip } from "./flip";
 import { gameCn } from "./game-cn";
 import { TRANSITION } from "./game-motion";
+import { StickerAsk } from "./sticker-ask";
+import { factRowVariants, factTextVariants } from "./sticker-motion";
 import { StickerStampMark } from "./sticker-stamp";
 import {
   type AskTextStep,
@@ -36,25 +38,37 @@ export type StickerProps = {
   flipDelay?: number;
   /** Runs once a turn to the collected face has landed. */
   onFlipped?: () => void;
-  /** Sits on the card's top-right corner and tilts and turns with it, e.g. an Edit button. */
-  corner?: ReactNode;
+  /**
+   * Slides the fact in under the photo and fades the ask toggle in. The large card is always
+   * expanded; the small one is, as in the album grid, only when told to be.
+   */
+  expanded?: boolean;
+  /** What the card mounts as, so it can open or close on arrival; `expanded` itself by default. */
+  expandedFrom?: boolean;
+  /** The motion of the open or the close, e.g. the flight the card rides in on. */
+  expandTransition?: Transition;
+  /** Adds the + button that shows the ask over the card; off unless a screen wants it. */
+  askToggle?: boolean;
+  /** Holds the ask open while true, e.g. while its field is being edited; needs `askToggle`. */
+  askRevealed?: boolean;
+  /** Hangs on the card's bottom edge and tilts and turns with it, e.g. an Edit button. */
+  edgeAction?: ReactNode;
   className?: string;
 };
 
 const stickerVariants = cva("relative flex-none text-left text-game-ink", {
   variants: {
-    size: { sm: "h-62 w-44", lg: "h-106 w-75" },
+    size: { sm: "h-62 w-(--sticker-width-sm)", lg: "h-106 w-(--sticker-width-lg)" },
   },
 });
 
-// Only loading fades the photo; ruled-out cards keep their normal appearance.
-const faceVariants = cva("absolute inset-0 flex flex-col bg-game-surface", {
+const faceVariants = cva("absolute inset-0 flex flex-col bg-game-surface p-(--face-inset)", {
   variants: {
-    size: { sm: "gap-2 p-2", lg: "gap-3 p-2.5" },
+    size: { sm: "ask-geometry-sm", lg: "ask-geometry-lg" },
   },
 });
 
-const artVariants = cva("relative flex min-h-0 flex-1 overflow-hidden", {
+const artVariants = cva("relative flex min-h-min flex-1 flex-col overflow-hidden", {
   variants: {
     size: { sm: "rounded-card-art", lg: "rounded-card-art-lg" },
   },
@@ -66,35 +80,58 @@ const ASK_TEXT: Record<StickerSize, Record<AskTextStep, string>> = {
   lg: { large: "text-name-lg", medium: "text-clue", small: "text-heading" },
 };
 
-const nameVariants = cva("max-w-full text-balance font-game-serif wrap-anywhere", {
+const askingVariants = cva("flex min-h-0 flex-1 flex-col", {
   variants: {
-    size: { sm: "text-name", lg: "text-name-lg" },
+    size: { sm: "gap-1 px-(--ask-pad) pt-2.5", lg: "gap-2 px-(--ask-pad) pt-4" },
   },
 });
 
-const subtitleVariants = cva("max-w-full text-game-muted wrap-anywhere", {
+// The name and team sit on the art's bottom edge. Over a photo they are white on a scrim that
+// eases in over `--fade`; on the tint they are plain.
+const captionVariants = cva("relative flex flex-none flex-col gap-0.5", {
   variants: {
-    size: { sm: "text-sm", lg: "text-base" },
+    size: { sm: "px-(--ask-pad) pb-2.25", lg: "px-(--ask-pad) pb-3" },
+    scrim: {
+      none: "pt-3",
+      album:
+        "pt-(--fade) text-white sticker-scrim [--fade:calc(var(--spacing)*8)] [--scrim-max:0.74]",
+      large:
+        "pt-(--fade) text-white sticker-scrim [--fade:calc(var(--spacing)*10)] [--scrim-blur:10px] [--scrim-max:0.62]",
+    },
   },
 });
 
-const infoVariants = cva("flex min-w-0 flex-none flex-col text-left gap-1", {
+// On the clipping box, not the text: the soft edge is a line high (`1lh`) at this type size.
+const FACT_TEXT: Record<StickerSize, string> = { sm: "text-fine", lg: "text-base" };
+
+const factVariants = cva("px-1 pb-0.5 text-pretty wrap-anywhere", {
   variants: {
-    size: { sm: "px-1 pb-0.5", lg: "px-1.5 pb-1" },
+    size: { sm: "pt-2", lg: "pt-3" },
   },
 });
 
-type StickerInfoProps = {
+const nameVariants = cva("relative max-w-full text-balance font-game-serif wrap-anywhere", {
+  variants: {
+    size: { sm: "text-name", lg: "text-clue" },
+  },
+});
+
+type StickerCaptionProps = {
   name: string;
   subtitle: string;
   size: StickerSize;
+  overPhoto: boolean;
 };
 
-function StickerInfo({ name, subtitle, size }: StickerInfoProps) {
+function StickerCaption({ name, subtitle, size, overPhoto }: StickerCaptionProps) {
+  const scrim = !overPhoto ? "none" : size === "lg" ? "large" : "album";
   return (
-    <div className={infoVariants({ size })}>
+    <div className={captionVariants({ size, scrim })}>
+      {scrim === "large" ? (
+        <span aria-hidden className="pointer-events-none absolute inset-0 sticker-scrim-blur" />
+      ) : null}
       <span className={nameVariants({ size })}>{name}</span>
-      <span className={subtitleVariants({ size })}>{subtitle}</span>
+      <span className="relative max-w-full text-small wrap-anywhere">{subtitle}</span>
     </div>
   );
 }
@@ -138,7 +175,7 @@ function StickerPhoto({ url, name, onError }: StickerPhotoProps) {
         onLoad={() => setLoaded(true)}
         onError={onError}
         className={gameCn(
-          "absolute inset-0 size-full object-cover",
+          "absolute inset-0 size-full object-cover object-[center_15%]",
           fadeIn && "transition-opacity duration-base ease-game",
           loaded ? "opacity-100" : "opacity-0",
         )}
@@ -158,10 +195,18 @@ export function Sticker({
   backdrop = "light",
   flipDelay,
   onFlipped,
-  corner,
+  expanded,
+  expandedFrom,
+  expandTransition = TRANSITION.enter,
+  askToggle = false,
+  askRevealed,
+  edgeAction,
   className,
 }: StickerProps) {
-  const view = getStickerView(person, mode, size);
+  const view = getStickerView(person, mode);
+  const factShown = expanded ?? size === "lg";
+  const factFrom = expandedFrom ?? factShown;
+  const reducedMotion = useReducedMotion() ?? false;
   // Orange on orange would drop the edge and the shadow, so a card on the found stage keeps ink.
   const edge = (mode === "found" || mode === "welcomer") && backdrop !== "found" ? "found" : "ink";
   const rootRef = useRef<HTMLDivElement>(null);
@@ -171,6 +216,7 @@ export function Sticker({
   // A picture that fails to load (expired, blocked) falls back to the initials.
   const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
   const photoUrl = person.photoUrl && person.photoUrl !== failedPhoto ? person.photoUrl : null;
+  const tintStyle = { backgroundColor: person.tint, color: person.tintInk };
 
   useEffect(() => {
     const kind = stickerCelebration(previousMode.current, mode);
@@ -193,27 +239,25 @@ export function Sticker({
     <>
       <CardBacking size={size} edge={edge} />
       <div className={gameCn(faceVariants({ size }), cardSurfaceVariants({ size, edge }))}>
-        <div
-          className={gameCn(
-            artVariants({ size }),
-            "flex-col justify-between",
-            size === "lg" ? "gap-2 p-5" : "gap-1 p-2.5",
-          )}
-          style={{ backgroundColor: person.tint, color: person.tintInk }}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-game-mono text-caption uppercase">Ask me about</span>
+        <div className={artVariants({ size })} style={tintStyle}>
+          <div className={askingVariants({ size })}>
+            <span className="text-small">Ask me about</span>
+            <span
+              className={gameCn(
+                "font-game-serif wrap-anywhere",
+                ASK_TEXT[size][getAskTextStep(person.ask, size)],
+              )}
+            >
+              {person.ask}
+            </span>
           </div>
-          <span
-            className={gameCn(
-              "font-game-serif wrap-anywhere",
-              ASK_TEXT[size][getAskTextStep(person.ask, size)],
-            )}
-          >
-            {person.ask}
-          </span>
+          <StickerCaption
+            name={person.name}
+            subtitle={view.subtitle}
+            size={size}
+            overPhoto={false}
+          />
         </div>
-        <StickerInfo name={person.name} subtitle={person.team} size={size} />
       </div>
     </>
   );
@@ -222,14 +266,7 @@ export function Sticker({
     <>
       <CardBacking size={size} edge={edge} />
       <div className={gameCn(faceVariants({ size }), cardSurfaceVariants({ size, edge }))}>
-        <div
-          className={gameCn(
-            artVariants({ size }),
-            "items-center justify-center",
-            photoUrl && "bg-game-hover",
-          )}
-          style={photoUrl ? undefined : { backgroundColor: person.color }}
-        >
+        <div className={artVariants({ size })} style={tintStyle}>
           {photoUrl ? (
             <StickerPhoto
               key={photoUrl}
@@ -237,33 +274,58 @@ export function Sticker({
               name={person.name}
               onError={() => setFailedPhoto(photoUrl)}
             />
-          ) : (
-            <span
-              aria-hidden
-              className={gameCn(
-                "font-game-serif",
-                size === "lg" ? "text-mark-lg" : "text-mark",
-                view.initialsTone === "white" ? "text-white" : "text-game-ink",
-              )}
-            >
-              {view.initials}
-            </span>
-          )}
-        </div>
-        <StickerInfo name={person.name} subtitle={view.subtitle} size={size} />
-        {view.showMore ? (
-          <div className="flex flex-none flex-col items-start gap-3 border-game-border border-t px-1.5 pt-3 pb-1 text-left">
-            {/* The locked face already printed the ask; open, the fact is the new part. */}
-            {person.fact ? (
-              <p className="text-balance font-game-serif text-small wrap-anywhere">{person.fact}</p>
-            ) : null}
-            <div className="flex flex-col gap-0.5">
-              <span className="font-game-mono text-caption text-game-muted uppercase">
-                Ask me about
+          ) : null}
+          <div className="relative flex min-h-0 flex-1 items-center justify-center [container-type:size]">
+            {photoUrl ? null : (
+              <span
+                aria-hidden
+                className={gameCn(
+                  "font-game-serif leading-none",
+                  size === "lg" ? "text-[min(96px,62cqh)]" : "text-[min(56px,62cqh)]",
+                )}
+              >
+                {view.initials}
               </span>
-              <p className="text-game-muted text-small wrap-anywhere">{person.ask}</p>
-            </div>
+            )}
           </div>
+          <StickerCaption
+            name={person.name}
+            subtitle={view.subtitle}
+            size={size}
+            overPhoto={photoUrl !== null}
+          />
+        </div>
+        {person.fact ? (
+          // Always laid out, so the card can open to it without moving anything else: a row of
+          // zero height grows to the fact's own, and the photo gives way.
+          <motion.div
+            inert={!factShown}
+            className="grid flex-none"
+            variants={factRowVariants(expandTransition, reducedMotion)}
+            initial={factFrom ? "shown" : "hidden"}
+            animate={factShown ? "shown" : "hidden"}
+          >
+            <div className={gameCn("fact-reveal-mask min-h-0 overflow-hidden", FACT_TEXT[size])}>
+              <motion.p
+                className={factVariants({ size })}
+                variants={factTextVariants(expandTransition, reducedMotion)}
+              >
+                {person.fact}
+              </motion.p>
+            </div>
+          </motion.div>
+        ) : null}
+        {askToggle ? (
+          <StickerAsk
+            ask={person.ask}
+            tint={person.tint}
+            tintInk={person.tintInk}
+            size={size}
+            askTextClass={ASK_TEXT[size][getAskTextStep(person.ask, size)]}
+            shown={factShown}
+            shownFrom={factFrom}
+            revealed={askRevealed}
+          />
         ) : null}
       </div>
     </>
@@ -293,7 +355,9 @@ export function Sticker({
               <StickerStampMark key={view.stamp} stamp={view.stamp} size={size} />
             ) : null}
           </AnimatePresence>
-          {corner ? <div className="absolute -top-4 -right-4">{corner}</div> : null}
+          {edgeAction ? (
+            <div className="absolute -bottom-7 left-1/2 -translate-x-1/2">{edgeAction}</div>
+          ) : null}
         </div>
       </Tilt>
     </div>

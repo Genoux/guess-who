@@ -4,6 +4,7 @@ import { motion, useIsPresent } from "motion/react";
 import { Dialog } from "radix-ui";
 import { useState } from "react";
 import { useFoundSequence } from "../hooks/use-found-sequence";
+import { FLIGHT } from "../lib/album-motion";
 import type { CollectTarget } from "../queries/get-collect-target";
 import type { FoundStats } from "../server/to-game-outcome";
 import { CardOverlay, OVERLAY_FADE, OverlayCard } from "./card-overlay";
@@ -91,6 +92,9 @@ function OverlayBody({ target, find, onFound, flightId, rotation, onClose }: Ove
           backdrop={find ? "found" : "light"}
           headingAs={Dialog.Title}
           tilt={landed && isPresent}
+          // The fact opens on the flight itself, so the card lands already open.
+          expandedFrom={false}
+          expandTransition={FLIGHT}
           wrapCard={(card) => (
             <OverlayCard
               flightId={flightId}

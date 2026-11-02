@@ -1,5 +1,4 @@
 import { getInitials } from "@inbeat/ui/lib/initials";
-import { readableOn } from "@/shared/lib/contrast";
 
 /** `welcomer` is the welcome tour's found card; the game itself stamps `found`. */
 export type StickerMode = "locked" | "collected" | "maybe" | "ruled" | "found" | "welcomer";
@@ -13,11 +12,11 @@ export type StickerPerson = {
   name: string;
   number: number | string;
   team: string;
-  /** Team color, behind the photo or initials. */
+  /** Team color; the card itself paints with `tint`. */
   color: string;
-  /** Lighter team tint, behind the "Ask me about" line. */
+  /** Lighter team tint: behind the initials, the ask and the locked face. */
   tint: string;
-  /** Text color on the tint; ink when unset. */
+  /** Text color on the tint, ink when unset. */
   tintInk?: string;
   ask: string;
   city?: string | null;
@@ -31,12 +30,9 @@ export type StickerView = {
   /** The collected face is showing (every mode but locked). */
   open: boolean;
   stamp: StickerStamp | null;
-  /** The line under the name: the team, plus the city on an open large sticker. */
+  /** The line under the name: the team, plus the city once the card is open. */
   subtitle: string;
-  /** The large sticker adds the fact and the ask line under the name. */
-  showMore: boolean;
   initials: string;
-  initialsTone: "ink" | "white";
 };
 
 export type AskTextStep = "large" | "medium" | "small";
@@ -61,23 +57,15 @@ export function formatStickerNumber(value: number | string): string {
   return /^\d$/.test(text) ? `0${text}` : text;
 }
 
-export function getStickerView(
-  person: StickerPerson,
-  mode: StickerMode,
-  size: StickerSize,
-): StickerView {
+export function getStickerView(person: StickerPerson, mode: StickerMode): StickerView {
   const open = mode !== "locked";
-  const teamLine = [person.team, open && size === "lg" ? person.city : null]
-    .filter(Boolean)
-    .join(" · ");
+  const teamLine = [person.team, open ? person.city?.trim() : null].filter(Boolean).join(" · ");
 
   return {
     open,
     stamp: mode === "locked" || mode === "collected" ? null : mode,
     subtitle: teamLine,
-    showMore: open && size === "lg",
     initials: getInitials(person.name, "?"),
-    initialsTone: readableOn(person.color),
   };
 }
 

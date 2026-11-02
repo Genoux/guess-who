@@ -47,7 +47,12 @@ describe("toGameOutcome", () => {
     expect(toGameOutcome(board("found"))).toEqual({
       over: true,
       found: true,
-      welcomer: { firstName: "Maya", person: welcomer.person, mode: "collected" },
+      welcomer: {
+        personId: "welcomer",
+        firstName: "Maya",
+        person: welcomer.person,
+        mode: "collected",
+      },
       foundOnDay: 6,
       cluesUsed: 1,
       revealSeen: false,

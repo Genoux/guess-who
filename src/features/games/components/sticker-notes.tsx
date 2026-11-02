@@ -2,9 +2,8 @@
 
 import { Tooltip } from "@inbeat/ui/components/tooltip";
 import { InfoIcon } from "lucide-react";
-import { type ReactNode, useState, useTransition } from "react";
+import { type ReactNode, useEffect, useState, useTransition } from "react";
 import { CardDetailLabel } from "@/shared/components/game/card-detail";
-import { GameButton } from "@/shared/components/game/game-button";
 import { GameField } from "@/shared/components/game/game-field";
 import { gameToast } from "@/shared/components/game/game-toaster";
 import { collectSticker } from "../actions/collect-sticker";
@@ -18,6 +17,12 @@ const STATUS_LINE: Partial<Record<AutosaveStatus, string>> = {
 };
 
 type NotesProps = { target: CollectTarget };
+
+type CollectNoteProps = NotesProps & {
+  /** The form's id, so the card's action ("Collect sticker") can submit it from outside. */
+  formId: string;
+  onPendingChange: (pending: boolean) => void;
+};
 
 function NotesBlock({ children }: { children: ReactNode }) {
   return (
@@ -34,11 +39,13 @@ function NotesBlock({ children }: { children: ReactNode }) {
   );
 }
 
-/** Before collecting: the first note and the one button that collects the sticker. */
-function CollectNote({ target }: NotesProps) {
+/** Before collecting: the first note. Collecting is the card's action, outside this form. */
+function CollectNote({ target, formId, onPendingChange }: CollectNoteProps) {
   const [note, setNote] = useState("");
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
+
+  useEffect(() => onPendingChange(pending), [pending, onPendingChange]);
 
   const collect = () => {
     const parsed = collectStickerSchema.safeParse({ personId: target.id, note });
@@ -56,7 +63,7 @@ function CollectNote({ target }: NotesProps) {
 
   return (
     <form
-      className="flex flex-col items-start gap-5"
+      id={formId}
       onSubmit={(event) => {
         event.preventDefault();
         collect();
@@ -75,9 +82,6 @@ function CollectNote({ target }: NotesProps) {
           onChange={(event) => setNote(event.target.value)}
         />
       </NotesBlock>
-      <GameButton type="submit" disabled={pending}>
-        Collect sticker
-      </GameButton>
     </form>
   );
 }
@@ -109,8 +113,22 @@ function EditNote({ target }: NotesProps) {
   );
 }
 
-/** The player's private notes on one teammate: written to collect, editable for good after. */
-export function StickerNotes({ target }: NotesProps) {
+/**
+ * The player's private notes on one teammate: written to collect, editable for good after. What
+ * acts on the whole card, "Collect sticker" included, lives outside, beside neither column.
+ */
+export function StickerNotes({
+  target,
+  formId,
+  onPendingChange,
+}: NotesProps & Pick<CollectNoteProps, "formId" | "onPendingChange">) {
   if (target.collected) return <EditNote key={target.id} target={target} />;
-  return <CollectNote key={target.id} target={target} />;
+  return (
+    <CollectNote
+      key={target.id}
+      target={target}
+      formId={formId}
+      onPendingChange={onPendingChange}
+    />
+  );
 }

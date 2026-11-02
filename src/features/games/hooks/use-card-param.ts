@@ -9,12 +9,13 @@ import { CARD_PARAM, cardUrl } from "../lib/card-url";
  * on the click itself; waiting for the router to echo the URL back through `useSearchParams` cost a
  * few frames before the flight could start.
  */
-export function useCardParam() {
+export function useCardParam(initialCardId: string | null = null) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const urlCardId = searchParams.get(CARD_PARAM);
-  const [cardId, setCardId] = useState<string | null>(null);
+  const [cardId, setCardId] = useState<string | null>(initialCardId);
   const pushedByUs = useRef(false);
+  const openedByLink = useRef(initialCardId !== null);
   const scrollAtOpen = useRef<number | null>(null);
 
   useEffect(() => {
@@ -23,12 +24,13 @@ export function useCardParam() {
       setCardId(null);
       pushedByUs.current = false;
       scrollAtOpen.current = null;
-    } else if (!pushedByUs.current) {
-      // A card is a popup over the album, not a page: a reload, a shared link or Forward lands on
-      // the album. Opening it there drew the album first, then the popup over it.
+    } else if (!pushedByUs.current && urlCardId !== initialCardId) {
+      // A card is a popup over the album, not a page: Forward, or a link the album could not
+      // resolve to a collected card, lands on the album. Opening it there drew the album first,
+      // then the popup over it. A card the server resolved (`initialCardId`) opens with the page.
       window.history.replaceState(null, "", cardUrl(pathname, searchParams.toString(), null));
     }
-  }, [urlCardId, pathname, searchParams]);
+  }, [urlCardId, initialCardId, pathname, searchParams]);
 
   const open = useCallback(
     (id: string) => {
@@ -50,8 +52,14 @@ export function useCardParam() {
       scrollAtOpen.current = null;
     }
     setCardId(null);
-    window.history.back();
-  }, []);
+    if (openedByLink.current) {
+      // A link opened it: no entry of ours to step back over, and Back must still leave the page.
+      openedByLink.current = false;
+      window.history.replaceState(null, "", cardUrl(pathname, searchParams.toString(), null));
+    } else {
+      window.history.back();
+    }
+  }, [pathname, searchParams]);
 
   return { cardId, open, close };
 }

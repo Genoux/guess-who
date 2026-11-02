@@ -7,7 +7,7 @@ export type GameOutcome =
   | {
       over: true;
       found: boolean;
-      welcomer: { firstName: string; person: StickerPerson; mode: StickerMode };
+      welcomer: { personId: string; firstName: string; person: StickerPerson; mode: StickerMode };
       /** Found on game day n, with this many clues out. Null when revealed on day 14. */
       foundOnDay: number | null;
       cluesUsed: number | null;
@@ -45,7 +45,12 @@ export function toGameOutcome({
   return {
     over: true,
     found: game.status === "found",
-    welcomer: { firstName: welcomer.firstName, person: welcomer.person, mode: welcomer.mode },
+    welcomer: {
+      personId: welcomer.id,
+      firstName: welcomer.firstName,
+      person: welcomer.person,
+      mode: welcomer.mode,
+    },
     ...stats,
     revealSeen: game.revealSeenAt !== null,
   };

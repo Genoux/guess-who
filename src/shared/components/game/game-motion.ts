@@ -18,6 +18,9 @@ export const EASE = {
   stamp: [0.2, 0.9, 0.3, 1.4],
 } as const;
 
+/** Pixels content drifts while it fades in or out. */
+export const NUDGE_PX = 8;
+
 const BEAT_S = 0.12;
 const STAGGER_S = 0.04;
 /** The most a list may spread over, so a long one does not crawl. */

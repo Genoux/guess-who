@@ -5,6 +5,7 @@ import { AlbumCover } from "@/features/games/components/album-cover";
 import { AppTopNav } from "@/features/games/components/app-top-nav";
 import { LockedHome } from "@/features/games/components/locked-home";
 import { ProgressSlots } from "@/features/games/components/progress-slots";
+import { CARD_PARAM, openingCardId } from "@/features/games/lib/card-url";
 import { endingEyebrow } from "@/features/games/lib/ending-eyebrow";
 import { parseStickerFilter, STICKER_FILTER_PARAM } from "@/features/games/lib/sticker-filter";
 import { getPlayerAlbum } from "@/features/games/queries/get-player-album";
@@ -65,6 +66,7 @@ export default async function AlbumPage(props: {
             active={album.active}
             collectedCount={album.nav.collectedCount}
             initialStatus={parseStickerFilter(query[STICKER_FILTER_PARAM])}
+            initialCardId={openingCardId(query[CARD_PARAM], album.stickers)}
           />
         )}
       </GameStage>

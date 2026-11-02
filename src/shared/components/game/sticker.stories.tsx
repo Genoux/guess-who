@@ -30,7 +30,37 @@ export const Maybe: Story = { args: { mode: "maybe" } };
 export const Ruled: Story = { args: { mode: "ruled", person: ana } };
 
 export const WithPhoto: Story = { args: { person: ana } };
+export const AlbumWithPhoto: Story = { args: { person: ana, size: "sm", mode: "collected" } };
+export const AlbumExpanded: Story = {
+  args: { person: ana, size: "sm", mode: "collected", expanded: true, askToggle: true },
+  decorators: [
+    (Story) => (
+      <div className="@container w-100">
+        <div className="zoom-open">
+          <Story />
+        </div>
+      </div>
+    ),
+  ],
+};
+export const AlbumExpandedLongest: Story = {
+  args: { person: longest, size: "sm", mode: "collected", expanded: true, askToggle: true },
+  decorators: AlbumExpanded.decorators,
+};
+export const AlbumLongest: Story = {
+  args: { person: { ...longest, photoUrl: ana.photoUrl }, size: "sm", mode: "collected" },
+};
 export const Large: Story = { args: { size: "lg", mode: "collected", person: ana } };
+export const LargeAskOpen: Story = {
+  args: { size: "lg", mode: "collected", person: ana, askToggle: true, askRevealed: true },
+};
+export const LargeNoPhoto: Story = { args: { size: "lg", mode: "collected", person: noor } };
+export const LongestTextLargeAskOpen: Story = {
+  args: { person: longest, mode: "collected", size: "lg", askToggle: true, askRevealed: true },
+};
+export const UnbrokenTextLargeAskOpen: Story = {
+  args: { person: unbroken, mode: "collected", size: "lg", askToggle: true, askRevealed: true },
+};
 export const LongestTextSmall: Story = { args: { person: longest, mode: "locked" } };
 export const LongestTextLarge: Story = { args: { person: longest, mode: "collected", size: "lg" } };
 export const LongestAskLockedLarge: Story = {

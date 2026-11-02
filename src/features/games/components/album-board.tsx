@@ -27,6 +27,8 @@ type AlbumBoardProps = {
   collectedCount: number;
   /** The status filter a link opened the album with. */
   initialStatus?: StickerFilter;
+  /** The card a link opened the album on, already checked against the album. */
+  initialCardId?: string | null;
 };
 
 const isPlainClick = (event: MouseEvent) =>
@@ -42,11 +44,12 @@ export function AlbumBoard({
   active,
   collectedCount,
   initialStatus = "all",
+  initialCardId = null,
 }: AlbumBoardProps) {
   const [team, setTeam] = useState(EVERYONE);
   const [status, setStatus] = useState<StickerFilter>(initialStatus);
   const [filtered, setFiltered] = useState(false);
-  const { cardId, open, close } = useCardParam();
+  const { cardId, open, close } = useCardParam(initialCardId);
   const inTeam = (sticker: AlbumSticker, teamId: string) =>
     teamId === EVERYONE || sticker.teamId === teamId;
   const countWhere = (teamId: string, filter: StickerFilter) =>
@@ -150,7 +153,21 @@ export function AlbumBoard({
                 const returning = sticker.id === returningId;
                 const card = (
                   <div className="zoom-fit">
-                    <Sticker person={sticker.person} mode={sticker.mode} celebrateChanges={false} />
+                    <Sticker
+                      person={sticker.person}
+                      mode={sticker.mode}
+                      celebrateChanges={false}
+                      // The card flying home closes as it goes, and its + fades out, so it lands as
+                      // the grid card it is; the open card's copy is gone the moment it leaves.
+                      {...(returning
+                        ? {
+                            askToggle: true,
+                            expandedFrom: true,
+                            expanded: false,
+                            expandTransition: FLIGHT,
+                          }
+                        : {})}
+                    />
                   </div>
                 );
                 return (

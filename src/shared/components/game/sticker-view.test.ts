@@ -32,57 +32,48 @@ describe("formatStickerNumber", () => {
 
 describe("getStickerView", () => {
   it("keeps a locked sticker closed with the team", () => {
-    const view = getStickerView(noor, "locked", "lg");
+    const view = getStickerView(noor, "locked");
     expect(view.open).toBe(false);
     expect(view.stamp).toBeNull();
-    expect(view.showMore).toBe(false);
     expect(view.subtitle).toBe("Creative");
     expect(view).not.toHaveProperty("number");
   });
 
-  it("adds the city on a large open sticker only", () => {
-    expect(getStickerView(noor, "collected", "lg").subtitle).toBe("Creative · Toronto");
-    expect(getStickerView(noor, "collected", "sm").subtitle).toBe("Creative");
-    expect(getStickerView({ ...noor, city: null }, "collected", "lg").subtitle).toBe("Creative");
+  it("adds the city to the team once the card is open", () => {
+    expect(getStickerView(noor, "collected").subtitle).toBe("Creative · Toronto");
+    expect(getStickerView(noor, "ruled").subtitle).toBe("Creative · Toronto");
+    expect(getStickerView({ ...noor, city: null }, "collected").subtitle).toBe("Creative");
+    expect(getStickerView({ ...noor, city: "  " }, "collected").subtitle).toBe("Creative");
   });
 
   it("stamps a found sticker as found, open", () => {
-    const view = getStickerView(noor, "found", "sm");
+    const view = getStickerView(noor, "found");
     expect(view.open).toBe(true);
     expect(view.stamp).toBe("found");
   });
 
   it("stamps the tour's welcomer as welcomer, open", () => {
-    const view = getStickerView(noor, "welcomer", "lg");
+    const view = getStickerView(noor, "welcomer");
     expect(view.open).toBe(true);
     expect(view.stamp).toBe("welcomer");
   });
 
   it("keeps the team on a ruled out sticker; the badge says not them", () => {
-    const view = getStickerView(noor, "ruled", "sm");
+    const view = getStickerView(noor, "ruled");
     expect(view.open).toBe(true);
     expect(view.stamp).toBe("ruled");
-    expect(view.subtitle).toBe("Creative");
   });
 
   it("maps maybe to its stamp", () => {
-    expect(getStickerView(noor, "maybe", "sm").stamp).toBe("maybe");
-    expect(getStickerView(noor, "collected", "sm").stamp).toBeNull();
+    expect(getStickerView(noor, "maybe").stamp).toBe("maybe");
+    expect(getStickerView(noor, "collected").stamp).toBeNull();
   });
 
-  it("shows the fact block on large open stickers", () => {
-    expect(getStickerView(noor, "collected", "lg").showMore).toBe(true);
-    expect(getStickerView(noor, "collected", "sm").showMore).toBe(false);
-  });
-
-  it("builds initials and picks a readable tone for the fallback", () => {
-    const view = getStickerView(noor, "collected", "sm");
+  it("builds initials for the fallback", () => {
+    const view = getStickerView(noor, "collected");
     expect(view.initials).toBe("NH");
-    expect(view.initialsTone).toBe("ink");
-    expect(getStickerView({ ...noor, color: "#157428" }, "collected", "sm").initialsTone).toBe(
-      "white",
-    );
-    expect(getStickerView({ ...noor, name: "  " }, "collected", "sm").initials).toBe("?");
+    expect(view).not.toHaveProperty("initialsTone");
+    expect(getStickerView({ ...noor, name: "  " }, "collected").initials).toBe("?");
   });
 });
 

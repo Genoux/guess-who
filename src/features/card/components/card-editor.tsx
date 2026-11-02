@@ -53,6 +53,7 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
   const [editing, setEditing] = useState(() => !isCardComplete(card.fields));
   const [incompleteCard, setIncompleteCard] = useState<UpdateMyCardInput | null>(null);
   const [pending, startTransition] = useTransition();
+  const [askFocused, setAskFocused] = useState(false);
   const switched = useRef(false);
   const editButton = useRef<HTMLButtonElement>(null);
   const teamField = useRef<HTMLButtonElement>(null);
@@ -144,8 +145,10 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
           size="lg"
           rot={-2}
           celebrateChanges={false}
+          askToggle
+          askRevealed={askFocused}
           className="group justify-self-center"
-          corner={
+          edgeAction={
             // Shown on hover or keyboard focus; always on a touch screen, which has no hover.
             <div
               inert={editing}
@@ -221,6 +224,8 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
                   maxLength={CARD_LIMITS.ask}
                   showCount
                   value={values.ask}
+                  onFocus={() => setAskFocused(true)}
+                  onBlur={() => setAskFocused(false)}
                   onChange={set("ask")}
                   error={errors.ask}
                 />

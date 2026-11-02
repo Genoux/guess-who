@@ -1,10 +1,14 @@
 "use client";
 
 import { motion } from "motion/react";
+import Link from "next/link";
 import { useState } from "react";
+import { GameButton } from "@/shared/components/game/game-button";
 import { gameCn } from "@/shared/components/game/game-cn";
 import { Sticker } from "@/shared/components/game/sticker";
+import { ROUTES } from "@/shared/config/routes";
 import { FLIGHT } from "../lib/album-motion";
+import { cardUrl } from "../lib/card-url";
 import { endingEyebrow } from "../lib/ending-eyebrow";
 import type { MissionClue } from "../queries/get-player-mission";
 import type { GameOutcome } from "../server/to-game-outcome";
@@ -58,32 +62,39 @@ export function MissionCase({ outcome, clues }: MissionCaseProps) {
           </>
         }
         card={
-          <div className="relative" style={returning ? { zIndex: 60 } : undefined}>
-            {revealOpen ? (
-              // Holds the slot open while the card is out; opacity, not visibility, as in the album.
-              <div aria-hidden className="pointer-events-none opacity-0">
-                {card}
-              </div>
-            ) : (
-              <button
-                type="button"
-                data-card-id={WELCOMER_FLIGHT_ID}
-                aria-label={`${welcomer.firstName}, your welcomer`}
-                aria-haspopup="dialog"
-                onClick={() => {
-                  setRevealOpen(true);
-                }}
-                className="block cursor-pointer rounded-card outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-6"
-              >
-                <motion.div
-                  layoutId={WELCOMER_FLIGHT_ID}
-                  layoutCrossfade={false}
-                  transition={{ layout: FLIGHT }}
-                >
+          <div className="flex flex-col items-center gap-8">
+            <div className="relative" style={returning ? { zIndex: 60 } : undefined}>
+              {revealOpen ? (
+                // Holds the slot open while the card is out; opacity, not visibility, as in the album.
+                <div aria-hidden className="pointer-events-none opacity-0">
                   {card}
-                </motion.div>
-              </button>
-            )}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  data-card-id={WELCOMER_FLIGHT_ID}
+                  aria-label={`${welcomer.firstName}, your welcomer`}
+                  aria-haspopup="dialog"
+                  onClick={() => {
+                    setRevealOpen(true);
+                  }}
+                  className="block cursor-pointer rounded-card outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-6"
+                >
+                  <motion.div
+                    layoutId={WELCOMER_FLIGHT_ID}
+                    layoutCrossfade={false}
+                    transition={{ layout: FLIGHT }}
+                  >
+                    {card}
+                  </motion.div>
+                </button>
+              )}
+            </div>
+            {outcome.revealSeen ? (
+              <GameButton asChild variant="light">
+                <Link href={cardUrl(ROUTES.play, "", welcomer.personId)}>See in album</Link>
+              </GameButton>
+            ) : null}
           </div>
         }
       >
