@@ -17,11 +17,27 @@ export function useCardParam(initialCardId: string | null = null) {
   const pushedByUs = useRef(false);
   const openedByLink = useRef(initialCardId !== null);
   const scrollAtOpen = useRef<number | null>(null);
+  // Our `history.back()` is queued until the URL loses `?card`; a second close in that window
+  // would step back again and leave the album, and a push would land under the pending back.
+  const backPending = useRef(false);
+  const openAfterBack = useRef<string | null>(null);
+  // The back can land before a second close arrives (the overlay stays mounted while the card
+  // flies home), so `backPending` alone is not enough: a close with no card open is nothing to do.
+  const cardOpen = useRef(initialCardId !== null);
 
   useEffect(() => {
     if (urlCardId === null) {
+      backPending.current = false;
+      const reopen = openAfterBack.current;
+      if (reopen !== null) {
+        openAfterBack.current = null;
+        window.history.pushState(null, "", cardUrl(pathname, searchParams.toString(), reopen));
+        pushedByUs.current = true;
+        return;
+      }
       // Back changed the URL first; follow it.
       setCardId(null);
+      cardOpen.current = false;
       pushedByUs.current = false;
       scrollAtOpen.current = null;
     } else if (!pushedByUs.current && urlCardId !== initialCardId) {
@@ -35,7 +51,12 @@ export function useCardParam(initialCardId: string | null = null) {
   const open = useCallback(
     (id: string) => {
       setCardId(id);
+      cardOpen.current = true;
       scrollAtOpen.current = window.scrollY;
+      if (backPending.current) {
+        openAfterBack.current = id;
+        return;
+      }
       window.history.pushState(null, "", cardUrl(pathname, searchParams.toString(), id));
       pushedByUs.current = true;
     },
@@ -43,6 +64,13 @@ export function useCardParam(initialCardId: string | null = null) {
   );
 
   const close = useCallback(() => {
+    openAfterBack.current = null;
+    if (!cardOpen.current) return;
+    cardOpen.current = false;
+    if (backPending.current) {
+      setCardId(null);
+      return;
+    }
     // A refresh while the card is open (collecting revalidates the album) scrolls the page under it
     // to the top: Next 16.3 gets back a page segment keyed with `?card`, which pushState kept out of
     // its tree, and treats it as new. Back restores the scroll only after the card has measured its
@@ -57,6 +85,7 @@ export function useCardParam(initialCardId: string | null = null) {
       openedByLink.current = false;
       window.history.replaceState(null, "", cardUrl(pathname, searchParams.toString(), null));
     } else {
+      backPending.current = true;
       window.history.back();
     }
   }, [pathname, searchParams]);
