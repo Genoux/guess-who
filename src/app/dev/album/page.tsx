@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TEAM_DEFINITIONS } from "@/entities/teams";
 import { AlbumBoard } from "@/features/games/components/album-board";
+import { CARD_PARAM, openingCardId } from "@/features/games/lib/card-url";
 import type { AlbumSticker } from "@/features/games/queries/get-player-album";
 import { ana, jonah, noor } from "@/shared/components/game/fixtures";
 import { GameShell } from "@/shared/components/game/game-shell";
@@ -85,7 +86,10 @@ const teams = TEAM_DEFINITIONS.map(({ name, color }) => ({
 })).filter((team) => team.count > 0);
 
 /** The player's album with sample stickers, for local dev and previews only. */
-export default function AlbumPreviewPage() {
+export default async function AlbumPreviewPage(props: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const query = await props.searchParams;
   if (!isCatalogueEnabled({ nodeEnv: env.NODE_ENV, vercelEnv: env.NEXT_PUBLIC_VERCEL_ENV })) {
     notFound();
   }
@@ -98,6 +102,7 @@ export default function AlbumPreviewPage() {
           stickers={stickers}
           active
           collectedCount={stickers.filter((sticker) => sticker.collected).length}
+          initialCardId={openingCardId(query[CARD_PARAM], stickers)}
         />
       </GameStage>
     </GameShell>

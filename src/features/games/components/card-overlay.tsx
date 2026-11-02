@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useIsPresent, useReducedMotion } from "motion/react";
 import { Dialog } from "radix-ui";
 import type { ReactNode } from "react";
 import { useOverlayLayer } from "@/shared/components/game/overlay-layer";
@@ -92,7 +92,13 @@ export function CardOverlay({
                 asChild
                 forceMount
                 aria-describedby={undefined}
-                onEscapeKeyDown={(event) => !dismissible && event.preventDefault()}
+                // Escape on an open disclosure (a card's ask) closes that first.
+                onEscapeKeyDown={(event) => {
+                  const onOpenDisclosure = (event.target as Element | null)?.closest(
+                    '[aria-expanded="true"]',
+                  );
+                  if (!dismissible || onOpenDisclosure) event.preventDefault();
+                }}
                 onInteractOutside={(event) => !dismissible && event.preventDefault()}
                 onOpenAutoFocus={(event) => {
                   event.preventDefault();
@@ -141,6 +147,9 @@ export function OverlayCard({
   onLanded,
   children,
 }: OverlayCardProps) {
+  // Hidden in the commit that closes it: the page copy takes off from the same spot in that same
+  // commit, and an exit animation only lands a frame later, which showed both cards for one frame.
+  const isPresent = useIsPresent();
   return (
     // zoom lays the small card out and paints it at the large size, so the text stays the same and
     // sharp, where scale() would stretch a small bitmap. It sits inside the layoutId element, whose
@@ -148,6 +157,7 @@ export function OverlayCard({
     // and this copy vanishes the instant the page copy takes off from the same spot.
     <motion.div
       className="pointer-events-auto"
+      style={isPresent ? undefined : { visibility: "hidden" }}
       layoutId={flightId}
       // Re-measures only for a new card: a server refresh re-rendered it while this layer was
       // scrolled, misread the scroll as movement and flew it back into place. layoutScroll on the

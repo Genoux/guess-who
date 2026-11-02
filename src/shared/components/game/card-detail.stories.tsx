@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { CardDetail, CardDetailFacts, CardDetailLabel } from "./card-detail";
+import { CardDetail, CardDetailLabel } from "./card-detail";
 import { jonah, noor } from "./fixtures";
 import { GameButton } from "./game-button";
 import { GameField } from "./game-field";
@@ -14,9 +14,14 @@ function Sample({ person, locked = false, maybe = false }: SampleProps) {
   return (
     <CardDetail
       card={
-        // The album overlay's open card: the small card at the large card's size.
-        <div style={{ zoom: 1.7 }}>
-          <Sticker person={person} mode={locked ? "locked" : maybe ? "maybe" : "collected"} />
+        <div className="zoom-open">
+          <Sticker
+            person={person}
+            size="sm"
+            expanded
+            askToggle
+            mode={locked ? "locked" : maybe ? "maybe" : "collected"}
+          />
         </div>
       }
       cardFooter={
@@ -31,14 +36,7 @@ function Sample({ person, locked = false, maybe = false }: SampleProps) {
       }
       panel={
         <div className="flex flex-col gap-8">
-          <h1 className="font-game-serif text-hero-md">{person.name}</h1>
-          <CardDetailFacts
-            facts={[
-              { label: "Location", value: locked ? null : person.city },
-              { label: "Fun fact", value: locked ? null : person.fact },
-              { label: "Ask me about", value: locked ? null : person.ask },
-            ]}
-          />
+          <h1 className="sr-only">{person.name}</h1>
           <div className="flex flex-col items-start gap-5">
             <div className="flex w-full flex-col gap-2.5">
               <CardDetailLabel>Your notes</CardDetailLabel>

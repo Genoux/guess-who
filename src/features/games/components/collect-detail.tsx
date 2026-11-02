@@ -1,10 +1,11 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, type Transition } from "motion/react";
 import Link from "next/link";
-import { type ElementType, type ReactNode, useRef } from "react";
-import { CardDetail, CardDetailFacts } from "@/shared/components/game/card-detail";
+import { type ElementType, type ReactNode, useId, useRef, useState } from "react";
+import { CardDetail } from "@/shared/components/game/card-detail";
 import { CloseButton } from "@/shared/components/game/close-button";
+import { GameButton } from "@/shared/components/game/game-button";
 import { Sticker } from "@/shared/components/game/sticker";
 import { ROUTES } from "@/shared/config/routes";
 import type { FoundSequence } from "../hooks/use-found-sequence";
@@ -65,21 +66,25 @@ type CollectDetailProps = {
   /** The element that carries the name, so a dialog can make it its title. */
   headingAs?: ElementType;
   tilt?: boolean;
+  /** What the card mounts as: closed, so the overlay opens it as it flies in. */
+  expandedFrom?: boolean;
+  /** The motion of the card opening, e.g. the flight it rides in on. */
+  expandTransition?: Transition;
   /** Frames the card; the album overlay flies it in from its slot. */
   wrapCard?: (card: ReactNode) => ReactNode;
   /** Frames everything but the card; the album overlay fades it in once the card lands. */
   wrapContent?: (content: ReactNode) => ReactNode;
 };
 
-// The album's own small card, zoomed: the same card in the grid and open, so the open card never
-// prints the fact the panel already shows.
+// The album's own small card, zoomed: the same card in the grid and open, only larger and with
+// its fact and ask opened.
 const zoomed = (card: ReactNode) => <div className="zoom-open">{card}</div>;
 const keep = (node: ReactNode) => node;
 
 /**
- * One sticker, open. The card and its mission switch on the left; on the right who they are,
- * what to ask them and the player's notes, short enough to sit beside the card. A right guess
- * clears all but the card, which then plays the reveal where it stands.
+ * One sticker, open. The card and its mission switch on the left, with its ask behind the +
+ * button; on the right the player's notes and the one action on the card. A right guess clears
+ * all but the card, which then plays the reveal where it stands.
  */
 export function CollectDetail({
   target,
@@ -89,11 +94,15 @@ export function CollectDetail({
   backdrop = "light",
   headingAs: Heading = "h1",
   tilt = true,
+  expandedFrom,
+  expandTransition,
   wrapCard = zoomed,
   wrapContent = keep,
 }: CollectDetailProps) {
   const { person } = target;
   const wordsRef = useRef<HTMLDivElement>(null);
+  const notesFormId = useId();
+  const [collecting, setCollecting] = useState(false);
 
   // The refresh the guess triggers ends the game, so what is on screen keeps to the local find
   // until the reveal is over, not to `target`.
@@ -122,6 +131,10 @@ export function CollectDetail({
                 person={person}
                 mode={find ? (sequence.stamped ? "found" : "collected") : target.mode}
                 size="sm"
+                expanded
+                expandedFrom={expandedFrom}
+                expandTransition={expandTransition}
+                askToggle
                 backdrop={backdrop}
                 tilt={tilt}
               />
@@ -163,39 +176,38 @@ export function CollectDetail({
           : fadeOut(
               wrapContent(
                 <div className="flex flex-col gap-6">
-                  {/* Stacked on a phone, the card right above already shows the name. */}
-                  <Heading className="font-game-serif text-hero-md max-md:sr-only">
-                    {person.name}
-                  </Heading>
-                  <CardDetailFacts
-                    facts={[
-                      { label: "Location", value: person.city },
-                      { label: "Fun fact", value: person.fact },
-                      // A locked card prints its ask line on the face; an open one has no room for it.
-                      {
-                        label: "Ask me about",
-                        value: target.mode === "locked" ? null : person.ask,
-                      },
-                    ]}
+                  {/* The card prints the name; this keeps the dialog labelled. */}
+                  <Heading className="sr-only">{person.name}</Heading>
+                  <StickerNotes
+                    target={target}
+                    formId={notesFormId}
+                    onPendingChange={setCollecting}
                   />
-                  <StickerNotes target={target} />
                 </div>,
               ),
               sequence.clear,
             )
       }
       footer={
-        !sequence.cleared && (find || (target.active && target.collected))
-          ? fadeOut(
+        sequence.cleared
+          ? null
+          : fadeOut(
               wrapContent(
-                // Not gated on `ruled`: the guess keeps its "Not X." moment open after the card is
-                // ruled out, and CardDetail hides the row once the button is gone.
                 <div className="flex justify-center">
-                  <StickerGuess target={target} onFound={onFound} />
+                  {!target.collected ? (
+                    // Submits the notes form from here: one submission, the button and the field's
+                    // own Enter alike, and the form's pending state disables the button.
+                    <GameButton type="submit" form={notesFormId} size="lg" disabled={collecting}>
+                      Collect sticker
+                    </GameButton>
+                  ) : find || target.active ? (
+                    // Not gated on `ruled`: the guess keeps its "Not X." moment open after the
+                    // card is ruled out, and renders nothing once that closes.
+                    <StickerGuess target={target} onFound={onFound} />
+                  ) : null}
                 </div>,
               ),
             )
-          : null
       }
     />
   );

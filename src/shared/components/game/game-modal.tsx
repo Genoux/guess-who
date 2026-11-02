@@ -55,7 +55,7 @@ export function GameModal({
                 transition={TRANSITION.enter}
               >
                 <div className="flex flex-col items-center gap-1.5">
-                  <Dialog.Title className="text-balance font-game-serif text-clue">
+                  <Dialog.Title className="text-balance font-game-serif text-modal-title">
                     {title}
                   </Dialog.Title>
                   {description ? (
