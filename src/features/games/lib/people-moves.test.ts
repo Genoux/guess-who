@@ -9,7 +9,7 @@ const base = {
   imageUrl: null,
   newHire: false,
   signedIn: true,
-  welcoming: false,
+  hasWelcomed: false,
 };
 
 const board = (): PeopleBoard => ({

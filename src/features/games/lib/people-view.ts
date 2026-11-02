@@ -13,8 +13,8 @@ export type PersonIdentity = {
   newHire: boolean;
   /** False for an email an admin added that nobody has signed in with. */
   signedIn: boolean;
-  /** Welcoming a running mission: removing them waits until it ends. */
-  welcoming: boolean;
+  /** Welcomed a mission, running or finished: they can't be removed. */
+  hasWelcomed: boolean;
 };
 
 export type PlayingRowView = PersonIdentity & {

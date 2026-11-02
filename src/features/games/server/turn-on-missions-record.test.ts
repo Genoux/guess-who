@@ -68,8 +68,8 @@ describe("turnOnMissionsRecord", () => {
   it("starts each person's mission one by one, with the admin as creator", async () => {
     client.query.mockResolvedValueOnce({
       rows: [
-        ["ana", "ana@inbeat.agency", "user_ana"],
-        ["ben", "ben@inbeat.agency", "user_ben"],
+        ["ana", "ana@inbeat.agency"],
+        ["ben", "ben@inbeat.agency"],
       ],
     });
     await expect(turnOn(["ana", "ben"])).resolves.toEqual({ started: 2, skippedNoWelcomer: 0 });
@@ -79,12 +79,12 @@ describe("turnOnMissionsRecord", () => {
     ]);
   });
 
-  it("starts someone invited who has not signed in, with the game unlinked until they do", async () => {
-    client.query.mockResolvedValueOnce({ rows: [["kim", "kim@gmail.com", null]] });
+  it("starts someone invited who has not signed in, by their own person id", async () => {
+    client.query.mockResolvedValueOnce({ rows: [["kim", "kim@gmail.com"]] });
     await expect(turnOn(["kim"])).resolves.toEqual({ started: 1, skippedNoWelcomer: 0 });
     expect(begin.beginMissionRecord).toHaveBeenCalledWith({
       playerEmail: "kim@gmail.com",
-      playerPersonId: null,
+      playerPersonId: "kim",
       createdBy: "admin",
       now,
     });

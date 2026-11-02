@@ -208,7 +208,9 @@ Never commit, push or open a PR unless explicitly asked.
   that copy. A partial unique index allows one active game per welcomer; a lost race is retried
   once, then answers "No welcomer is free right now. Try again tomorrow." Bulk turn-on starts people
   one by one and returns `{ started, skippedNoWelcomer }`. A person who has not signed in yet starts
-  with `games.player_person_id` null; their first sign-in links the game by email. `games.intro_seen_at` records the
+  with `games.player_person_id` null; their first sign-in links the game by email. The insert reads
+  the player's row `for share` inside the lock, so a sign-in racing it either is seen or waits and
+  finds the game. `games.intro_seen_at` records the
   welcome tour, shown on the first visit to `/`.
 - `getViewerPerson()` creates or links the viewer's `people` row on first request (Clerk user id,
   else verified primary email) and links unclaimed games whose `player_email` matches. A row
@@ -217,12 +219,14 @@ Never commit, push or open a PR unless explicitly asked.
   the Slack photo, so a photo changed in Slack shows after the next sign-in.
 - Emails (`people.email`, `games.player_email`) are stored normalized with `normalizeEmail`.
 - Remove person (admin People, No mission and Done rows) deletes a person and all their data after a
-  confirm: `removePersonRecord` deletes, in one transaction behind the mission-start lock, every game
-  they played or welcomed (both `games` FKs are `restrict`; clues, guesses and shortlists cascade),
-  then the `people` row (albums, their sticker in others' albums, notes and `welcomer_clues` cascade).
-  It refuses while they play or welcome a running mission ("End their mission first.", expired
-  missions are revealed first) and an admin cannot remove themselves. Photos are Slack URLs, so no
-  storage objects; the Clerk user stays, and signing in again makes a fresh row. `welcoming` on a
+  confirm: `removePersonRecord` deletes, in one transaction behind the mission-start lock, the game
+  they played (`games.player_person_id` is `restrict`; clues, guesses and shortlists cascade), then
+  the `people` row (albums, their sticker in others' albums, notes and `welcomer_clues` cascade).
+  It refuses anyone who welcomed a mission, running or finished ("They welcomed a mission, so they
+  can't be removed."): `games.welcomer_person_id` is `restrict` and the game is another player's
+  record. It also refuses while they play a running mission ("End their mission first.", expired
+  missions are revealed first), and an admin cannot remove themselves. Photos are Slack URLs, so no
+  storage objects; the Clerk user stays, and signing in again makes a fresh row. `hasWelcomed` on a
   People row hides Remove.
 - The game runs on Montréal time (`America/Toronto`): day 1 is `games.start_date`, clues land at
   09:00 on days 3, 6, 9 and 12, the reveal at 09:00 on day 14 (`features/games/lib/game-schedule.ts`).

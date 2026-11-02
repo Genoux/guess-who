@@ -60,19 +60,19 @@ const artVariants = cva("relative flex min-h-0 flex-1 overflow-hidden", {
   },
 });
 
-// Sized so an 80 character ask fits the locked face's box on both stickers; see `getAskTextStep`.
+// Sized so a 55 character ask fits the locked face's box on both stickers; see `getAskTextStep`.
 const ASK_TEXT: Record<StickerSize, Record<AskTextStep, string>> = {
-  sm: { large: "text-quote", medium: "text-quote", small: "text-small" },
+  sm: { large: "text-quote", medium: "text-small", small: "text-fine" },
   lg: { large: "text-name-lg", medium: "text-clue", small: "text-heading" },
 };
 
-const nameVariants = cva("max-w-full truncate font-game-serif", {
+const nameVariants = cva("max-w-full text-balance font-game-serif wrap-anywhere", {
   variants: {
     size: { sm: "text-name", lg: "text-name-lg" },
   },
 });
 
-const subtitleVariants = cva("max-w-full truncate text-game-muted", {
+const subtitleVariants = cva("max-w-full text-game-muted wrap-anywhere", {
   variants: {
     size: { sm: "text-sm", lg: "text-base" },
   },
@@ -196,8 +196,8 @@ export function Sticker({
         <div
           className={gameCn(
             artVariants({ size }),
-            "flex-col justify-between gap-2",
-            size === "lg" ? "p-5" : "p-3",
+            "flex-col justify-between",
+            size === "lg" ? "gap-2 p-5" : "gap-1 p-2.5",
           )}
           style={{ backgroundColor: person.tint, color: person.tintInk }}
         >
@@ -206,8 +206,8 @@ export function Sticker({
           </div>
           <span
             className={gameCn(
-              "break-words font-game-serif",
-              ASK_TEXT[size][getAskTextStep(person.ask)],
+              "font-game-serif wrap-anywhere",
+              ASK_TEXT[size][getAskTextStep(person.ask, size)],
             )}
           >
             {person.ask}
@@ -255,13 +255,13 @@ export function Sticker({
           <div className="flex flex-none flex-col items-start gap-3 border-game-border border-t px-1.5 pt-3 pb-1 text-left">
             {/* The locked face already printed the ask; open, the fact is the new part. */}
             {person.fact ? (
-              <p className="text-balance break-words font-game-serif text-small">{person.fact}</p>
+              <p className="text-balance font-game-serif text-small wrap-anywhere">{person.fact}</p>
             ) : null}
             <div className="flex flex-col gap-0.5">
               <span className="font-game-mono text-caption text-game-muted uppercase">
                 Ask me about
               </span>
-              <p className="break-words text-game-muted text-small">{person.ask}</p>
+              <p className="text-game-muted text-small wrap-anywhere">{person.ask}</p>
             </div>
           </div>
         ) : null}

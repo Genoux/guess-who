@@ -22,14 +22,15 @@ type FieldBase = {
   className?: string;
 };
 
-type InputFieldProps = FieldBase & { multiline?: false } & Omit<
-    ComponentProps<"input">,
-    "className"
-  >;
-type TextareaFieldProps = FieldBase & { multiline: true } & Omit<
-    ComponentProps<"textarea">,
-    "className"
-  >;
+type CountProps = {
+  /** Shows "length/maxLength" under the field; needs `maxLength` and a controlled `value`. */
+  showCount?: boolean;
+};
+
+type InputFieldProps = FieldBase &
+  CountProps & { multiline?: false } & Omit<ComponentProps<"input">, "className">;
+type TextareaFieldProps = FieldBase &
+  CountProps & { multiline: true } & Omit<ComponentProps<"textarea">, "className">;
 
 export type GameFieldOption = {
   value: string;
@@ -78,6 +79,8 @@ const colorDot = (color: string) => (
 
 type FieldFrameProps = FieldBase & {
   id: string;
+  /** Characters used against the limit, e.g. "12/60". */
+  count?: string;
   /** What the label points at is wired by the caller; the frame adds the label, error and help. */
   children: ReactNode;
 };
@@ -89,17 +92,25 @@ export function FieldFrame({
   hideLabel,
   help,
   error,
+  count,
   className,
   children,
 }: FieldFrameProps) {
   return (
     <div className={gameCn("flex w-full flex-col gap-2 text-left", className)}>
-      <label
-        htmlFor={id}
-        className={gameCn("font-medium text-game-ink text-small", hideLabel && "sr-only")}
-      >
-        {label}
-      </label>
+      <div className="flex items-baseline justify-between gap-3">
+        <label
+          htmlFor={id}
+          className={gameCn("font-medium text-game-ink text-small", hideLabel && "sr-only")}
+        >
+          {label}
+        </label>
+        {count ? (
+          <span id={`${id}-count`} className="text-game-muted text-small tabular-nums">
+            {count}
+          </span>
+        ) : null}
+      </div>
       {children}
       {error ? (
         <span
@@ -123,12 +134,13 @@ export function FieldFrame({
 /** The ids a control names in aria-describedby, in the order the frame renders them. */
 export function describedBy(
   id: string,
-  { help, error }: Pick<FieldBase, "help" | "error">,
+  { help, error, count }: Pick<FieldBase, "help" | "error"> & { count?: string },
   caller?: string,
 ) {
   return (
-    [caller, error ? `${id}-error` : null, help ? `${id}-help` : null].filter(Boolean).join(" ") ||
-    undefined
+    [caller, count ? `${id}-count` : null, error ? `${id}-error` : null, help ? `${id}-help` : null]
+      .filter(Boolean)
+      .join(" ") || undefined
   );
 }
 
@@ -146,10 +158,14 @@ export function GameField(props: GameFieldProps) {
     "aria-invalid": callerInvalid,
   } = props;
   const id = idProp ?? generatedId;
+  const count =
+    "showCount" in props && props.showCount && props.maxLength !== undefined
+      ? `${String(props.value ?? "").length}/${props.maxLength}`
+      : undefined;
   const a11y = {
     id,
     "aria-invalid": error ? true : callerInvalid,
-    "aria-describedby": describedBy(id, { help, error }, callerDescribedBy),
+    "aria-describedby": describedBy(id, { help, error, count }, callerDescribedBy),
   };
 
   let control: ReactNode;
@@ -161,6 +177,7 @@ export function GameField(props: GameFieldProps) {
       error: _error,
       className: _className,
       multiline: _multiline,
+      showCount: _showCount,
       id: _id,
       "aria-describedby": _describedBy,
       "aria-invalid": _invalid,
@@ -220,6 +237,7 @@ export function GameField(props: GameFieldProps) {
       error: _error,
       className: _className,
       multiline: _multiline,
+      showCount: _showCount,
       id: _id,
       "aria-describedby": _describedBy,
       "aria-invalid": _invalid,
@@ -243,6 +261,7 @@ export function GameField(props: GameFieldProps) {
       hideLabel={hideLabel}
       help={help}
       error={error}
+      count={count}
       className={className}
     >
       {control}

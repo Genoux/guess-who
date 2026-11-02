@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { ana, longest, noor } from "./fixtures";
+import { ana, longest, noor, unbroken } from "./fixtures";
 import { Sticker } from "./sticker";
 import type { StickerMode, StickerSize } from "./sticker-view";
 
@@ -35,6 +35,13 @@ export const LongestTextSmall: Story = { args: { person: longest, mode: "locked"
 export const LongestTextLarge: Story = { args: { person: longest, mode: "collected", size: "lg" } };
 export const LongestAskLockedLarge: Story = {
   args: { person: longest, mode: "locked", size: "lg" },
+};
+export const UnbrokenTextSmall: Story = { args: { person: unbroken, mode: "locked" } };
+export const UnbrokenTextLarge: Story = {
+  args: { person: unbroken, mode: "collected", size: "lg" },
+};
+export const UnbrokenAskLockedLarge: Story = {
+  args: { person: unbroken, mode: "locked", size: "lg" },
 };
 export const HandStuck: Story = { args: { rot: -3, tilt: false } };
 

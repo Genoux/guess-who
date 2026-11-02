@@ -18,14 +18,15 @@ const failsWith = (kind: "forbidden" | "not_found" | "conflict") =>
   expect.toSatisfy((err) => isAppError(err, kind));
 const statement = (verb: string) => sentStatements(client).find(({ sql }) => sql.startsWith(verb));
 
-/** The person row exists unless `missing`; a running game involves them only when `running`. */
-const behave = ({ missing = false, running = false } = {}) =>
+/** The person row exists unless `missing`; a running game involves them only when `running`; a game they welcomed exists when `welcomed`. */
+const behave = ({ missing = false, running = false, welcomed = false } = {}) =>
   client.query.mockImplementation(async (config) => {
     const text = config.text.replaceAll('"', "");
     if (text.startsWith("select") && text.includes("from people")) {
       return { rows: missing ? [] : [["kim@gmail.com"]] };
     }
     if (text.startsWith("select") && text.includes("from games")) {
+      if (text.includes("welcomer_person_id =")) return { rows: welcomed ? [["game_2"]] : [] };
       return { rows: running ? [["game_1"]] : [] };
     }
     return { rows: [] };
@@ -38,7 +39,7 @@ beforeEach(() => {
 });
 
 describe("removePersonRecord", () => {
-  it("deletes the games they played or welcomed, then the person, in that order", async () => {
+  it("deletes the games they played, then the person, in that order", async () => {
     await removePersonRecord(input);
     const deletes = sentStatements(client).filter(({ sql }) => sql.startsWith("delete from"));
     expect(deletes.map(({ sql }) => sql.split(" where")[0])).toEqual([
@@ -46,8 +47,9 @@ describe("removePersonRecord", () => {
       "delete from people",
     ]);
     expect(statement("delete from games")?.sql).toMatch(
-      /player_person_id = \$\d+ or .*welcomer_person_id = \$\d+ or .*player_person_id is null and .*player_email = \$\d+/,
+      /player_person_id = \$\d+ or .*player_person_id is null and .*player_email = \$\d+/,
     );
+    expect(statement("delete from games")?.sql).not.toMatch(/welcomer_person_id/);
     expect(statement("delete from people")?.params).toEqual(["kim"]);
   });
 
@@ -60,6 +62,16 @@ describe("removePersonRecord", () => {
     behave({ running: true });
     await expect(removePersonRecord(input)).rejects.toSatisfy(
       (err) => isAppError(err, "conflict") && err.safeMessage === "End their mission first.",
+    );
+    expect(statement("delete from")).toBeUndefined();
+  });
+
+  it("refuses anyone who welcomed a mission, running or finished, and deletes nothing", async () => {
+    behave({ welcomed: true });
+    await expect(removePersonRecord(input)).rejects.toSatisfy(
+      (err) =>
+        isAppError(err, "conflict") &&
+        err.safeMessage === "They welcomed a mission, so they can't be removed.",
     );
     expect(statement("delete from")).toBeUndefined();
   });

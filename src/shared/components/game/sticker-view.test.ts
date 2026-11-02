@@ -101,16 +101,22 @@ describe("stickerCelebration", () => {
 });
 
 describe("getAskTextStep", () => {
-  it("steps the locked ask down as it gets longer", () => {
-    expect(getAskTextStep("Night trains")).toBe("large");
-    expect(getAskTextStep("x".repeat(32))).toBe("large");
-    expect(getAskTextStep("x".repeat(33))).toBe("medium");
-    expect(getAskTextStep("x".repeat(56))).toBe("medium");
-    expect(getAskTextStep("x".repeat(57))).toBe("small");
-    expect(getAskTextStep("x".repeat(80))).toBe("small");
+  it("steps the small sticker's ask down early, as its box is short", () => {
+    expect(getAskTextStep("Night trains", "sm")).toBe("large");
+    expect(getAskTextStep("x".repeat(16), "sm")).toBe("large");
+    expect(getAskTextStep("x".repeat(17), "sm")).toBe("medium");
+    expect(getAskTextStep("x".repeat(32), "sm")).toBe("medium");
+    expect(getAskTextStep("x".repeat(33), "sm")).toBe("small");
+    expect(getAskTextStep("x".repeat(55), "sm")).toBe("small");
+  });
+
+  it("keeps the large sticker's ask big up to 32 characters", () => {
+    expect(getAskTextStep("x".repeat(32), "lg")).toBe("large");
+    expect(getAskTextStep("x".repeat(33), "lg")).toBe("medium");
+    expect(getAskTextStep("x".repeat(57), "lg")).toBe("small");
   });
 
   it("measures the text as written, not the padding around it", () => {
-    expect(getAskTextStep(`  ${"x".repeat(32)}  `)).toBe("large");
+    expect(getAskTextStep(`  ${"x".repeat(16)}  `, "sm")).toBe("large");
   });
 });

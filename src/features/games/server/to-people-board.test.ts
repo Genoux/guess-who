@@ -266,16 +266,24 @@ describe("toPeopleBoard done", () => {
     expect(done[0]?.outcome.label).toBe("Revealed on day 14");
   });
 
-  it("marks a welcomer of a running mission, and no one else", () => {
-    const { noMission, playing } = board([
+  it("marks anyone who welcomed a mission, running or finished, and no one else", () => {
+    const { noMission, playing, done } = board([
       person({ personId: "ana", email: "ana@inbeat.agency" }),
       person({ personId: "ben", email: "ben@inbeat.agency" }),
+      person({ personId: "cam", email: "cam@inbeat.agency" }),
       person({ personId: "kim", email: "kim@gmail.com", game: { ...base, id: "kim" } }),
+      person({
+        personId: "lou",
+        email: "lou@gmail.com",
+        game: { ...base, id: "lou", welcomerPersonId: "cam", startDate: "2026-10-01" },
+      }),
     ]);
-    expect(noMission.map(({ key, welcoming }) => [key, welcoming])).toEqual([
+    expect(noMission.map(({ key, hasWelcomed }) => [key, hasWelcomed])).toEqual([
       ["ana", true],
       ["ben", false],
+      ["cam", true],
     ]);
-    expect(playing[0]?.welcoming).toBe(false);
+    expect(playing[0]?.hasWelcomed).toBe(false);
+    expect(done[0]?.hasWelcomed).toBe(false);
   });
 });

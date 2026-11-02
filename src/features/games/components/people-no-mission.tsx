@@ -193,7 +193,7 @@ export function PeopleNoMission({ rows, onTurnOn, onSetNewHire, onRemove }: Peop
                           ...(row.newHire
                             ? []
                             : [{ label: "Set as new hire", onSelect: () => onSetNewHire(row) }]),
-                          ...(row.welcoming
+                          ...(row.hasWelcomed
                             ? []
                             : [
                                 {

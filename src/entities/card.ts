@@ -1,3 +1,7 @@
+// Chosen so long-worded sentences at these lengths fit both stickers without clipping, measured in
+// a browser; see `longest` and `unbroken` in the sticker fixtures. Change them together.
+export const CARD_LIMITS = { location: 25, fact: 120, ask: 55 } as const;
+
 export type CardContent = {
   teamId: string | null;
   location: string | null;

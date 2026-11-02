@@ -1,6 +1,5 @@
 import { z } from "zod";
-
-export const CARD_LIMITS = { location: 60, fact: 140, ask: 80 } as const;
+import { CARD_LIMITS } from "@/entities/card";
 
 const cardText = (max: number) =>
   z

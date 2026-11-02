@@ -9,10 +9,10 @@ import { revealExpiredGames } from "./game-records";
 type RemovePersonInput = { personId: string; actorPersonId: string; now: Date };
 
 /**
- * Deletes a person and everything of theirs, in one transaction. The games they played or welcomed
- * go first (both foreign keys restrict); clues, guesses and shortlists leave with their game, and
- * their albums, stickers, notes and welcomer clues cascade from the person. A running mission
- * refuses it: an admin ends that first.
+ * Deletes a person and everything of theirs, in one transaction. The game they played goes first
+ * (its foreign key restricts); clues, guesses and shortlists leave with it, and their albums,
+ * stickers, notes and welcomer clues cascade from the person. Anyone who welcomed a mission is
+ * refused: the game is another player's record, and a running one is ended by an admin first.
  */
 export async function removePersonRecord({ personId, actorPersonId, now }: RemovePersonInput) {
   if (personId === actorPersonId) {
@@ -30,9 +30,19 @@ export async function removePersonRecord({ personId, actorPersonId, now }: Remov
       .where(eq(people.id, personId));
     if (!person) throw new AppError("not_found", "person missing");
 
+    const [welcomed] = await tx
+      .select({ id: games.id })
+      .from(games)
+      .where(eq(games.welcomerPersonId, personId))
+      .limit(1);
+    if (welcomed) {
+      throw new AppError("conflict", "person welcomed a mission", {
+        safeMessage: "They welcomed a mission, so they can't be removed.",
+      });
+    }
+
     const theirGames = or(
       eq(games.playerPersonId, personId),
-      eq(games.welcomerPersonId, personId),
       and(isNull(games.playerPersonId), eq(games.playerEmail, person.email)),
     );
     const [running] = await tx

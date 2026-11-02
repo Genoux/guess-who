@@ -75,18 +75,14 @@ export function toPeopleBoard({
   const playing: PlayingRowView[] = [];
   const noMission: NoMissionRowView[] = [];
   const done: (DoneRowView & { endedAt: Date })[] = [];
-  const welcomingIds = new Set(
-    people.flatMap(({ game }) =>
-      game && missionStateAt(game, now) === "playing" ? [game.welcomerPersonId] : [],
-    ),
-  );
+  const welcomerIds = new Set(people.flatMap(({ game }) => (game ? [game.welcomerPersonId] : [])));
 
   for (const record of people) {
     const { game } = record;
     const state = missionStateAt(game, now);
     const identity = {
       key: record.personId,
-      welcoming: welcomingIds.has(record.personId),
+      hasWelcomed: welcomerIds.has(record.personId),
       signedIn: record.signedIn,
       name: record.name,
       email: record.email,

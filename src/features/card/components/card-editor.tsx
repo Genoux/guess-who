@@ -2,7 +2,7 @@
 
 import { PencilIcon } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState, useTransition } from "react";
-import { isCardComplete } from "@/entities/card";
+import { CARD_LIMITS, isCardComplete } from "@/entities/card";
 import { GameBook } from "@/shared/components/game/game-book";
 import { GameButton } from "@/shared/components/game/game-button";
 import { gameCn } from "@/shared/components/game/game-cn";
@@ -12,7 +12,7 @@ import { SaveAnywayDialog } from "@/shared/components/game/save-anyway-dialog";
 import { Sticker } from "@/shared/components/game/sticker";
 import { formatStickerNumber, type StickerPerson } from "@/shared/components/game/sticker-view";
 import { updateMyCard } from "../actions/update-my-card";
-import { CARD_LIMITS, type UpdateMyCardInput, updateMyCardSchema } from "../schemas";
+import { type UpdateMyCardInput, updateMyCardSchema } from "../schemas";
 import type { CardAudience, CardFields, MyCard } from "../types";
 
 type FieldErrors = Partial<Record<keyof CardFields, string>>;
@@ -209,6 +209,7 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
                   name="fact"
                   multiline
                   maxLength={CARD_LIMITS.fact}
+                  showCount
                   value={values.fact}
                   onChange={set("fact")}
                   error={errors.fact}
@@ -218,6 +219,7 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
                   name="ask"
                   multiline
                   maxLength={CARD_LIMITS.ask}
+                  showCount
                   value={values.ask}
                   onChange={set("ask")}
                   error={errors.ask}

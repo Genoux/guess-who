@@ -28,7 +28,7 @@ const invitedRow = (email: string): NoMissionRowView => ({
   imageUrl: null,
   newHire: true,
   signedIn: false,
-  welcoming: false,
+  hasWelcomed: false,
   asWelcomer: { kind: "cardNotDone" },
 });
 

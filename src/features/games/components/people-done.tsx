@@ -65,7 +65,7 @@ export function PeopleDone({ rows, onRemove }: PeopleDoneProps) {
               <NumberCell muted className={PEOPLE_LAST_CLASS}>
                 {row.endedOn}
               </NumberCell>
-              {row.welcoming ? null : (
+              {row.hasWelcomed ? null : (
                 <GameRowMenu
                   className={PEOPLE_MENU_CLASS}
                   label={`Actions for ${row.name ?? row.email}`}

@@ -24,7 +24,7 @@ const hasNoFreeWelcomer = (err: unknown) =>
  */
 export async function turnOnMissionsRecord({ personIds, adminPersonId, now }: TurnOnMissionsInput) {
   const withoutMission = await db
-    .select({ id: people.id, email: people.email, clerkUserId: people.clerkUserId })
+    .select({ id: people.id, email: people.email })
     .from(people)
     .where(
       and(
@@ -44,12 +44,11 @@ export async function turnOnMissionsRecord({ personIds, adminPersonId, now }: Tu
 
   let started = 0;
   let skippedNoWelcomer = 0;
-  for (const { id, email, clerkUserId } of withoutMission) {
+  for (const { id, email } of withoutMission) {
     try {
       await beginMissionRecord({
         playerEmail: email,
-        // Someone who has not signed in stays unlinked: their first sign-in links the game by email.
-        playerPersonId: clerkUserId ? id : null,
+        playerPersonId: id,
         createdBy: adminPersonId,
         now,
       });
