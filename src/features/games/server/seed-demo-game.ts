@@ -432,7 +432,7 @@ export async function seedDemoGame(
     .values({ email: gamePlayerEmail, name: gamePlayerEmail.split("@")[0] ?? gamePlayerEmail })
     .onConflictDoNothing({ target: schema.people.email });
   const [playerRow] = await db
-    .select({ id: schema.people.id, clerkUserId: schema.people.clerkUserId })
+    .select({ id: schema.people.id })
     .from(schema.people)
     .where(eq(schema.people.email, gamePlayerEmail));
   if (!playerRow) throw new Error("Player row is missing");
@@ -441,7 +441,7 @@ export async function seedDemoGame(
     .insert(schema.games)
     .values({
       playerEmail: gamePlayerEmail,
-      playerPersonId: playerRow.clerkUserId ? playerRow.id : null,
+      playerPersonId: playerRow.id,
       welcomerPersonId: welcomerId,
       startDate,
       // A fresh game is the first visit: the welcome tour has not been seen.
@@ -726,7 +726,7 @@ export async function seedAdminBoard(db: SchemaDb, now: Date): Promise<{ mission
       .insert(schema.games)
       .values({
         playerEmail: entry.email,
-        playerPersonId: entry.signedIn ? idOf(entry.email) : null,
+        playerPersonId: idOf(entry.email),
         welcomerPersonId: welcomerId,
         startDate,
         status: entry.outcome ?? "active",

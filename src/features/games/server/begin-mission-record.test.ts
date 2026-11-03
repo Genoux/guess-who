@@ -21,7 +21,7 @@ vi.mock("@/shared/lib/find-active-welcomer-game", () => ({
   findActiveWelcomerGame: records.findActiveWelcomerGame,
 }));
 
-import { beginMissionRecord } from "./begin-mission-record";
+import { ALREADY_HAS_MISSION, beginMissionRecord } from "./begin-mission-record";
 import { NO_WELCOMER_FREE } from "./choose-welcomer";
 
 const candidate = (id: string, overrides = {}) => ({
@@ -61,26 +61,18 @@ type Behaviour = {
   lostInserts?: number;
   /** The first checks find the chosen welcomer already welcomed by the player's own player. */
   clashes?: number;
-  /** The email or person already has a mission. */
+  /** The person already has a mission. */
   hasMission?: boolean;
-  /** The player has claimed their person row by signing in. */
-  signedIn?: boolean;
 };
 
 const WELCOMER_TEAM = [["Creative"]];
 
-const behave = ({
-  lostInserts = 0,
-  clashes = 0,
-  hasMission = false,
-  signedIn = true,
-}: Behaviour = {}) => {
+const behave = ({ lostInserts = 0, clashes = 0, hasMission = false }: Behaviour = {}) => {
   let lost = lostInserts;
   let clash = clashes;
   client.query.mockImplementation(async (config) => {
     const text = config.text.replaceAll('"', "");
     if (text.includes("pg_advisory_xact_lock")) return { rows: [] };
-    if (text.includes("for share")) return { rows: [[signedIn ? "user_player" : null]] };
     if (text.startsWith("insert into games")) {
       if (lost-- > 0) throw uniqueViolation;
       return { rows: [["game_1"]] };
@@ -90,7 +82,7 @@ const behave = ({
     if (text.includes("games.welcomer_person_id =")) {
       return { rows: clash-- > 0 ? [["game_9"]] : [] };
     }
-    if (text.includes("games.player_email")) return { rows: hasMission ? [["game_9"]] : [] };
+    if (text.includes("games.player_person_id")) return { rows: hasMission ? [["game_9"]] : [] };
     return { rows: [] };
   });
 };
@@ -157,34 +149,20 @@ describe("beginMissionRecord", () => {
     expect(insert()?.params).toContain("ben");
   });
 
-  it("never picks the player, signed in or not", async () => {
-    behave({ signedIn: false });
+  it("never picks the player", async () => {
     records.listWelcomerCandidates.mockResolvedValue([candidate("player"), candidate("ben")]);
     await start();
     expect(insert()?.params).toContain("ben");
-    expect(insert()?.params).not.toContain("player");
   });
 
-  it("links the player to the game when they have signed in by the time it is written", async () => {
+  it("always links the player's person row, signed in or not, and reads nothing by email", async () => {
     await start();
-    expect(insert()?.params).toContain("player");
-  });
-
-  it("leaves the game unlinked while the player has not signed in", async () => {
-    behave({ signedIn: false });
-    await start();
-    expect(insert()?.params).toEqual(expect.arrayContaining([null, "player@inbeat.agency", "ana"]));
-    expect(insert()?.params).not.toContain("player");
-  });
-
-  it("locks the player's row until commit, so a sign-in either shows or finds the game", async () => {
-    await start();
-    const sql = sentStatements(client).map((statement) => statement.sql);
-    const lock = sql.findIndex((text) => text.includes("pg_advisory_xact_lock"));
-    const claim = sql.findIndex((text) => text.includes("for share"));
-    const write = sql.findIndex((text) => text.startsWith("insert into games"));
-    expect(lock).toBeLessThan(claim);
-    expect(claim).toBeLessThan(write);
+    expect(insert()?.params).toEqual(
+      expect.arrayContaining(["player", "player@inbeat.agency", "ana"]),
+    );
+    expect(sentStatements(client).some(({ sql }) => sql.includes("games.player_email"))).toBe(
+      false,
+    );
   });
 
   it("answers a conflict when nobody is eligible, and writes nothing", async () => {
@@ -204,11 +182,11 @@ describe("beginMissionRecord", () => {
     expect(check).toBeLessThan(write);
   });
 
-  it("refuses a second mission for the same email or person, inside the lock", async () => {
+  it("refuses a second mission for the same person, inside the lock", async () => {
     behave({ hasMission: true });
     await expect(start()).rejects.toMatchObject({
       kind: "conflict",
-      safeMessage: "This email already has a mission.",
+      safeMessage: ALREADY_HAS_MISSION,
     });
     expect(insert()).toBeUndefined();
   });

@@ -1,5 +1,5 @@
 import "server-only";
-import { asc, eq, or, sql } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { games, people, teams } from "@/db/schema";
 import { db } from "@/shared/lib/db";
@@ -48,7 +48,7 @@ const toGame = ({
 const toTeam = (name: string | null, color: string | null) =>
   name && color ? { name, color } : null;
 
-/** Everyone with a person row, signed in or only invited, with their mission if they have one. */
+/** Everyone with a person row, signed in or not, with their mission if they have one. */
 export async function listPeople(): Promise<PersonRecord[]> {
   const rows = await db
     .select({
@@ -69,7 +69,7 @@ export async function listPeople(): Promise<PersonRecord[]> {
     })
     .from(people)
     .leftJoin(teams, eq(people.teamId, teams.id))
-    .leftJoin(games, or(eq(games.playerPersonId, people.id), eq(games.playerEmail, people.email)))
+    .leftJoin(games, eq(games.playerPersonId, people.id))
     .leftJoin(welcomer, eq(games.welcomerPersonId, welcomer.id));
   return rows.map(
     ({

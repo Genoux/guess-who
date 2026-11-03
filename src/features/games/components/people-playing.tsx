@@ -15,11 +15,10 @@ import { NumberCell, PersonCell, RoleTag, TeamTag, WelcomerCell } from "./person
 type PeoplePlayingProps = {
   rows: readonly PlayingRowView[];
   onEnd: (row: PlayingRowView) => void;
-  onChangeEmail: (row: PlayingRowView) => void;
 };
 
 /** One row per started mission, furthest day first. */
-export function PeoplePlaying({ rows, onEnd, onChangeEmail }: PeoplePlayingProps) {
+export function PeoplePlaying({ rows, onEnd }: PeoplePlayingProps) {
   return (
     <GameBook
       as="section"
@@ -66,12 +65,7 @@ export function PeoplePlaying({ rows, onEnd, onChangeEmail }: PeoplePlayingProps
               <GameRowMenu
                 className={PEOPLE_MENU_CLASS}
                 label={`Actions for ${row.name ?? row.email}`}
-                items={[
-                  ...(row.signedIn
-                    ? []
-                    : [{ label: "Change email", onSelect: () => onChangeEmail(row) }]),
-                  { label: "End mission", onSelect: () => onEnd(row) },
-                ]}
+                items={[{ label: "End mission", onSelect: () => onEnd(row) }]}
               />
             </li>
           ))}

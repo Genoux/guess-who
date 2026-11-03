@@ -1,4 +1,3 @@
-import { normalizeEmail } from "@inbeat/core/email";
 import { z } from "zod";
 import { DEV_SCENARIO_IDS } from "./lib/dev-state";
 
@@ -34,17 +33,7 @@ export const writeClueSchema = z.object({
 
 export const devStateSchema = z.object({ scenario: z.enum(DEV_SCENARIO_IDS) });
 
-const playerEmail = z
-  .string()
-  .trim()
-  .pipe(z.email({ error: "Enter their email." }))
-  .transform(normalizeEmail);
-
-export const addNewHireSchema = z.object({ email: playerEmail });
-
-export const changeInviteEmailSchema = z.object({ gameId: z.uuid(), email: playerEmail });
-
-export const setAsNewHireSchema = z.object({ personId: z.uuid() });
+export const startAsNewHireSchema = z.object({ personId: z.uuid() });
 
 export const endMissionSchema = z.object({ gameId: z.uuid() });
 

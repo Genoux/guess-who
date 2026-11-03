@@ -5,7 +5,7 @@ const client = vi.hoisted(() => ({ query: vi.fn(async () => ({ rows: [] as unkno
 vi.mock("@/shared/lib/db", async () => (await import("@/test/fake-db")).fakeDbModule(client));
 vi.mock("./db", async () => (await import("@/test/fake-db")).fakeDbModule(client));
 
-import { claimPerson } from "./person-records";
+import { claimPerson, findPeopleByAnyEmail } from "./person-records";
 
 beforeEach(() => {
   client.query.mockReset();
@@ -13,7 +13,7 @@ beforeEach(() => {
 });
 
 describe("claimPerson", () => {
-  const identity = { name: "Jane Doe", imageUrl: null, slackUserId: null };
+  const identity = { imageUrl: null, slackUserId: null };
 
   it("links a pre-created row to the Clerk user and leaves the new hire flag alone", async () => {
     await claimPerson("person_1", "user_1", "session_1", identity);
@@ -23,12 +23,24 @@ describe("claimPerson", () => {
     expect(update?.sql).toMatch(/where \(people\.id = \$\d+ and people\.clerk_user_id is null\)/);
   });
 
-  it("swaps the placeholder name adding them gave the row for their name from Clerk", async () => {
-    await claimPerson("person_1", "user_1", "session_1", identity);
+  it("leaves the Deel-owned name and email alone", async () => {
+    await claimPerson("person_1", "user_1", "session_1", {
+      imageUrl: "https://img/x",
+      slackUserId: "U1",
+    });
     const [update] = sentStatements(client);
-    expect(update?.sql).toMatch(
-      /name = case when people\.name = split_part\(people\.email, '@', 1\) then \$\d+ else people\.name end/,
+    expect(update?.sql.split(" where ")[0]).not.toMatch(/name =|email =/);
+    expect(update?.params).toEqual(expect.arrayContaining(["https://img/x", "U1"]));
+  });
+});
+
+describe("findPeopleByAnyEmail", () => {
+  it("matches the work or the personal email, two rows at most", async () => {
+    await findPeopleByAnyEmail("jane@gmail.com");
+    const [select] = sentStatements(client);
+    expect(select?.sql).toMatch(
+      /where \(people\.email = \$1 or people\.personal_email = \$2\) limit \$3/,
     );
-    expect(update?.params).toContain("Jane Doe");
+    expect(select?.params).toEqual(["jane@gmail.com", "jane@gmail.com", 2]);
   });
 });
