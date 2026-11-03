@@ -11,6 +11,8 @@ export type PersonIdentity = {
   imageUrl: string | null;
   /** A new hire: their mission is their rite of passage. */
   newHire: boolean;
+  /** Their Deel start date is within the last 30 days. */
+  joinedRecently: boolean;
   /** False for an email an admin added that nobody has signed in with. */
   signedIn: boolean;
 };

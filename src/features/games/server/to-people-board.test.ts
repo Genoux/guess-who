@@ -18,6 +18,7 @@ const person = (overrides: Partial<PersonRecord> = {}): PersonRecord => ({
   newHire: false,
   cluesWritten: 3,
   welcomerLeft: false,
+  joinedOn: null,
   game: null,
   ...overrides,
 });
@@ -102,6 +103,21 @@ describe("toPeopleBoard playing", () => {
 
   it("keeps a mission that ran past day 14 out of Playing", () => {
     expect(board([person({ game: { ...base, startDate: "2026-10-01" } })]).playing).toEqual([]);
+  });
+});
+
+describe("toPeopleBoard joined recently", () => {
+  it("flags someone whose Deel start date is within 30 days", () => {
+    const { noMission } = board([
+      person({ personId: "new", joinedOn: "2026-10-09" }),
+      person({ personId: "old", joinedOn: "2026-09-27" }),
+      person({ personId: "none", joinedOn: null }),
+    ]);
+    expect(noMission.map(({ key, joinedRecently }) => [key, joinedRecently])).toEqual([
+      ["new", true],
+      ["old", false],
+      ["none", false],
+    ]);
   });
 });
 

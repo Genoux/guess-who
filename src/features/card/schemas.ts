@@ -7,10 +7,11 @@ const cardText = (max: number) =>
     .trim()
     .max(max, { error: `Keep it to ${max} characters.` });
 
-/** The teammate's own sticker. Drafts save: `isCardComplete` decides what a blank field costs. */
+/**
+ * The only fields a teammate writes. Name, team and location come from Deel, so a payload that
+ * carries them is stripped here. Drafts save: `isCardComplete` decides what a blank field costs.
+ */
 export const updateMyCardSchema = z.object({
-  teamId: z.uuid({ error: "Pick your team." }).nullable(),
-  location: cardText(CARD_LIMITS.location),
   fact: cardText(CARD_LIMITS.fact),
   ask: cardText(CARD_LIMITS.ask),
 });

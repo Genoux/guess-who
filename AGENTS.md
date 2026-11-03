@@ -138,7 +138,7 @@ Never commit, push or open a PR unless explicitly asked.
   and all three clues written can be picked as a welcomer. The admin People page has three views, each person in
   exactly one by mission state: Playing, No mission (no game, signed in or not, with an icon
   until they sign in; search, filter, and select people to turn missions on; people who find no
-  free welcomer stay here and the toast says so) and Done. Only an admin starts a mission: "Start as
+  free welcomer stay here and the toast says so) and Done. A mission starts automatically when Deel reports a new hire active (see Auto-mission) or when an admin starts it: "Start as
   new hire" (No mission rows, confirmed first) flags the person and starts the mission at once (no
   free welcomer: the person stays flagged in No mission, and the toast says so), and Turn on starts
   the others, signed in or not. A running mission is ended with End mission only: it resets the game
@@ -178,6 +178,12 @@ Never commit, push or open a PR unless explicitly asked.
 
 ### Known gaps
 
+- Deel disables a webhook after 10 failed deliveries and nothing in the app notices. Every delivery
+  logs `deel webhook` with the event type and outcome; no such log for days, or a new Deel hire
+  missing, means re-enable it in Deel, Organization settings, Developer, Webhooks. Replay an event
+  locally with `bun run deel:replay -- worker.v2.updated --id <deel person id>` (signs with
+  `DEEL_WEBHOOK_SECRET`; `--url` targets a preview). There is no full sync: people missed while a
+  webhook was down appear only on their next event or after another `deel:backfill`.
 - The licensed Fieldtrip fonts in `public/fonts` are committed so previews render them, although the
   repo is public. Shortcut until the repo goes private or the fonts move to private storage fetched at
   build time; then re-add `/public/fonts/` to `.gitignore`. Owner: John.
@@ -220,6 +226,28 @@ Never commit, push or open a PR unless explicitly asked.
   Once per Clerk session (`synced_session_id`) it re-reads the Clerk user for the Slack user id and
   the Slack photo, so a photo changed in Slack shows after the next sign-in.
 - Emails (`people.email`, `games.player_email`) are stored normalized with `normalizeEmail`.
+- Deel is the source of truth for who exists (`src/integrations/deel`, read-only client). Env:
+  `DEEL_API_URL` (defaults to production), `DEEL_API_TOKEN` (people:read), `DEEL_WEBHOOK_SECRET`
+  (optional; without it the webhook answers 401) and the optional `DEEL_ORGANIZATION_ID`.
+  `bun run deel:backfill` (dry run by default; `--apply`, plus `--confirm-production` against the
+  production API) creates people and marks those already `active` with `auto_mission_done_at`, so
+  they never auto-start; it runs `seedTeams` first. `people.deel_id` is the key; the work email
+  fills `email`, a personal email `personal_email`; the Deel country is written to `location` and
+  the hire date to `start_date`. `POST /api/webhooks/deel` verifies `x-deel-signature` (hex
+  HMAC-SHA256 of `"POST"` plus the raw body), takes the person from the event, re-fetches them from
+  Deel and classifies the change (`toRosterChange`): upsert, remove (leaver, below) or ignore. It
+  handles `worker.v2.created|updated|deleted`, `employee.created.*`, `contract.status.updated`
+  and `contract.terminated`; `onboarding.status.updated` is harmless and not a trigger.
+  Responses: 401 bad or missing signature, 429 rate limited, 200 for ignored, unhandled and
+  permanent outcomes (logged), 5xx only for transient failures so Deel retries. A replay only
+  re-syncs current state.
+- Auto-mission: after any upsert, a person whose Deel `hiring_status` is `active`, with
+  `auto_mission_done_at` null and no game, is flagged `new_hire` and `startAutoMissionRecord` starts
+  their mission. `beginMissionRecord` sets the marker for every start, so End mission never
+  restarts it. No free welcomer: the person stays flagged and unmarked until a later event or an
+  admin starts them.
+- "Joined recently" (`joinedRecently`, `entities/game-schedule.ts`): `people.start_date` is at most
+  30 days back in Montréal, or still ahead. No Mission rows show it as their small line.
 - There is no Remove person: Deel decides who exists. `removeLeaverRecord` runs when a webhook's
   re-fetched Deel person is a leaver (`toRosterChange`): a 404, `inactive`, or `no_active_contracts` with an
   end date before today in Montréal. Any other answer, a 400 included, or no end date keeps them. In one transaction behind the mission-start lock it
@@ -232,7 +260,7 @@ Never commit, push or open a PR unless explicitly asked.
   rows go with the person (accepted). The Clerk user stays and signing in is refused until Deel lists
   them again.
 - The game runs on Montréal time (`America/Toronto`): day 1 is `games.start_date`, clues land at
-  09:00 on days 3, 6, 9 and 12, the reveal at 09:00 on day 14 (`features/games/lib/game-schedule.ts`).
+  09:00 on days 3, 6, 9 and 12, the reveal at 09:00 on day 14 (`entities/game-schedule.ts`).
   Clue 1 is generated from the welcomer's team; clues 2 to 4 are the welcomer's own, one `welcomer_clues`
   row per (person, number), kept across missions. Teammates write them on `/clues`; `eligibleWelcomers`
   requires all three, and excludes the player, anyone welcoming a running mission and the person
@@ -241,10 +269,14 @@ Never commit, push or open a PR unless explicitly asked.
 - One top bar, `AppTopNav`, for every signed-in screen: tabs Album, Mission (only with a game in any state), My card, My clues, Welcomer (while welcoming a started mission), at most 5 in PillTabs; People (admins) is an icon button beside the avatar. Only pages everyone shown them can open become tabs.
 - A card is complete only when team, location, fact and ask are all filled in (`isCardComplete` in
   `src/entities/card.ts`; `completeCardCondition` in `src/shared/lib` is the SQL twin: keep them in
-  step). Album, welcomer pool and turn-on all use it. The card saves while incomplete, after a
-  confirm dialog: it leaves collectors' albums until completed (their `collections` rows stay), and
-  a missing team keeps the one the person has. While someone welcomes a started mission
-  (`findActiveWelcomerGame`) the server refuses an incomplete card, and clues are read-only.
+  step). Album, welcomer pool and turn-on all use it. Name, team and location come from Deel and
+  show read-only on /card; `updateMyCardSchema` and `updateCardRecord` write only fact and ask, so
+  a payload with the others is stripped. An unmapped Deel department leaves the team null, so the
+  card stays incomplete and the editor says "Your team isn't set yet. Ask People Strategy." The
+  card saves while incomplete, after a confirm dialog: it leaves collectors' albums until
+  completed (their `collections` rows stay). While someone welcomes a started mission
+  (`findActiveWelcomerGame`) the server refuses a save that leaves the card incomplete, and clues
+  are read-only.
 - A blank clue text deletes that `welcomer_clues` row, so a clue is written or absent; a running
   mission keeps its own copy in `clues`.
 - Player pages read through `loadPlayerBoard()` and the view shapers; never pass a raw `games`,

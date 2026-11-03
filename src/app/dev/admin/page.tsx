@@ -84,6 +84,7 @@ const person = (
   newHire: game !== null && game.status === "active",
   cluesWritten: clues,
   welcomerLeft: false,
+  joinedOn: null,
   game,
 });
 
@@ -101,6 +102,7 @@ const notSignedIn = (id: string, name: string, welcomerName: string): PersonReco
   newHire: true,
   cluesWritten: 0,
   welcomerLeft: false,
+  joinedOn: null,
   game: playing(id, welcomerName, "2026-10-28"),
 });
 
