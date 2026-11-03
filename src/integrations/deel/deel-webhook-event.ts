@@ -1,13 +1,15 @@
 import "server-only";
 import { z } from "zod";
 
+const resourceSchema = z.record(z.string(), z.unknown());
+
 const deelWebhookEnvelopeSchema = z.object({
   data: z.object({
     meta: z.object({
       event_type: z.string().min(1),
       organization_id: z.string().nullish(),
     }),
-    resource: z.record(z.string(), z.unknown()),
+    resource: z.union([resourceSchema, z.array(resourceSchema)]),
   }),
 });
 
@@ -30,6 +32,20 @@ export function parseDeelWebhookEvent(rawBody: string): DeelWebhookEvent | null 
   return {
     eventType: meta.event_type,
     organizationId: meta.organization_id ?? null,
-    resource,
+    resource: Array.isArray(resource) ? (resource[0] ?? {}) : resource,
   };
+}
+
+export type DeelSubject = { kind: "person" | "contract"; id: string };
+
+// Ids per event type are pinned in engram `integrations/deel-webhooks`: worker events carry the
+// person id, contract and employee events a contract id.
+const PERSON_EVENTS = new Set(["worker.v2.created", "worker.v2.updated", "worker.v2.deleted"]);
+const CONTRACT_EVENTS = /^(contract\.status\.updated|contract\.terminated|employee\.created\..+)$/;
+
+export function deelSubjectOf({ eventType, resource }: DeelWebhookEvent): DeelSubject | null {
+  const id = typeof resource.id === "string" && resource.id ? resource.id : null;
+  if (!id) return null;
+  if (PERSON_EVENTS.has(eventType)) return { kind: "person", id };
+  return CONTRACT_EVENTS.test(eventType) ? { kind: "contract", id } : null;
 }

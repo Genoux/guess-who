@@ -71,6 +71,18 @@ export function createDeelClient({ baseUrl, token, fetchImpl = fetch }: DeelClie
     return parsed.data;
   }
 
+  async function* listPeople(): AsyncGenerator<DeelPerson> {
+    let offset = 0;
+    while (true) {
+      const query = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(offset) });
+      const page = await get(`/people?${query}`, deelPeoplePageSchema);
+      if (!page) return;
+      yield* page.data;
+      offset += page.data.length;
+      if (page.data.length === 0 || offset >= page.page.total_rows) return;
+    }
+  }
+
   return {
     async getPerson(deelId: string): Promise<DeelPerson | null> {
       // Deel answered 400, not 404, for an unknown well-formed uuid.
@@ -82,16 +94,16 @@ export function createDeelClient({ baseUrl, token, fetchImpl = fetch }: DeelClie
       return found?.data ?? null;
     },
 
-    async *listPeople(): AsyncGenerator<DeelPerson> {
-      let offset = 0;
-      while (true) {
-        const query = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(offset) });
-        const page = await get(`/people?${query}`, deelPeoplePageSchema);
-        if (!page) return;
-        yield* page.data;
-        offset += page.data.length;
-        if (page.data.length === 0 || offset >= page.page.total_rows) return;
+    listPeople,
+
+    // Deel gives no contract-to-person lookup for our token, so contract events scan the list.
+    async findPersonByContractId(contractId: string): Promise<DeelPerson | null> {
+      for await (const person of listPeople()) {
+        if (person.employments.some(({ id }) => id === contractId)) return person;
       }
+      return null;
     },
   };
 }
+
+export type DeelClient = ReturnType<typeof createDeelClient>;
