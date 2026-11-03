@@ -77,14 +77,14 @@ export function applyPeopleMove(board: PeopleBoard, move: PeopleMove): PeopleBoa
         done: board.done.filter(({ key }) => key !== move.key),
       };
     case "add": {
-      const known = board.noMission.some(({ email }) => email === move.email);
+      const known = board.noMission.find(({ email }) => email === move.email);
       return {
         ...board,
-        noMission: known
-          ? board.noMission.map((row) =>
-              row.email === move.email ? { ...row, newHire: true } : row,
-            )
-          : [invitedRow(move.email), ...board.noMission],
+        noMission: board.noMission.filter((row) => row !== known),
+        playing: [
+          toPlaying({ ...(known ?? invitedRow(move.email)), newHire: true }),
+          ...board.playing,
+        ],
       };
     }
     case "changeEmail":

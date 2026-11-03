@@ -5,8 +5,7 @@ import { GameField } from "@/shared/components/game/game-field";
 import { GameModalActions } from "@/shared/components/game/game-modal-actions";
 import { addNewHireSchema } from "../schemas";
 
-const ADD_HELP =
-  "They'll show up in No mission. Turn on their mission when it's time; their card and clues come after.";
+const ADD_HELP = "Their mission starts today.";
 const CHANGE_HELP = "Use the email their Slack account uses.";
 
 type NewHireEmailFormProps = {

@@ -138,12 +138,13 @@ Never commit, push or open a PR unless explicitly asked.
   and all three clues written can be picked as a welcomer. The admin People page has three views, each person in
   exactly one by mission state: Playing, No mission (no game, signed in or only invited by email, with an icon
   until they sign in; search, filter, and select people to turn missions on; people who find no
-  free welcomer stay here and the toast says so) and Done. No mission starts by itself: "Add new
-  hire" adds an email and flags it, and an admin turns the mission on, signed in or not (the
-  person links on first sign-in). A running mission is ended with End mission only: it resets the game
+  free welcomer stay here and the toast says so) and Done. Only an admin starts a mission: "Add new
+  hire" adds an email, flags it and starts the mission at once (no free welcomer: the person is
+  still added and stays in No mission, and the toast says so), and Turn on starts the others,
+  signed in or not (the person links on first sign-in). A running mission is ended with End mission only: it resets the game
   (guesses and clues cleared), keeps the album, notes and new hire flag, and starting again picks a
   new welcomer. One pipeline, the rite of passage: a new hire (`people.new_hire`,
-  set by "Add new hire" or "Set as new hire", neither of which starts a mission, and cleared when their mission ends, found or revealed)
+  set by "Add new hire" or "Set as new hire", the latter starting no mission, and cleared when their mission ends, found or revealed)
   earns their card and clues by playing. While the flag is set My card and My clues are hidden,
   /card and /clues redirect, and the card and clue actions refuse ("Finish your mission first.";
   one rule, `isLockedNewHire`). With no mission they have nothing to open, only the locked home.
@@ -202,7 +203,7 @@ Never commit, push or open a PR unless explicitly asked.
 - The album belongs to the person: `collections` has `collector_person_id`, not a game, so
   deleting a game never touches it. Anyone signed in can open it; nobody collects their own sticker.
 - A game exists only once its mission has started: `welcomer_person_id` and `start_date` are
-  required. `beginMissionRecord` (used only by turn-on) takes one
+  required. `beginMissionRecord` (used by turn-on and Add new hire) takes one
   advisory lock, picks the welcomer, inserts the game with `start_date` today and copies the
   welcomer's three `welcomer_clues` into the per-game `clues` table; the board and the reveal read
   that copy. A partial unique index allows one active game per welcomer; a lost race is retried
