@@ -4,18 +4,20 @@ import type { DeelClient } from "@/integrations/deel/deel-client";
 import type { DeelSubject } from "@/integrations/deel/deel-webhook-event";
 import { toRosterChange } from "@/integrations/deel/to-roster-change";
 import { db } from "@/shared/lib/db";
+import { startAutoMissionRecord } from "./start-auto-mission-record";
 import { upsertRosterPersonRecord } from "./upsert-roster-person-record";
 
 type SyncInput = {
   deel: Pick<DeelClient, "getPerson" | "findPersonByContractId">;
   subject: DeelSubject;
+  now: Date;
 };
 
 /**
- * Re-reads the person a webhook is about and applies it. Leavers are only reported here:
+ * Re-reads the person a webhook is about, applies it and, for someone who just became active, starts their mission. Leavers are only reported here:
  * removing them needs the leaver transaction, which comes in a later slice.
  */
-export async function syncDeelPersonRecord({ deel, subject }: SyncInput): Promise<string> {
+export async function syncDeelPersonRecord({ deel, subject, now }: SyncInput): Promise<string> {
   const person =
     subject.kind === "person"
       ? await deel.getPerson(subject.id)
@@ -25,8 +27,9 @@ export async function syncDeelPersonRecord({ deel, subject }: SyncInput): Promis
   const change = toRosterChange(person?.id ?? subject.id, person);
   if (change.kind === "ignore") return `ignored: ${change.reason}`;
   if (change.kind === "remove") return "leaver not removed yet";
+  let outcome: string;
   try {
-    return await db.transaction((tx) => upsertRosterPersonRecord(tx, change.person));
+    outcome = await db.transaction((tx) => upsertRosterPersonRecord(tx, change.person));
   } catch (error) {
     // Deel sends several events per person at once; the loser of the race retries and the
     // pre-check then finds the committed row.
@@ -38,4 +41,6 @@ export async function syncDeelPersonRecord({ deel, subject }: SyncInput): Promis
     }
     throw error;
   }
+  if (outcome === "conflict") return outcome;
+  return `${outcome}; ${await startAutoMissionRecord({ deelId: change.person.deelId, now })}`;
 }

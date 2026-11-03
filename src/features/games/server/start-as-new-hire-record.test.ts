@@ -52,6 +52,13 @@ describe("startAsNewHireRecord", () => {
     });
   });
 
+  it("starts with no creator when no admin is given", async () => {
+    await startAsNewHireRecord({ ...input, adminPersonId: null });
+    expect(begin.beginMissionRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ createdBy: null }),
+    );
+  });
+
   it("flags before it starts, so a person with no free welcomer stays flagged", async () => {
     begin.beginMissionRecord.mockRejectedValueOnce(noWelcomer());
     await expect(startAsNewHireRecord(input)).resolves.toEqual({ started: false });
@@ -65,6 +72,15 @@ describe("startAsNewHireRecord", () => {
     );
     expect(updates()).toHaveLength(2);
     expect(updates()[1]?.params).toEqual(expect.arrayContaining([false, "person_1"]));
+  });
+
+  it("undoes the flag only while the person has no game, decided in SQL", async () => {
+    begin.beginMissionRecord.mockRejectedValueOnce(alreadyHasMission());
+    await expect(startAsNewHireRecord(input)).rejects.toThrow();
+    const undo = updates()[1];
+    expect(undo?.sql).toMatch(
+      /where \(people\.id = \$\d+ and not exists \(select .* from games where games\.player_person_id = people\.id\)\)/,
+    );
   });
 
   it("keeps a flag that was already there when a concurrent start won", async () => {
