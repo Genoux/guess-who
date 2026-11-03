@@ -99,6 +99,13 @@
       "when": 1793387282673,
       "tag": "0013_games_intro_seen",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793739090946,
+      "tag": "0014_people_deel_columns",
+      "breakpoints": true
     }
   ]
 }
