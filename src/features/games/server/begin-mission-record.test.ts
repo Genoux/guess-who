@@ -182,6 +182,29 @@ describe("beginMissionRecord", () => {
     expect(check).toBeLessThan(write);
   });
 
+  it("marks the person's auto mission as done in the same transaction as the game", async () => {
+    await start();
+    const sql = sentStatements(client).map((statement) => statement.sql);
+    const marker = sentStatements(client).find(({ sql: text }) =>
+      text.startsWith("update people set auto_mission_done_at"),
+    );
+    expect(marker?.params).toEqual(expect.arrayContaining([now.toISOString(), "player"]));
+    expect(sql.findIndex((text) => text.startsWith("insert into games"))).toBeLessThan(
+      sql.findIndex((text) => text.startsWith("update people set auto_mission_done_at")),
+    );
+    expect(sql.indexOf("commit")).toBeGreaterThan(
+      sql.findIndex((text) => text.startsWith("update people set auto_mission_done_at")),
+    );
+  });
+
+  it("keeps an existing marker", async () => {
+    await start();
+    const marker = sentStatements(client).find(({ sql }) =>
+      sql.startsWith("update people set auto_mission_done_at"),
+    );
+    expect(marker?.sql).toMatch(/auto_mission_done_at is null/);
+  });
+
   it("refuses a second mission for the same person, inside the lock", async () => {
     behave({ hasMission: true });
     await expect(start()).rejects.toMatchObject({

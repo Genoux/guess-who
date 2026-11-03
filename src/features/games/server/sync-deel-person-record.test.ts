@@ -4,6 +4,8 @@ import type { DeelPerson } from "@/integrations/deel/deel-person";
 
 const upsert = vi.hoisted(() => ({ upsertRosterPersonRecord: vi.fn() }));
 vi.mock("./upsert-roster-person-record", () => upsert);
+const autoMission = vi.hoisted(() => ({ startAutoMissionRecord: vi.fn() }));
+vi.mock("./start-auto-mission-record", () => autoMission);
 vi.mock("@/shared/lib/db", () => ({
   db: { transaction: (run: (tx: string) => unknown) => run("tx") },
 }));
@@ -23,18 +25,20 @@ const activePerson: DeelPerson = {
 };
 
 const deel = { getPerson: vi.fn(), findPersonByContractId: vi.fn() };
+const now = new Date("2026-11-02T15:00:00Z");
 const sync = (subject: Parameters<typeof syncDeelPersonRecord>[0]["subject"]) =>
-  syncDeelPersonRecord({ deel, subject });
+  syncDeelPersonRecord({ deel, subject, now });
 
 beforeEach(() => {
   vi.resetAllMocks();
   upsert.upsertRosterPersonRecord.mockResolvedValue("created");
+  autoMission.startAutoMissionRecord.mockResolvedValue("mission started");
 });
 
 describe("syncDeelPersonRecord", () => {
   it("fetches a person subject by id and upserts an active in-scope person", async () => {
     deel.getPerson.mockResolvedValue(activePerson);
-    expect(await sync({ kind: "person", id: "p1" })).toBe("created");
+    expect(await sync({ kind: "person", id: "p1" })).toBe("created; mission started");
     expect(deel.getPerson).toHaveBeenCalledWith("p1");
     expect(upsert.upsertRosterPersonRecord).toHaveBeenCalledWith(
       "tx",
@@ -44,7 +48,7 @@ describe("syncDeelPersonRecord", () => {
 
   it("resolves a contract subject through the contract lookup", async () => {
     deel.findPersonByContractId.mockResolvedValue(activePerson);
-    expect(await sync({ kind: "contract", id: "c1" })).toBe("created");
+    expect(await sync({ kind: "contract", id: "c1" })).toBe("created; mission started");
     expect(deel.findPersonByContractId).toHaveBeenCalledWith("c1");
     expect(deel.getPerson).not.toHaveBeenCalled();
   });
@@ -79,6 +83,30 @@ describe("syncDeelPersonRecord", () => {
     deel.getPerson.mockResolvedValue(activePerson);
     upsert.upsertRosterPersonRecord.mockResolvedValue("conflict");
     expect(await sync({ kind: "person", id: "p1" })).toBe("conflict");
+    expect(autoMission.startAutoMissionRecord).not.toHaveBeenCalled();
+  });
+
+  it("starts the auto mission of the upserted person after the write", async () => {
+    deel.getPerson.mockResolvedValue(activePerson);
+    await sync({ kind: "person", id: "p1" });
+    expect(autoMission.startAutoMissionRecord).toHaveBeenCalledWith({ deelId: "p1", now });
+  });
+
+  it.each(["ignored", "leaver"])("does not start a mission for a %s", async (kind) => {
+    deel.getPerson.mockResolvedValue(
+      kind === "leaver"
+        ? { ...activePerson, hiring_status: "inactive" }
+        : { ...activePerson, client_legal_entity: undefined },
+    );
+    await sync({ kind: "person", id: "p1" });
+    expect(autoMission.startAutoMissionRecord).not.toHaveBeenCalled();
+  });
+
+  it("lets a failed start through so the route classifies it", async () => {
+    deel.getPerson.mockResolvedValue(activePerson);
+    const failure = new Error("boom");
+    autoMission.startAutoMissionRecord.mockRejectedValueOnce(failure);
+    await expect(sync({ kind: "person", id: "p1" })).rejects.toBe(failure);
   });
 
   it("turns a unique violation from a racing delivery into a retryable error", async () => {

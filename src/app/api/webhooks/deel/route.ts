@@ -53,7 +53,7 @@ export const POST = route({
     try {
       if (!env.DEEL_API_TOKEN) throw new AppError("external_service", "DEEL_API_TOKEN is not set");
       const deel = createDeelClient({ baseUrl: env.DEEL_API_URL, token: env.DEEL_API_TOKEN });
-      return received(await syncDeelPersonRecord({ deel, subject }), eventType);
+      return received(await syncDeelPersonRecord({ deel, subject, now: new Date() }), eventType);
     } catch (error) {
       if (isTransient(error)) throw error;
       captureAppError(error, { tags: { route: "webhooks.deel" } });
