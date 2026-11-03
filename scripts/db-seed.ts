@@ -57,14 +57,19 @@ try {
   await db
     .insert(schema.people)
     .values(
-      people.map(([name, team, location, fact, ask]) => ({
-        name,
-        email: `${name.toLowerCase().replace(" ", ".")}@example.com`,
-        teamId: teamIds.get(team),
-        location,
-        fact,
-        ask,
-      })),
+      people.map(([name, team, location, fact, ask]) => {
+        const handle = name.toLowerCase().replace(" ", ".");
+        return {
+          name,
+          // The demo cast reuses some of these names with its own `deelIdOf` ids.
+          deelId: `seed-base-${handle}`,
+          email: `${handle}@example.com`,
+          teamId: teamIds.get(team),
+          location,
+          fact,
+          ask,
+        };
+      }),
     )
     .onConflictDoNothing();
 

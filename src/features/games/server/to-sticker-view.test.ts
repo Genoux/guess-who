@@ -18,6 +18,10 @@ const person: Person = {
   stickerNumber: 7,
   hidden: false,
   newHire: false,
+  personalEmail: null,
+  deelId: null,
+  startDate: null,
+  autoMissionDoneAt: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
