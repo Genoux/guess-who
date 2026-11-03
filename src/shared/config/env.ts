@@ -8,6 +8,7 @@ import {
 } from "@inbeat/core/env";
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
+import { deelSecretsEnv } from "./deel-secrets-env";
 
 export const env = createEnv({
   server: {
@@ -16,9 +17,7 @@ export const env = createEnv({
     ...clerkServerEnv,
     ...upstashEnv,
     DEEL_API_URL: z.url().default("https://api.letsdeel.com/rest/v2"),
-    DEEL_API_TOKEN: z.string().min(1).optional(),
-    // Without it the webhook route refuses every delivery.
-    DEEL_WEBHOOK_SECRET: z.string().min(1).optional(),
+    ...deelSecretsEnv(process.env.VERCEL_ENV),
     DEEL_ORGANIZATION_ID: z.string().min(1).optional(),
   },
   shared: {

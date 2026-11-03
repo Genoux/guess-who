@@ -1,5 +1,5 @@
 import "server-only";
-import { AppError, isUniqueViolation } from "@inbeat/core/errors";
+import { AppError, isUniqueViolation, PG_CODES } from "@inbeat/core/errors";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { clues, games, people, teams, welcomerClues } from "@/db/schema";
 import { todayInGameZone } from "@/entities/game-schedule";
@@ -21,10 +21,22 @@ type BeginMissionInput = {
   random?: () => number;
 };
 
-// A lost race on the welcomer index, or a pick that turned out to welcome the player's own
-// player, re-reads who is busy and picks once more; a second loss means the pool is too tight to
+// A lost race on the welcomer index, a welcomer deleted by a leaver between the pick and the
+// insert, or a pick that turned out to welcome the player's own player, re-reads who is busy and
+// picks once more; a second loss means the pool is too tight to
 // keep guessing.
 const MAX_PICKS = 2;
+const WELCOMER_FOREIGN_KEY = "games_welcomer_person_id_people_id_fk";
+
+// A leaver can delete the chosen welcomer before the insert; any other missing row is a real error.
+function welcomerRowDeleted(err: unknown): boolean {
+  for (let cause = err; cause && typeof cause === "object"; ) {
+    const { code, constraint } = cause as { code?: string; constraint?: string };
+    if (code === PG_CODES.foreignKeyViolation) return constraint === WELCOMER_FOREIGN_KEY;
+    cause = (cause as { cause?: unknown }).cause;
+  }
+  return false;
+}
 
 // Starts are rare (one per person, ever), so they queue behind one lock instead of each
 // reasoning about the others' half-written state.
@@ -101,7 +113,8 @@ export async function beginMissionRecord({
         now,
       });
     } catch (err) {
-      if (!isUniqueViolation(err) && !(err instanceof MutualWelcoming)) throw err;
+      const lostWelcomer = isUniqueViolation(err) || welcomerRowDeleted(err);
+      if (!lostWelcomer && !(err instanceof MutualWelcoming)) throw err;
     }
   }
   throw new AppError("conflict", "welcomer taken twice", { safeMessage: NO_WELCOMER_FREE });

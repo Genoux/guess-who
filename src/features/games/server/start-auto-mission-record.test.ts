@@ -12,15 +12,16 @@ import { ALREADY_HAS_MISSION } from "./begin-mission-record";
 import { startAutoMissionRecord } from "./start-auto-mission-record";
 
 const now = new Date("2026-11-02T15:00:00Z");
+const RECENT_START = "2026-10-20";
 
-/** The person row found by deel id: `[id, auto_mission_done_at]`. */
+/** The person row found by deel id: `[id, auto_mission_done_at, start_date]`. */
 const answer = (rows: unknown[][]) => client.query.mockResolvedValue({ rows });
 
 beforeEach(() => {
   client.query.mockReset();
   started.startAsNewHireRecord.mockReset();
   started.startAsNewHireRecord.mockResolvedValue({ started: true });
-  answer([["person_1", null]]);
+  answer([["person_1", null, RECENT_START]]);
 });
 
 describe("startAutoMissionRecord", () => {
@@ -41,7 +42,7 @@ describe("startAutoMissionRecord", () => {
   });
 
   it("does nothing once the marker is set", async () => {
-    answer([["person_1", new Date("2026-10-01T00:00:00Z")]]);
+    answer([["person_1", new Date("2026-10-01T00:00:00Z"), RECENT_START]]);
     await expect(startAutoMissionRecord({ deelId: "d1", now })).resolves.toBe(
       "auto mission already done",
     );
@@ -51,6 +52,15 @@ describe("startAutoMissionRecord", () => {
   it("does nothing for an unknown person", async () => {
     answer([]);
     await expect(startAutoMissionRecord({ deelId: "d1", now })).resolves.toBe("unknown person");
+    expect(started.startAsNewHireRecord).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["60 days ago", "2026-09-03"],
+    ["no start date", null],
+  ])("does not start a person with %s", async (_label, startDate) => {
+    answer([["person_1", null, startDate]]);
+    await expect(startAutoMissionRecord({ deelId: "d1", now })).resolves.toBe("not a recent hire");
     expect(started.startAsNewHireRecord).not.toHaveBeenCalled();
   });
 
