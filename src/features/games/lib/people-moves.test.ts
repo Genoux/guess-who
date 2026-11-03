@@ -8,6 +8,7 @@ const base = {
   name: null,
   imageUrl: null,
   newHire: false,
+  joinedRecently: false,
   signedIn: true,
 };
 

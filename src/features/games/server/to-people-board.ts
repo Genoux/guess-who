@@ -1,5 +1,5 @@
 import "server-only";
-import { gameDay, todayInGameZone } from "@/entities/game-schedule";
+import { gameDay, joinedRecently, todayInGameZone } from "@/entities/game-schedule";
 import { missionOutcome, missionStateAt, summarizeProgress } from "../lib/mission-progress";
 import type {
   DoneRowView,
@@ -27,6 +27,8 @@ export type PersonRecord = {
   cluesWritten: number;
   /** Their welcomer left Deel mid-mission and the mission was reset. */
   welcomerLeft: boolean;
+  /** The Deel start date (YYYY-MM-DD). */
+  joinedOn: string | null;
   game:
     | (Pick<
         Game,
@@ -89,6 +91,7 @@ export function toPeopleBoard({
       team: record.team,
       imageUrl: record.imageUrl,
       newHire: record.newHire,
+      joinedRecently: joinedRecently(record.joinedOn, now),
     };
 
     const standing = asWelcomer(record, record.cluesWritten);

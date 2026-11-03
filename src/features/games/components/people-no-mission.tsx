@@ -31,6 +31,10 @@ import { PersonCell, RoleTag, TeamTag } from "./person-cell";
 const PAGE_SIZE = 14;
 const NEEDS_CARD_AND_CLUES = "Needs card and clues";
 const WELCOMER_LEFT_NOTE = "Their welcomer left. Start them again.";
+const JOINED_RECENTLY_NOTE = "Joined recently";
+
+const noteFor = ({ welcomerLeft, joinedRecently }: NoMissionRowView) =>
+  welcomerLeft ? WELCOMER_LEFT_NOTE : joinedRecently ? JOINED_RECENTLY_NOTE : undefined;
 
 const READINESS_DOT: Record<AsWelcomer["kind"], string> = {
   canWelcome: "bg-game-ready",
@@ -152,7 +156,7 @@ export function PeopleNoMission({ rows, onTurnOn, onStartAsNewHire }: PeopleNoMi
                       team={row.team}
                       imageUrl={row.imageUrl}
                       notSignedIn={!row.signedIn}
-                      note={row.welcomerLeft ? WELCOMER_LEFT_NOTE : undefined}
+                      note={noteFor(row)}
                       leading={
                         selecting ? (
                           <span title={canTurnOn(row) ? undefined : NEEDS_CARD_AND_CLUES}>

@@ -6,6 +6,7 @@ import {
   gameDay,
   isClueNumber,
   isPastReveal,
+  joinedRecently,
   lastExpiredStartDate,
   releaseAtForDay,
   revealAt,
@@ -107,5 +108,26 @@ describe("lastExpiredStartDate", () => {
     const expired = lastExpiredStartDate(now);
     expect(isPastReveal(expired, now)).toBe(true);
     expect(isPastReveal(addDays(expired, 1), now)).toBe(false);
+  });
+});
+
+describe("joinedRecently", () => {
+  const now = new Date("2026-11-30T15:00:00Z");
+
+  it("is true up to 30 days after the start date and false after", () => {
+    expect(joinedRecently("2026-11-01", now)).toBe(true);
+    expect(joinedRecently("2026-10-31", now)).toBe(true);
+    expect(joinedRecently("2026-10-30", now)).toBe(false);
+  });
+
+  it("is false without a start date and true for one still ahead", () => {
+    expect(joinedRecently(null, now)).toBe(false);
+    expect(joinedRecently("2026-12-07", now)).toBe(true);
+  });
+
+  it("counts the day in Montréal, not UTC", () => {
+    // 02:30 UTC on 1 Dec is still 30 Nov in Montréal: 30 days after 31 Oct.
+    expect(joinedRecently("2026-10-31", new Date("2026-12-01T02:30:00Z"))).toBe(true);
+    expect(joinedRecently("2026-10-31", new Date("2026-12-01T06:00:00Z"))).toBe(false);
   });
 });
