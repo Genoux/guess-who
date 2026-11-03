@@ -16,6 +16,8 @@ type PersonCellProps = {
   imageUrl: string | null;
   /** Their invite is still waiting for a first sign-in. */
   notSignedIn?: boolean;
+  /** Replaces the subline, for something an admin must act on. */
+  note?: string;
   /** Before the avatar: the checkbox in select mode. */
   leading?: ReactNode;
 };
@@ -27,10 +29,11 @@ export function PersonCell({
   team,
   imageUrl,
   notSignedIn = false,
+  note,
   leading,
 }: PersonCellProps) {
   const who = name ?? email;
-  const subline = personSubline({ name, email });
+  const subline = note ?? personSubline({ name, email });
   return (
     <div className="people-who flex min-w-0 items-center gap-3 text-left">
       {leading}

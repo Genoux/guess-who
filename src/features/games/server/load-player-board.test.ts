@@ -41,6 +41,7 @@ const person = (id: string, overrides: Partial<Person> = {}): Person => ({
   deelId: null,
   startDate: null,
   autoMissionDoneAt: null,
+  welcomerLeftAt: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   ...overrides,
@@ -64,6 +65,8 @@ const game = (status: Game["status"], revealSeenAt: Date | null = null): Game =>
   welcomerPersonId: "welcomer",
   startDate: "2026-11-02",
   welcomerTeamName: "Creative",
+  welcomerName: null,
+  welcomerImageUrl: null,
   status,
   foundAt: status === "found" ? new Date("2026-11-07T15:00:00Z") : null,
   foundWithClues: status === "found" ? 1 : null,
@@ -247,6 +250,30 @@ describe("loadPlayerBoard once the game is over", () => {
     expect(board?.stickers.find((s) => s.id === "welcomer")?.mode).toBe("collected");
     expect(board?.collectedCount).toBe(2);
   });
+
+  it.each(["found", "revealed"] as const)(
+    "reveals a welcomer who left Deel from the game's snapshot (%s)",
+    async (status) => {
+      setUp(status, new Date());
+      mocks.findLatestPlayerGame.mockResolvedValue({
+        ...game(status, new Date()),
+        welcomerPersonId: null,
+        welcomerName: "Wanda Gone",
+        welcomerImageUrl: "https://img.test/wanda.png",
+      });
+      const board = await loadPlayerBoard();
+      expect(mocks.findPersonById).not.toHaveBeenCalledWith(null);
+      expect(board.welcomer).toMatchObject({
+        name: "Wanda Gone",
+        firstName: "Wanda",
+        mode: "collected",
+        collected: false,
+        teamId: "creative",
+        person: { name: "Wanda Gone", team: "Creative", photoUrl: "https://img.test/wanda.png" },
+      });
+      expect(board.stickers.map(({ id }) => id)).not.toContain(board.welcomer?.id);
+    },
+  );
 
   it.each(["found", "revealed"] as const)(
     "keeps the %s welcomer locked in the album until the reveal was seen",

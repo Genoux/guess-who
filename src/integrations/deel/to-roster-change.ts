@@ -1,5 +1,6 @@
 import "server-only";
 import { normalizeEmail } from "@inbeat/core/email";
+import { todayInGameZone } from "@/entities/game-schedule";
 import { type TeamName, teamForDeelDepartment } from "@/entities/teams";
 import { type DeelPerson, personalEmail, workEmail } from "./deel-person";
 
@@ -21,8 +22,6 @@ export type RosterChange =
   | { kind: "upsert"; person: RosterPerson }
   | { kind: "remove"; deelId: string }
   | { kind: "ignore"; reason: string };
-
-const LEAVER_STATUSES = new Set(["inactive", "no_active_contracts"]);
 
 // The four legal entities (IB, CM, CA, AAG). Names are compared without case, accents or
 // punctuation because Deel's own spelling drifts ("inc" vs "INC.").
@@ -68,12 +67,27 @@ function dateOnly(value: string | null | undefined): string | null {
   return value?.match(/^\d{4}-\d{2}-\d{2}/)?.[0] ?? null;
 }
 
+const endDateOf = (person: DeelPerson) =>
+  dateOnly(
+    person.termination_last_day ??
+      person.last_day_of_work_local_date ??
+      person.worker_termination_last_date_of_work,
+  );
+
 /**
- * Classifies a re-fetched Deel person (`null` when Deel no longer knows the id). Leavers are
- * checked before scope: removing an unknown or out-of-scope id is a no-op downstream.
+ * A leaver is only someone Deel no longer knows (404), is `inactive`, or has no active contract
+ * and an end date before today in Montréal; anything ambiguous keeps the person, because removal
+ * deletes their data. Classifies a re-fetched Deel person (`null` when gone) and runs before the
+ * scope check: removing an unknown or out-of-scope id is a no-op downstream.
  */
-export function toRosterChange(deelId: string, person: DeelPerson | null): RosterChange {
-  if (!person || LEAVER_STATUSES.has(person.hiring_status)) return { kind: "remove", deelId };
+export function toRosterChange(deelId: string, person: DeelPerson | null, now: Date): RosterChange {
+  if (!person || person.hiring_status === "inactive") return { kind: "remove", deelId };
+  if (person.hiring_status === "no_active_contracts") {
+    const endDate = endDateOf(person);
+    if (!endDate) return { kind: "ignore", reason: "no active contract, no end date" };
+    if (endDate < todayInGameZone(now)) return { kind: "remove", deelId };
+    return { kind: "ignore", reason: "no active contract, end date not reached" };
+  }
   if (person.hiring_status !== "active") return { kind: "ignore", reason: "not active or leaver" };
 
   const entity = person.client_legal_entity?.name;

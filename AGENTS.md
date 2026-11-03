@@ -203,8 +203,9 @@ Never commit, push or open a PR unless explicitly asked.
   are only `admin` and `member`.
 - The album belongs to the person: `collections` has `collector_person_id`, not a game, so
   deleting a game never touches it. Anyone signed in can open it; nobody collects their own sticker.
-- A game exists only once its mission has started: `welcomer_person_id` and `start_date` are
-  required. `beginMissionRecord` (used by turn-on and Start as new hire) takes one
+- A game exists only once its mission has started: `start_date` and the welcomer are set with the
+  row (`welcomer_person_id` turns null only if the welcomer is later deleted; see the leavers fact).
+  `beginMissionRecord` (used by turn-on and Start as new hire) takes one
   advisory lock, picks the welcomer, inserts the game with `start_date` today and copies the
   welcomer's three `welcomer_clues` into the per-game `clues` table; the board and the reveal read
   that copy. A partial unique index allows one active game per welcomer; a lost race is retried
@@ -219,16 +220,17 @@ Never commit, push or open a PR unless explicitly asked.
   Once per Clerk session (`synced_session_id`) it re-reads the Clerk user for the Slack user id and
   the Slack photo, so a photo changed in Slack shows after the next sign-in.
 - Emails (`people.email`, `games.player_email`) are stored normalized with `normalizeEmail`.
-- Remove person (admin People, No mission and Done rows) deletes a person and all their data after a
-  confirm: `removePersonRecord` deletes, in one transaction behind the mission-start lock, the game
-  they played (`games.player_person_id` is `restrict`; clues, guesses and shortlists cascade), then
-  the `people` row (albums, their sticker in others' albums, notes and `welcomer_clues` cascade).
-  It refuses anyone who welcomed a mission, running or finished ("They welcomed a mission, so they
-  can't be removed."): `games.welcomer_person_id` is `restrict` and the game is another player's
-  record. It also refuses while they play a running mission ("End their mission first.", expired
-  missions are revealed first), and an admin cannot remove themselves. Photos are Slack URLs, so no
-  storage objects; the Clerk user stays, and signing in again is refused until Deel lists them again. `hasWelcomed` on a
-  People row hides Remove.
+- There is no Remove person: Deel decides who exists. `removeLeaverRecord` runs when a webhook's
+  re-fetched Deel person is a leaver (`toRosterChange`): a 404, `inactive`, or `no_active_contracts` with an
+  end date before today in Montréal. Any other answer, a 400 included, or no end date keeps them. In one transaction behind the mission-start lock it
+  deletes the running game they welcome (its player stays flagged, `auto_mission_done_at` is cleared
+  and `people.welcomer_left_at` is set, so People shows "Their welcomer left. Start them again." until
+  `beginMissionRecord` clears it), deletes the game they play (also a legacy one found by `player_email`), then the `people` row (albums, their
+  sticker in others' albums, notes and `welcomer_clues` cascade). Finished games they welcomed stay:
+  `games.welcomer_person_id` is `set null` and the reveal reads the welcomer snapshot
+  (`games.welcomer_name`, `welcomer_team_name`, `welcomer_image_url`, written at start). Their guess
+  rows go with the person (accepted). The Clerk user stays and signing in is refused until Deel lists
+  them again.
 - The game runs on Montréal time (`America/Toronto`): day 1 is `games.start_date`, clues land at
   09:00 on days 3, 6, 9 and 12, the reveal at 09:00 on day 14 (`features/games/lib/game-schedule.ts`).
   Clue 1 is generated from the welcomer's team; clues 2 to 4 are the welcomer's own, one `welcomer_clues`

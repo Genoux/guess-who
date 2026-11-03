@@ -9,7 +9,6 @@ const base = {
   imageUrl: null,
   newHire: false,
   signedIn: true,
-  hasWelcomed: false,
 };
 
 const board = (): PeopleBoard => ({
@@ -38,8 +37,8 @@ const board = (): PeopleBoard => ({
     },
   ],
   noMission: [
-    { ...base, key: "n1", name: "Nia", email: "nia@x.com", asWelcomer: can },
-    { ...base, key: "n2", name: "Ned", email: "ned@x.com", asWelcomer: can },
+    { ...base, key: "n1", name: "Nia", email: "nia@x.com", asWelcomer: can, welcomerLeft: false },
+    { ...base, key: "n2", name: "Ned", email: "ned@x.com", asWelcomer: can, welcomerLeft: false },
   ],
   done: [],
 });
@@ -82,9 +81,15 @@ describe("applyPeopleMove", () => {
     });
   });
 
-  it.each(["p1", "n1"])("removes %s from the board entirely", (key) => {
-    const next = applyPeopleMove(board(), { type: "remove", key });
-    expect(everyone(next)).toEqual(everyone(board()).filter((other) => other !== key));
+  it("starting someone drops the welcomer-left note; ending a mission never adds it", () => {
+    const left = {
+      ...board(),
+      noMission: board().noMission.map((row) => ({ ...row, welcomerLeft: true })),
+    };
+    const started = applyPeopleMove(left, { type: "startAsNewHire", key: "n1" });
+    expect(started.playing[0]).not.toHaveProperty("welcomerLeft");
+    const ended = applyPeopleMove(board(), { type: "end", gameId: "g-play" });
+    expect(ended.noMission.find(({ key }) => key === "p1")?.welcomerLeft).toBe(false);
   });
 
   it("starts someone as a new hire: No mission to Playing on day 1, flagged, first in line", () => {

@@ -13,6 +13,8 @@ const GAME_ROW = [
   "person_1",
   "new@inbeat.agency",
   "welcomer",
+  null,
+  null,
   "2026-11-02",
   null,
   "active",

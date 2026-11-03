@@ -13,8 +13,6 @@ export type PersonIdentity = {
   newHire: boolean;
   /** False for an email an admin added that nobody has signed in with. */
   signedIn: boolean;
-  /** Welcomed a mission, running or finished: they can't be removed. */
-  hasWelcomed: boolean;
 };
 
 export type PlayingRowView = PersonIdentity & {
@@ -29,6 +27,8 @@ export type PlayingRowView = PersonIdentity & {
 
 export type NoMissionRowView = PersonIdentity & {
   asWelcomer: AsWelcomer;
+  /** Their welcomer left Deel mid-mission and the mission was reset: an admin starts them again. */
+  welcomerLeft: boolean;
 };
 
 export type DoneRowView = PersonIdentity & {

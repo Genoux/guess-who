@@ -64,7 +64,7 @@ export async function welcomesEachOther(
 
 /**
  * Starts a person's mission: a random eligible welcomer is picked, day 1 is today, the welcomer's
- * team name is frozen for clue 1, and their three clues are copied into the game. The copies keep
+ * team name is frozen for clue 1, their name and photo for the reveal, and their three clues are copied into the game. The copies keep
  * a welcomer's later edits from changing what this player reads or sees at the reveal.
  */
 export async function beginMissionRecord({
@@ -140,8 +140,8 @@ async function insertStartedGame({
       });
     }
 
-    const [welcomerTeam] = await tx
-      .select({ name: teams.name })
+    const [welcomer] = await tx
+      .select({ teamName: teams.name, name: people.name, imageUrl: people.imageUrl })
       .from(people)
       .leftJoin(teams, eq(people.teamId, teams.id))
       .where(eq(people.id, welcomerPersonId));
@@ -152,7 +152,9 @@ async function insertStartedGame({
         playerPersonId,
         welcomerPersonId,
         startDate,
-        welcomerTeamName: welcomerTeam?.name ?? null,
+        welcomerTeamName: welcomer?.teamName ?? null,
+        welcomerName: welcomer?.name ?? null,
+        welcomerImageUrl: welcomer?.imageUrl ?? null,
         createdBy,
       })
       .returning({ id: games.id });
@@ -166,6 +168,7 @@ async function insertStartedGame({
       .filter(({ text }) => text.trim() !== "")
       .map(({ number, text }) => ({ gameId: game.id, number, text }));
     if (snapshot.length > 0) await tx.insert(clues).values(snapshot);
+    await tx.update(people).set({ welcomerLeftAt: null }).where(eq(people.id, playerPersonId));
     // The marker outlives End mission, so no start, manual or automatic, is ever repeated.
     await tx
       .update(people)

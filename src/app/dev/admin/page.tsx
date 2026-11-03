@@ -83,6 +83,7 @@ const person = (
   // The people with a mission on the sample page are its new hires.
   newHire: game !== null && game.status === "active",
   cluesWritten: clues,
+  welcomerLeft: false,
   game,
 });
 
@@ -99,6 +100,7 @@ const notSignedIn = (id: string, name: string, welcomerName: string): PersonReco
   imageUrl: null,
   newHire: true,
   cluesWritten: 0,
+  welcomerLeft: false,
   game: playing(id, welcomerName, "2026-10-28"),
 });
 

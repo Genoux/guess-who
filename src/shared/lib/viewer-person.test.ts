@@ -43,6 +43,7 @@ const person = (overrides: Partial<Person> = {}): Person => ({
   deelId: null,
   startDate: null,
   autoMissionDoneAt: null,
+  welcomerLeftAt: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   ...overrides,

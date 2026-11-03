@@ -4,13 +4,12 @@ import type { NoMissionRowView, PeopleBoard, PlayingRowView } from "./people-vie
 export type PeopleMove =
   | { type: "turnOn"; keys: readonly string[] }
   | { type: "startAsNewHire"; key: string }
-  | { type: "end"; gameId: string }
-  | { type: "remove"; key: string };
+  | { type: "end"; gameId: string };
 
 /** The welcomer is picked on the server; until it answers the row has no name for it. */
 const PICKING_WELCOMER = "";
 
-const toPlaying = (row: NoMissionRowView): PlayingRowView => ({
+const toPlaying = ({ welcomerLeft: _welcomerLeft, ...row }: NoMissionRowView): PlayingRowView => ({
   ...row,
   gameId: `pending-${row.key}`,
   welcomer: PICKING_WELCOMER,
@@ -24,7 +23,7 @@ const toNoMission = ({
   day: _day,
   progress: _progress,
   ...row
-}: PlayingRowView): NoMissionRowView => row;
+}: PlayingRowView): NoMissionRowView => ({ ...row, welcomerLeft: false });
 
 /**
  * The board after one move. Every move takes a person out of one view and puts them in another
@@ -59,11 +58,5 @@ export function applyPeopleMove(board: PeopleBoard, move: PeopleMove): PeopleBoa
         noMission: row ? [...board.noMission, toNoMission(row)] : board.noMission,
       };
     }
-    case "remove":
-      return {
-        playing: board.playing.filter(({ key }) => key !== move.key),
-        noMission: board.noMission.filter(({ key }) => key !== move.key),
-        done: board.done.filter(({ key }) => key !== move.key),
-      };
   }
 }

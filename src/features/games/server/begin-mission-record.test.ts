@@ -65,7 +65,7 @@ type Behaviour = {
   hasMission?: boolean;
 };
 
-const WELCOMER_TEAM = [["Creative"]];
+const WELCOMER_TEAM = [["Creative", "Ana Welcomer", "https://img.test/ana.png"]];
 
 const behave = ({ lostInserts = 0, clashes = 0, hasMission = false }: Behaviour = {}) => {
   let lost = lostInserts;
@@ -111,6 +111,27 @@ describe("beginMissionRecord", () => {
     await start();
     expect(insert()?.sql).toMatch(/welcomer_team_name/);
     expect(insert()?.params).toContain("Creative");
+  });
+
+  it("freezes the welcomer's name and photo too, so the reveal survives them leaving Deel", async () => {
+    await start();
+    expect(insert()?.sql).toMatch(/welcomer_name/);
+    expect(insert()?.sql).toMatch(/welcomer_image_url/);
+    expect(insert()?.params).toEqual(
+      expect.arrayContaining(["Ana Welcomer", "https://img.test/ana.png"]),
+    );
+  });
+
+  it("clears the player's welcomer_left_at in the same transaction", async () => {
+    await start();
+    const statements = sentStatements(client).map(({ sql }) => sql);
+    const clear = sentStatements(client).find(({ sql }) =>
+      sql.startsWith("update people set welcomer_left_at"),
+    );
+    expect(clear?.params).toEqual(expect.arrayContaining([null, "player"]));
+    expect(statements.indexOf("commit")).toBeGreaterThan(
+      statements.findIndex((text) => text.startsWith("update people set welcomer_left_at")),
+    );
   });
 
   it("snapshots the welcomer's clues into the game's own", async () => {

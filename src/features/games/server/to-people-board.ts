@@ -25,6 +25,8 @@ export type PersonRecord = {
   newHire: boolean;
   /** Clues 2 to 4 written. */
   cluesWritten: number;
+  /** Their welcomer left Deel mid-mission and the mission was reset. */
+  welcomerLeft: boolean;
   game:
     | (Pick<
         Game,
@@ -75,14 +77,12 @@ export function toPeopleBoard({
   const playing: PlayingRowView[] = [];
   const noMission: NoMissionRowView[] = [];
   const done: (DoneRowView & { endedAt: Date })[] = [];
-  const welcomerIds = new Set(people.flatMap(({ game }) => (game ? [game.welcomerPersonId] : [])));
 
   for (const record of people) {
     const { game } = record;
     const state = missionStateAt(game, now);
     const identity = {
       key: record.personId,
-      hasWelcomed: welcomerIds.has(record.personId),
       signedIn: record.signedIn,
       name: record.name,
       email: record.email,
@@ -93,7 +93,7 @@ export function toPeopleBoard({
 
     const standing = asWelcomer(record, record.cluesWritten);
     if (!game) {
-      noMission.push({ ...identity, asWelcomer: standing });
+      noMission.push({ ...identity, asWelcomer: standing, welcomerLeft: record.welcomerLeft });
       continue;
     }
 

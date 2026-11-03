@@ -31,6 +31,7 @@ describe("listPeople", () => {
           "/demo/avatars/sam-taylor.webp",
           false,
           "2",
+          false,
           null,
           null,
           null,
@@ -53,6 +54,7 @@ describe("listPeople", () => {
           null,
           true,
           "0",
+          true,
           "game_2",
           "active",
           "ben",
@@ -77,6 +79,7 @@ describe("listPeople", () => {
         imageUrl: "/demo/avatars/sam-taylor.webp",
         newHire: false,
         cluesWritten: 2,
+        welcomerLeft: false,
         game: null,
       },
       {
@@ -92,6 +95,7 @@ describe("listPeople", () => {
         imageUrl: null,
         newHire: true,
         cluesWritten: 0,
+        welcomerLeft: true,
         game: {
           id: "game_2",
           status: "active",
@@ -103,6 +107,45 @@ describe("listPeople", () => {
         },
       },
     ]);
+  });
+
+  it("keeps a mission whose welcomer was deleted, named by the snapshot", async () => {
+    client.query.mockResolvedValueOnce({
+      rows: [
+        [
+          "kim",
+          null,
+          "kim",
+          "kim@gmail.com",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          false,
+          "0",
+          false,
+          "game_3",
+          "revealed",
+          null,
+          "2026-10-01",
+          null,
+          null,
+          "Ana Ferreira",
+        ],
+      ],
+    });
+    const [kim] = await listPeople();
+    expect(kim?.game).toMatchObject({
+      id: "game_3",
+      welcomerPersonId: null,
+      welcomerName: "Ana Ferreira",
+    });
+    expect(sentStatements(client)[0]?.sql).toMatch(
+      /coalesce\(welcomer\.name, games\.welcomer_name\)/,
+    );
   });
 
   it("reads every person row, with the game they play, in one query", async () => {
