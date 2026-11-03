@@ -122,14 +122,34 @@ Never commit, push or open a PR unless explicitly asked.
 
 ### Product brief
 
-- The Album + Misión Incógnita: a small game for an inBeat new hire's first two weeks.
-- Users: new hires (players), teammates (fill in their sticker card), the secret welcomer
-  (a teammate picked per game), admins (People Strategy).
-- Core flows: a new hire collects teammates' stickers by chatting with them and writing one thing
-  they learned (private notebook); four clues (day 3 is always the team, days 6, 9, 12 written by
-  the welcomer); guess any collected sticker, a wrong guess rules that person out; found or revealed
-  on day 14; then the new hire makes their own sticker and joins the album. Teammates only edit
-  their own card. Admins start games, pick welcomers, manage people.
+- The Album + Misión Incógnita: a small game for an inBeat teammate's first two weeks, or anyone's
+  who an admin turns a mission on for. "New hire" is not a kind of person: it is someone whose
+  mission has not finished.
+- Users: teammates (fill in their sticker card, collect stickers, write their three secret clues),
+  players (a teammate with a mission), the secret welcomer (a teammate picked when a mission
+  starts), admins (People Strategy).
+- Core flows: every signed-in teammate has an album and collects stickers by chatting with people
+  and writing one thing they learned (private notebook). Turning a mission on starts it: a random
+  welcomer is picked and day 1 is today (there is no Start button and no waiting state). The
+  player's first visit shows the welcome tour as an explanation, then leads to the mission. Four
+  clues (day 3 is always the welcomer's team, days 6, 9, 12 are the welcomer's own, copied when the
+  mission starts); guess any collected sticker, a wrong guess rules that person out; found or
+  revealed on day 14; then the player makes their own sticker. Only a teammate with a complete card
+  and all three clues written can be picked as a welcomer. The admin People page has three views, each person in
+  exactly one by mission state: Playing, No mission (no game, signed in or only invited by email, with an icon
+  until they sign in; search, filter, and select people to turn missions on; people who find no
+  free welcomer stay here and the toast says so) and Done. Only an admin starts a mission: "Add new
+  hire" adds an email, flags it and starts the mission at once (no free welcomer: the person is
+  still added and stays in No mission, and the toast says so), and Turn on starts the others,
+  signed in or not (the person links on first sign-in). A running mission is ended with End mission only: it resets the game
+  (guesses and clues cleared), keeps the album, notes and new hire flag, and starting again picks a
+  new welcomer. One pipeline, the rite of passage: a new hire (`people.new_hire`,
+  set by "Add new hire" or "Set as new hire", the latter starting no mission, and cleared when their mission ends, found or revealed)
+  earns their card and clues by playing. While the flag is set My card and My clues are hidden,
+  /card and /clues redirect, and the card and clue actions refuse ("Finish your mission first.";
+  one rule, `isLockedNewHire`). With no mission they have nothing to open, only the locked home.
+  A teammate who is not a new hire keeps My card and My clues, mission or not, and is turned on
+  from No mission once they can welcome (a complete card and all three clues).
 - Design source: the canvas at https://claude.ai/artifact/9V2NQ7cHj3dC2rRtjs4ovj and `docs/plan.md`.
 
 ### Stack deltas
@@ -139,6 +159,11 @@ Never commit, push or open a PR unless explicitly asked.
 - Notifications leave the app as signed webhook events to n8n, which posts to Slack. No Slack API
   in the app.
 - Playwright e2e against previews (phase 8).
+- Storybook (`@storybook/nextjs-vite`) for the game UI kit: stories sit beside each component as
+  `src/shared/components/game/*.stories.tsx`; run `bun run storybook` (port 6006) or
+  `bun run build-storybook`. Stories share sample people with the dev catalogue through
+  `src/shared/components/game/fixtures.ts`; add data there, never inline. The static build copies
+  the licensed fonts from `public/fonts`, so never deploy `storybook-static` publicly.
 - `@biomejs/biome` pinned to 2.5.15: Biome 2.6 formats markdown and rewrites the managed toolkit
   files, which then fails `ib check`. Unpin when ib-toolkit excludes markdown.
 
@@ -146,26 +171,99 @@ Never commit, push or open a PR unless explicitly asked.
 
 | What | Why | Owner |
 |---|---|---|
-| Player screens use a game UI layer in `src/shared/components/game` built on Fieldtrip tokens and fonts, not `@inbeat/ui` | The product is a game with the Fieldtrip brand; `@inbeat/ui` stays for admin screens | John |
-| `canvas-confetti` and `react-parallax-tilt` for effects, beside `motion` | Use existing libraries instead of hand-built sparkle and tilt | John |
+| Player and admin screens use a game UI layer in `src/shared/components/game` built on Fieldtrip tokens and fonts, not `@inbeat/ui` | The product is a game with the Fieldtrip brand, admin included | John |
+| `canvas-confetti` for confetti, beside `motion` | Use an existing library instead of hand-built sparkle | John |
 | PR-title lint and release-please in this app | Versioned releases and a changelog for the app | John |
 
 ### Known gaps
 
+- The licensed Fieldtrip fonts in `public/fonts` are committed so previews render them, although the
+  repo is public. Shortcut until the repo goes private or the fonts move to private storage fetched at
+  build time; then re-add `/public/fonts/` to `.gitignore`. Owner: John.
 - Sentry is wired by the template but has no project yet: `NEXT_PUBLIC_SENTRY_DSN` stays empty until
   the owner creates one. Errors still get `ERR_xxxx` ids and logs.
-- Clerk runs on accountless development keys (written to `.env.local` by `clerk init`) until the
-  owner claims the app and adds Slack, the allowlist and the `metadata` session claim. Until the
-  claim exists every user resolves to `member`.
+- Only Clerk's development instance is set up. It signs in with Slack through a Slack app in the inBeat
+  workspace (custom credentials): Clerk's shared Slack app is refused there with
+  `invalid_team_for_non_distributed_app`. Still to do: the production instance, with its Redirect URL
+  added to the same Slack app. Roles need the `{"metadata": "{{user.public_metadata}}"}` session
+  claim and `{"role": "admin"}` in the user's public metadata; without them a user is `member`.
+- No cron yet (phase 6): clue visibility and the day-14 reveal are computed on read, and an
+  expired active game is ended as `revealed` by the first player or welcomer request after it
+  (`// shortcut:` in `finalize-expired-game-record.ts`). No notifications are sent.
+- Upstash is not set up: without `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` the rate
+  limiter keeps per-instance memory counters and logs a warning.
+- Sticker photos show initials until phase 3's signed R2 URL lands (`// shortcut:` in
+  `to-sticker-person.ts`).
 
 ### Learned facts
 
-- New hires are not a Clerk role: they are the `player` of a game. Welcomers are the `welcomer`
-  of a game. Clerk roles are only `admin` and `member`.
+- Players are not a Clerk role: a player is the `player` of a game, and a game is a person's one
+  mission (unique per email and per player). Welcomers are the `welcomer` of a game. Clerk roles
+  are only `admin` and `member`.
+- The album belongs to the person: `collections` has `collector_person_id`, not a game, so
+  deleting a game never touches it. Anyone signed in can open it; nobody collects their own sticker.
+- A game exists only once its mission has started: `welcomer_person_id` and `start_date` are
+  required. `beginMissionRecord` (used by turn-on and Add new hire) takes one
+  advisory lock, picks the welcomer, inserts the game with `start_date` today and copies the
+  welcomer's three `welcomer_clues` into the per-game `clues` table; the board and the reveal read
+  that copy. A partial unique index allows one active game per welcomer; a lost race is retried
+  once, then answers "No welcomer is free right now. Try again tomorrow." Bulk turn-on starts people
+  one by one and returns `{ started, skippedNoWelcomer }`. A person who has not signed in yet starts
+  with `games.player_person_id` null; their first sign-in links the game by email. The insert reads
+  the player's row `for share` inside the lock, so a sign-in racing it either is seen or waits and
+  finds the game. `games.intro_seen_at` records the
+  welcome tour, shown on the first visit to `/`.
 - `getViewerPerson()` creates or links the viewer's `people` row on first request (Clerk user id,
   else verified primary email) and links unclaimed games whose `player_email` matches. A row
   already linked to another Clerk user is never moved; an admin clears `clerk_user_id` first.
+  Once per Clerk session (`synced_session_id`) it re-reads the Clerk user for the Slack user id and
+  the Slack photo, so a photo changed in Slack shows after the next sign-in.
 - Emails (`people.email`, `games.player_email`) are stored normalized with `normalizeEmail`.
+- Remove person (admin People, No mission and Done rows) deletes a person and all their data after a
+  confirm: `removePersonRecord` deletes, in one transaction behind the mission-start lock, the game
+  they played (`games.player_person_id` is `restrict`; clues, guesses and shortlists cascade), then
+  the `people` row (albums, their sticker in others' albums, notes and `welcomer_clues` cascade).
+  It refuses anyone who welcomed a mission, running or finished ("They welcomed a mission, so they
+  can't be removed."): `games.welcomer_person_id` is `restrict` and the game is another player's
+  record. It also refuses while they play a running mission ("End their mission first.", expired
+  missions are revealed first), and an admin cannot remove themselves. Photos are Slack URLs, so no
+  storage objects; the Clerk user stays, and signing in again makes a fresh row. `hasWelcomed` on a
+  People row hides Remove.
+- The game runs on Montréal time (`America/Toronto`): day 1 is `games.start_date`, clues land at
+  09:00 on days 3, 6, 9 and 12, the reveal at 09:00 on day 14 (`features/games/lib/game-schedule.ts`).
+  Clue 1 is generated from the welcomer's team; clues 2 to 4 are the welcomer's own, one `welcomer_clues`
+  row per (person, number), kept across missions. Teammates write them on `/clues`; `eligibleWelcomers`
+  requires all three, and excludes the player, anyone welcoming a running mission and the person
+  the player welcomes. While someone welcomes a started active mission their clues are read-only.
+  Playing and welcoming at once is allowed.
+- One top bar, `AppTopNav`, for every signed-in screen: tabs Album, Mission (only with a game in any state), My card, My clues, Welcomer (while welcoming a started mission), at most 5 in PillTabs; People (admins) is an icon button beside the avatar. Only pages everyone shown them can open become tabs.
+- A card is complete only when team, location, fact and ask are all filled in (`isCardComplete` in
+  `src/entities/card.ts`; `completeCardCondition` in `src/shared/lib` is the SQL twin: keep them in
+  step). Album, welcomer pool and turn-on all use it. The card saves while incomplete, after a
+  confirm dialog: it leaves collectors' albums until completed (their `collections` rows stay), and
+  a missing team keeps the one the person has. While someone welcomes a started mission
+  (`findActiveWelcomerGame`) the server refuses an incomplete card, and clues are read-only.
+- A blank clue text deletes that `welcomer_clues` row, so a clue is written or absent; a running
+  mission keeps its own copy in `clues`.
+- Player pages read through `loadPlayerBoard()` and the view shapers; never pass a raw `games`,
+  `people` or `collections` row to a client component.
+- Every player screen fills the viewport and centers its content vertically: `GameStage` always does it,
+  there is no opt-in.
+- `bun run db:seed:demo` builds a playable dev game (see the script header for the flags).
+- Full-screen moments (card overlays, the reveal, the collect page) use the `screen-center` utility:
+  a top bar with "The Album" logo lined up with `GameTopNav`'s, then the content centered on the
+  screen itself. Actions sit centered under the content; no divider lines.
+- Motion timing is shared from `src/shared/components/game/game-motion.ts` (durations, eases, `beats()`,
+  `stagger()`, transitions) and content enters through `Reveal`; a feature's own choreography lives in a
+  `*-motion.ts` file. `game-motion.test.ts` fails on inline timing literals and on CSS tokens that drift.
+- Tooltips, player screens included, use `Tooltip` from `@inbeat/ui/components/tooltip` (text goes in
+  `content`; `TooltipProvider` is mounted in the root layout). The trigger component must forward its
+  props and ref, or the tooltip never opens.
+- Teams are groups of Deel departments (all entities: IB, CM, CA, AAG), defined once in
+  `src/entities/teams.ts`; the seeds and `teamForDeelDepartment` read that list. Renames go through
+  `formerName` so `seedTeams` renames the row in place.
+- Player-facing copy stays short and plain: one line telling the player what to do, no cute or
+  wordy phrasing.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

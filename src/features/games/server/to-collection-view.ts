@@ -1,21 +1,16 @@
 import "server-only";
-import type { Collection, Game } from "../types";
+import type { Collection } from "../types";
 
 export type CollectionView = {
   personId: string;
   collectedAt: Date;
-  /** Present only for the game's player; admins never see the notebook. */
+  /** Present only for the collector; admins never see the notebook. */
   notebook?: Pick<Collection, "note" | "chatKind">;
 };
 
-export function toCollectionView(
-  collection: Collection,
-  game: Pick<Game, "id" | "playerPersonId">,
-  viewerPersonId: string,
-): CollectionView {
+export function toCollectionView(collection: Collection, viewerPersonId: string): CollectionView {
   const view = { personId: collection.personId, collectedAt: collection.createdAt };
-  const isPlayer = collection.gameId === game.id && game.playerPersonId === viewerPersonId;
-  return isPlayer
+  return collection.collectorPersonId === viewerPersonId
     ? { ...view, notebook: { note: collection.note, chatKind: collection.chatKind } }
     : view;
 }

@@ -1,0 +1,120 @@
+/*
+ * One CSS grid per view. Columns are as wide as their content (the person column takes what is
+ * left, down to a minimum) and the free space is shared equally between them, so the gap between
+ * two columns is the same everywhere. The caption row and each row take the table's columns as a
+ * subgrid. Below the content width the table scrolls sideways inside its book, with the person
+ * column stuck on the left.
+ */
+.people-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.people-table {
+  --person: minmax(min(45vw, 14rem), max-content);
+  --menu: 2.75rem;
+  display: grid;
+  grid-template-columns: var(--cols);
+  column-gap: 2rem;
+  justify-content: space-between;
+  min-width: min-content;
+}
+
+@media (min-width: 48rem) {
+  .people-table {
+    --person: minmax(14rem, max-content);
+  }
+}
+
+.people--playing .people-table {
+  --cols: var(--person) repeat(6, max-content) var(--menu,);
+}
+
+.people--done .people-table {
+  --cols: var(--person) repeat(5, max-content);
+}
+
+.people--no-mission .people-table {
+  --cols: var(--person) repeat(3, max-content) var(--menu,);
+}
+
+.people-heads,
+.people-list,
+.people-row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  column-gap: normal;
+  align-items: center;
+}
+
+.people-heads,
+.people-row {
+  padding-inline: 0.75rem;
+}
+
+.people-heads {
+  background: var(--color-game-surface);
+  padding-block: 0.5rem;
+}
+
+.people-scroll:first-child .people-heads {
+  padding-top: 0;
+}
+
+.people-row {
+  position: relative;
+}
+
+/* A long name truncates at this width instead of taking the room the other columns share. */
+.people-who {
+  max-width: 20rem;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: inherit;
+}
+
+@media (max-width: 47.999rem) {
+  .people-who {
+    border-right: 1px solid var(--color-game-border);
+  }
+}
+
+.people-menu {
+  justify-self: center;
+}
+
+/*
+ * With a pointer the row menu has no column: its dots appear over the row's last value on hover,
+ * focus or while open. Touch keeps a column with the dots always in view.
+ */
+@media (hover: hover) {
+  .people-table {
+    --menu: ;
+  }
+
+  .people-menu-head {
+    display: none;
+  }
+
+  .people-menu {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 0.75rem;
+    margin-block: auto;
+    opacity: 0;
+  }
+
+  .people-row:hover .people-menu,
+  .people-row:focus-within .people-menu,
+  .people-menu[data-state="open"] {
+    opacity: 1;
+  }
+
+  .people-row:has(.people-menu):hover .people-last,
+  .people-row:has(.people-menu):focus-within .people-last,
+  .people-row:has(.people-menu[data-state="open"]) .people-last {
+    opacity: 0;
+  }
+}

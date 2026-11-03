@@ -8,6 +8,97 @@
       "when": 1792602525064,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792605608414,
+      "tag": "0001_game_progress",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792618924117,
+      "tag": "0002_people_image_url",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793031190320,
+      "tag": "0003_found_with_clues",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793031567736,
+      "tag": "0004_reveal_seen_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793194869023,
+      "tag": "0005_add_people_slack_user_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793195935354,
+      "tag": "0006_add_people_synced_session_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793289630223,
+      "tag": "0007_welcomer_clues",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793308264610,
+      "tag": "0008_collections_by_collector",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793308406607,
+      "tag": "0009_mission_start",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793363437971,
+      "tag": "0010_welcomer_team_snapshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793382535318,
+      "tag": "0011_people_new_hire",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793387131206,
+      "tag": "0012_missions_start_on_create",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793387282673,
+      "tag": "0013_games_intro_seen",
+      "breakpoints": true
     }
   ]
 }

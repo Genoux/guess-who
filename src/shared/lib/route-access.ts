@@ -1,7 +1,20 @@
 import { ROUTES } from "@/shared/config/routes";
 
 // Clerk's sign-in and sign-up pages are catch-all routes; the rest are single files.
-const PUBLIC_SECTIONS = [ROUTES.signIn, ROUTES.signUp];
+// The dev pages are public here but 404 outside development and previews.
+const PUBLIC_SECTIONS = [
+  ROUTES.signIn,
+  ROUTES.signUp,
+  ROUTES.devComponents,
+  ROUTES.devWelcome,
+  ROUTES.devAlbum,
+  ROUTES.devMission,
+  ROUTES.devCard,
+  ROUTES.devWelcomer,
+  ROUTES.devAdmin,
+  ROUTES.devClues,
+  ROUTES.devLocked,
+];
 const PUBLIC_PATHS = ["/api/health", "/robots.txt"];
 
 const isWithin = (pathname: string, section: string) =>

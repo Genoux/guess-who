@@ -14,3 +14,10 @@ coverage
 npm-debug.log*
 .clerk/
 .claude/
+
+# Storybook
+storybook-static/
+*storybook.log
+
+# per-machine agent hook state
+.cursor/hooks/state/

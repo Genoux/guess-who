@@ -1,13 +1,75 @@
-import { redirect } from "next/navigation";
-import { getActivePlayerGame } from "@/features/games/queries/get-active-player-game";
+import type { Metadata } from "next";
+import { AlbumBanner } from "@/features/games/components/album-banner";
+import { AlbumBoard } from "@/features/games/components/album-board";
+import { AlbumCover } from "@/features/games/components/album-cover";
+import { AppTopNav } from "@/features/games/components/app-top-nav";
+import { LockedHome } from "@/features/games/components/locked-home";
+import { ProgressSlots } from "@/features/games/components/progress-slots";
+import { CARD_PARAM, openingCardId } from "@/features/games/lib/card-url";
+import { endingEyebrow } from "@/features/games/lib/ending-eyebrow";
+import { parseStickerFilter, STICKER_FILTER_PARAM } from "@/features/games/lib/sticker-filter";
+import { getPlayerAlbum } from "@/features/games/queries/get-player-album";
+import { getTopNav } from "@/features/games/queries/get-top-nav";
+import type { GameOutcome } from "@/features/games/server/to-game-outcome";
+import { GameShell } from "@/shared/components/game/game-shell";
+import { GameStage } from "@/shared/components/game/game-stage";
 import { ROUTES } from "@/shared/config/routes";
 
-export default async function PlayPage() {
-  const game = await getActivePlayerGame();
-  if (!game) redirect(ROUTES.card);
+type EndedOutcome = Extract<GameOutcome, { over: true }>;
+
+function endingBanner({ found, revealSeen, welcomer }: EndedOutcome) {
+  const eyebrow = endingEyebrow({ found, revealSeen });
+  if (!revealSeen) return { eyebrow, title: "Who was your welcomer?", cta: "Reveal" };
+  const verb = found ? "You found" : "It was";
+  return { eyebrow, title: `${verb} ${welcomer.firstName}.`, cta: "See mission" };
+}
+
+export const metadata: Metadata = { title: "Album" };
+
+export default async function AlbumPage(props: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const [nav, query] = await Promise.all([getTopNav(), props.searchParams]);
+  // A new hire with no mission has no album to open.
+  if (nav.locked && !nav.hasMission) return <LockedHome nav={nav} />;
+  const album = await getPlayerAlbum();
+
   return (
-    <main>
-      <h1>Your mission</h1>
-    </main>
+    <GameShell>
+      <AppTopNav nav={nav} current="album" />
+      <GameStage className="max-w-360 px-2 sm:px-4 md:px-8">
+        <AlbumCover>
+          <div className="flex flex-col items-center gap-5">
+            <h1 className="font-game-serif text-hero">Your album</h1>
+            <ProgressSlots collected={album.nav.collectedCount} total={album.nav.total} />
+            {album.stickers.length === 0 && (
+              <p className="text-game-muted">
+                The album is still empty. Stickers arrive as teammates fill in their cards.
+              </p>
+            )}
+          </div>
+          {album.outcome.over ? (
+            <AlbumBanner href={ROUTES.playMission} {...endingBanner(album.outcome)} />
+          ) : album.newClue ? (
+            <AlbumBanner
+              href={ROUTES.playMission}
+              eyebrow="New clue"
+              title={`Clue ${album.newClue.number} just landed.`}
+              cta="Open it"
+            />
+          ) : null}
+        </AlbumCover>
+        {album.stickers.length > 0 && (
+          <AlbumBoard
+            teams={album.teams}
+            stickers={album.stickers}
+            active={album.active}
+            collectedCount={album.nav.collectedCount}
+            initialStatus={parseStickerFilter(query[STICKER_FILTER_PARAM])}
+            initialCardId={openingCardId(query[CARD_PARAM], album.stickers)}
+          />
+        )}
+      </GameStage>
+    </GameShell>
   );
 }

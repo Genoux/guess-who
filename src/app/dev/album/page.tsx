@@ -1,0 +1,110 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { TEAM_DEFINITIONS } from "@/entities/teams";
+import { AlbumBoard } from "@/features/games/components/album-board";
+import { CARD_PARAM, openingCardId } from "@/features/games/lib/card-url";
+import type { AlbumSticker } from "@/features/games/queries/get-player-album";
+import { ana, jonah, noor } from "@/shared/components/game/fixtures";
+import { GameShell } from "@/shared/components/game/game-shell";
+import { GameStage } from "@/shared/components/game/game-stage";
+import type { StickerPerson } from "@/shared/components/game/sticker-view";
+import { env } from "@/shared/config/env";
+import { isCatalogueEnabled } from "@/shared/lib/catalogue-access";
+
+export const metadata: Metadata = {
+  title: "Album (dev)",
+  robots: { index: false, follow: false },
+};
+
+const idOf = (name: string) => name.toLowerCase().replace(/[^a-z]+/g, "-");
+
+const NAMES = [
+  "Mira Okafor",
+  "Theo Lindqvist",
+  "Yuki Tanaka",
+  "Sam Rivera",
+  "Lou Martin",
+  "Ines Costa",
+];
+
+// Locked stickers carry only public fields, as the server sends them.
+const lockedPerson = ({ city: _city, fact: _fact, photoUrl: _photoUrl, ...rest }: StickerPerson) =>
+  rest;
+
+// Spread over all eight teams, so the team menu shows the real case.
+const inTeam = (person: StickerPerson, index: number): StickerPerson => {
+  const team = TEAM_DEFINITIONS[index % TEAM_DEFINITIONS.length];
+  return team ? { ...person, team: team.name, color: team.color, tint: team.tint } : person;
+};
+
+// The committed demo portraits, so the album shows real files from /demo/avatars.
+const DEMO_PHOTOS = [
+  "ana-souza",
+  "mateo-ruiz",
+  "noor-haddad",
+  "omar-aziz",
+  "ben-carter",
+  "grace-liu",
+].map((slug) => `/demo/avatars/${slug}.webp`);
+
+const people: StickerPerson[] = [
+  noor,
+  jonah,
+  ana,
+  ...NAMES.map((name, index) => {
+    const base = [noor, jonah, ana][index % 3] as StickerPerson;
+    return { ...base, name, number: 10 + index, photoUrl: DEMO_PHOTOS[index] ?? null };
+  }),
+].map((person, index) => inTeam(person, index));
+
+// One collected card of each state, so every badge and the photo can be checked in motion.
+const SHORTLISTED_INDEX = 4;
+const RULED_INDEX = 6;
+
+const stickers: AlbumSticker[] = people.map((person, index) => {
+  const collected = index % 2 === 0;
+  const shortlisted = index === SHORTLISTED_INDEX;
+  const ruled = index === RULED_INDEX;
+  return {
+    id: `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
+    teamId: idOf(person.team),
+    firstName: person.name.split(" ")[0] ?? person.name,
+    person: collected ? person : lockedPerson(person),
+    mode: !collected ? "locked" : shortlisted ? "maybe" : ruled ? "ruled" : "collected",
+    collected,
+    shortlisted,
+    ruled,
+    note: collected ? "Knows every bakery in town." : null,
+  };
+});
+
+const teams = TEAM_DEFINITIONS.map(({ name, color }) => ({
+  id: idOf(name),
+  name,
+  color,
+  count: stickers.filter((sticker) => sticker.teamId === idOf(name)).length,
+})).filter((team) => team.count > 0);
+
+/** The player's album with sample stickers, for local dev and previews only. */
+export default async function AlbumPreviewPage(props: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const query = await props.searchParams;
+  if (!isCatalogueEnabled({ nodeEnv: env.NODE_ENV, vercelEnv: env.NEXT_PUBLIC_VERCEL_ENV })) {
+    notFound();
+  }
+
+  return (
+    <GameShell>
+      <GameStage className="max-w-280 px-2 sm:px-4 md:px-8">
+        <AlbumBoard
+          teams={teams}
+          stickers={stickers}
+          active
+          collectedCount={stickers.filter((sticker) => sticker.collected).length}
+          initialCardId={openingCardId(query[CARD_PARAM], stickers)}
+        />
+      </GameStage>
+    </GameShell>
+  );
+}

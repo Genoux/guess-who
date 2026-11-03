@@ -12,7 +12,7 @@ const clue: Clue = {
   createdAt: new Date(),
   updatedAt: new Date(),
 };
-const game = { playerPersonId: "player", welcomerPersonId: "welcomer" };
+const game = { playerPersonId: "player", welcomerPersonId: "welcomer", status: "active" as const };
 const before = new Date("2026-11-06T12:59:59Z");
 
 const view = (viewer: GameViewer, now: Date) => toClueView(clue, game, viewer, now);
@@ -48,5 +48,13 @@ describe("toClueView", () => {
     expect(view({ personId: "admin", role: "admin" }, before).text).toBe(
       "I have climbed a volcano",
     );
+  });
+
+  it("releases every clue to the player once the game is over", () => {
+    const ended = { ...game, status: "found" as const };
+    expect(toClueView(clue, ended, { personId: "player", role: "member" }, before)).toMatchObject({
+      released: true,
+      text: "I have climbed a volcano",
+    });
   });
 });

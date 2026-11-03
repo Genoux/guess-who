@@ -1,0 +1,298 @@
+/*
+ * Fieldtrip game theme for player screens (see "Deliberate deviations" in AGENTS.md).
+ * Imported once from src/app/globals.css: Tailwind v4 only turns @theme tokens into utilities
+ * inside the same compile as `@import "tailwindcss"`. Everything is namespaced (game-*, sticker,
+ * clue, ...) so the @inbeat/ui tokens used by admin screens stay untouched. The font files are
+ * declared in game-fonts.css, which GameShell imports.
+ */
+@theme {
+  /* The narrowest the app lays out at: below it the page scrolls sideways. */
+  --container-app-min: 20rem;
+
+  /* Colors */
+  --color-game-bg: #f7f7f3;
+  --color-game-surface: #ffffff;
+  --color-game-sidebar: #f3f3ef;
+  --color-game-hover: #edede8;
+  --color-game-border: #e4e4df;
+  --color-game-border-strong: #aaaaa4;
+  /* Every card's edge (stickers, clues): ink, so the card reads as a card on the light page. */
+  --color-game-card-edge: #191910;
+  /* Quiet outlines on small controls, lighter than a card edge. */
+  --color-game-outline: #d4d4cc;
+  --color-game-ink: #191910;
+  --color-game-ink-hover: #0a0a05;
+  --color-game-ink-soft: #2e2e26;
+  --color-game-ink-dots: #4a4a40;
+  --color-game-muted: #5c5c55;
+  --color-game-shortlist: #f9d317;
+  --color-game-shortlist-hover: #f2c800;
+  --color-game-shortlist-soft: #fdeda2;
+  --color-game-found: #ea4112;
+  /* found, darkened so error text passes 4.5:1 on the surface and the background */
+  --color-game-error: #b8320c;
+  --color-game-ready: #157428;
+
+  /* Fonts: licensed faces with system fallbacks (files are not committed) */
+  --font-game-serif: "Diplomat ST", Georgia, serif;
+  --font-game-sans: "SwissNow", "Helvetica Neue", Arial, sans-serif;
+  --font-game-mono: "Diplomat Mono ST", ui-monospace, monospace;
+
+  /* Type scale (size / line height / tracking) */
+  --text-hero: 56px;
+  --text-hero--line-height: 60px;
+  --text-hero--letter-spacing: -0.025em;
+  --text-hero-md: 40px;
+  --text-hero-md--line-height: 44px;
+  --text-hero-md--letter-spacing: -0.025em;
+  --text-display: 40px;
+  --text-display--line-height: 44px;
+  --text-display--letter-spacing: -0.02em;
+  --text-title: 32px;
+  --text-title--line-height: 36px;
+  --text-title--letter-spacing: -0.02em;
+  --text-logo: 28px;
+  --text-logo--line-height: 32px;
+  --text-logo--letter-spacing: -0.02em;
+  --text-modal-title: var(--text-logo);
+  --text-modal-title--line-height: var(--text-logo--line-height);
+  --text-modal-title--letter-spacing: var(--text-logo--letter-spacing);
+  --text-heading: 20px;
+  --text-heading--line-height: 24px;
+  --text-heading--letter-spacing: -0.01em;
+  --text-lead: 18px;
+  --text-lead--line-height: 26px;
+  --text-button-sm: 15px;
+  --text-button-sm--line-height: 20px;
+  --text-small: 13px;
+  --text-small--line-height: 18px;
+  --text-caption: 13px;
+  --text-caption--line-height: 18px;
+  --text-caption--letter-spacing: 0.03em;
+  --text-fine: 12px;
+  --text-fine--line-height: 15px;
+  --text-meta: 10px;
+  --text-meta--line-height: 14px;
+  --text-meta--letter-spacing: 0.06em;
+  --text-clue: 22px;
+  --text-clue--line-height: 26px;
+  --text-clue--letter-spacing: -0.01em;
+  --text-clue-lg: 34px;
+  --text-clue-lg--line-height: 40px;
+  --text-clue-lg--letter-spacing: -0.01em;
+  --text-mark: 56px;
+  --text-mark--line-height: 1;
+  --text-mark-lg: 96px;
+  --text-mark-lg--line-height: 1;
+  --text-quote: 17px;
+  --text-quote--line-height: 20px;
+  --text-quote--letter-spacing: -0.01em;
+  --text-name: 18px;
+  --text-name--line-height: 22px;
+  --text-name--letter-spacing: -0.01em;
+  --text-name-lg: 30px;
+  --text-name-lg--line-height: 34px;
+  --text-name-lg--letter-spacing: -0.01em;
+  --text-stamp: 24px;
+  --text-stamp--line-height: 28px;
+  --text-stamp-lg: 32px;
+  --text-stamp-lg--line-height: 36px;
+  --text-avatar: 17px;
+  --text-avatar--line-height: 1;
+  --font-weight-book: 450;
+  --tracking-caption: 0.06em;
+
+  /* Radii */
+  --radius-game-sm: 6px;
+  --radius-game-md: 8px;
+  --radius-game-lg: 12px;
+  --radius-field: 14px;
+  --radius-card: 10px;
+  --radius-card-art: 6px;
+  --radius-card-lg: 14px;
+  --sticker-width-sm: calc(var(--spacing) * 44);
+  --sticker-width-lg: calc(var(--spacing) * 75);
+  --radius-card-art-lg: 8px;
+  --radius-stage: 20px;
+  --radius-book: 24px;
+  --radius-modal: 28px;
+
+  /* Shadows: the 4px sticker ink shadow and the hairline edge */
+  --shadow-ink: 4px 4px 0 var(--color-game-ink);
+  --shadow-edge: inset 0 0 0 1px var(--color-game-border);
+  --shadow-edge-strong: inset 0 0 0 1px var(--color-game-border-strong);
+  /* Menus and popovers lifted off the page: the hairline edge plus a soft drop. */
+  --shadow-pop: 0 0 0 1px var(--color-game-border), 0 12px 32px -8px rgb(25 25 16 / 0.18);
+
+  /* Timing mirrors game-motion.ts; game-motion.test.ts fails when they drift apart. */
+  --ease-game: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --transition-duration-instant: 120ms;
+  --transition-duration-fast: 200ms;
+  --transition-duration-base: 320ms;
+  --transition-duration-slow: 500ms;
+  --transition-duration-slower: 640ms;
+}
+
+/* A device where hovering works: controls can wait for a hover, and tooltips carry their words. */
+@custom-variant hoverable (@media (hover: hover));
+
+/* A swap of game screens (GameShell's ViewTransition): one dissolve, old into new. */
+::view-transition-group(.game-page),
+::view-transition-old(.game-page),
+::view-transition-new(.game-page) {
+  animation-duration: var(--transition-duration-base);
+  animation-timing-function: var(--ease-game);
+}
+
+/* The overlay would swallow clicks while it plays; let them reach the live page. */
+::view-transition {
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-name: none;
+  }
+}
+
+/* A full-screen moment: the bar on top, the content centered in the space under it, so the gaps
+   above and below the content match on screen. Too tall for the screen, it scrolls. */
+@utility screen-center {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-items: start;
+
+  & > :nth-child(2) {
+    align-self: center;
+  }
+}
+
+/* The 176px album card zoomed, whole, to the width of its container (an `@container`), so a grid
+   column narrower or wider than the card never squishes it. tan(atan2(a, b)) is a / b as a plain
+   number: calc() cannot divide one length by another outside Chrome 140+. */
+@utility zoom-fit {
+  zoom: tan(atan2(100cqi, 176px));
+}
+
+/* A clue alone on a phone: the 200px clue card zoomed to 280px, a step under the 300px sticker
+   beside it. */
+@utility zoom-clue {
+  zoom: 1.4;
+  --card-edge: calc(2px / 1.4);
+}
+
+/* The open card: the album card zoomed to the large card's width, or down to the width of its
+   container (an `@container`) when that is narrower, e.g. on a phone. tan(atan2(a, b)) is a / b
+   as a plain number: calc() cannot divide one length by another outside Chrome 140+. */
+@utility zoom-open {
+  zoom: min(
+    tan(atan2(var(--sticker-width-lg), var(--sticker-width-sm))),
+    tan(atan2(100cqi, var(--sticker-width-sm)))
+  );
+}
+
+/* The name and team over a card's photo: ink at `--scrim-max` under the text, easing out to nothing
+   over `--fade` above it. The ramp is the eased alpha at 30%, 60% and 85% of the fade, as
+   multipliers of the max. The caller sets `--scrim-max` per card size: the album card's is a plain
+   gradient, the large card's is lighter because it also sits on a blur (`sticker-scrim-blur`,
+   sized by `--scrim-blur`). White text on the large max (0.62) over a white photo is 4.9:1. */
+@utility sticker-scrim {
+  --scrim-ramp-1: 0.7;
+  --scrim-ramp-2: 0.33;
+  --scrim-ramp-3: 0.09;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--color-game-ink) calc(var(--scrim-max) * 100%), transparent)
+      calc(100% - var(--fade)),
+    color-mix(
+        in srgb,
+        var(--color-game-ink) calc(var(--scrim-max) * var(--scrim-ramp-1) * 100%),
+        transparent
+      )
+      calc(100% - var(--fade) * 0.7),
+    color-mix(
+        in srgb,
+        var(--color-game-ink) calc(var(--scrim-max) * var(--scrim-ramp-2) * 100%),
+        transparent
+      )
+      calc(100% - var(--fade) * 0.4),
+    color-mix(
+        in srgb,
+        var(--color-game-ink) calc(var(--scrim-max) * var(--scrim-ramp-3) * 100%),
+        transparent
+      )
+      calc(100% - var(--fade) * 0.15),
+    transparent
+  );
+}
+
+/* The ask panel's geometry, set once on a face from three inputs: `--face-inset` (the face's
+   padding, which the panel covers), `--ask-pad` (the text's side padding) and `--ask-scale` (the
+   button's size against the large card's). The button sits `offset` in from the face's edge, and
+   `center` is its centre measured from the panel's top and right edges: the circle that grows the
+   panel starts there. `clear` is how far the label keeps from the panel's padding to stay off it. */
+@utility ask-geometry {
+  --ask-inset: var(--face-inset);
+  --ask-button: calc(var(--spacing) * 8 * var(--ask-scale));
+  --ask-offset: calc(var(--spacing) * 5 * var(--ask-scale));
+  --ask-icon: calc(var(--ask-button) * 7 / 16);
+  --ask-center: calc(var(--ask-offset) + var(--ask-button) / 2 - var(--ask-inset));
+  --ask-clear: calc(
+    var(--ask-center) +
+    var(--ask-button) /
+    2 +
+    var(--spacing) *
+    2 *
+    var(--ask-scale) -
+    var(--ask-pad)
+  );
+}
+
+@utility ask-geometry-lg {
+  @apply ask-geometry;
+  --face-inset: calc(var(--spacing) * 2.5);
+  --ask-pad: calc(var(--spacing) * 3.5);
+  --ask-scale: 1;
+}
+
+/* The album card is the large one at 176 / 300, zoomed up when opened, so the button shrinks in
+   step and reads the same size once zoomed. */
+@utility ask-geometry-sm {
+  @apply ask-geometry;
+  --face-inset: calc(var(--spacing) * 2);
+  --ask-pad: calc(var(--spacing) * 2.5);
+  --ask-scale: tan(atan2(var(--sticker-width-sm), var(--sticker-width-lg)));
+}
+
+/* A circle from the button's centre, `--ask-progress` (0 to 1, driven by motion) from the button's
+   radius to the full diagonal. A circle() percentage is of the box's diagonal over root 2, so
+   100% * sqrt(2) is the diagonal: it reaches the farthest corner from any point inside. */
+@utility ask-panel-clip {
+  clip-path: circle(
+    calc(var(--ask-button) / 2 + (100% * sqrt(2) - var(--ask-button) / 2) * var(--ask-progress, 1))
+      at calc(100% - var(--ask-center)) var(--ask-center)
+  );
+}
+
+/* The bottom edge of the fact's growing row, a line of its text high while `--fact-edge` is 1, so
+   the row opens as a fade, not a cut. At 0 the mask is solid. */
+@utility fact-reveal-mask {
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 1lh * var(--fact-edge, 0)), transparent);
+}
+
+@utility sticker-scrim-blur {
+  backdrop-filter: blur(var(--scrim-blur));
+  mask-image: linear-gradient(
+    to top,
+    #000 calc(100% - var(--fade)),
+    rgb(0 0 0 / 0.5) calc(100% - var(--fade) * 0.5),
+    transparent
+  );
+}
+
+/* The reveal card, a tad under the open card. */
+@utility zoom-reveal {
+  zoom: 0.9;
+}
