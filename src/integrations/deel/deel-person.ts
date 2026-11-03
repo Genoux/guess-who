@@ -20,6 +20,10 @@ export const deelPersonSchema = z.object({
   country: z.string().nullish(),
   department: z.object({ id: z.string(), name: z.string() }).nullish(),
   client_legal_entity: z.object({ id: z.string(), name: z.string() }).nullish(),
+  // Where Deel reports the last working day, depending on the record; see `endDateOf`.
+  termination_last_day: z.string().nullish(),
+  last_day_of_work_local_date: z.string().nullish(),
+  worker_termination_last_date_of_work: z.string().nullish(),
   employments: z.array(z.object({ id: z.string() })).default([]),
 });
 

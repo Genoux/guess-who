@@ -6,23 +6,16 @@ import { gameToast } from "@/shared/components/game/game-toaster";
 import { PillTabs } from "@/shared/components/game/pill-tabs";
 import { Reveal } from "@/shared/components/game/reveal";
 import { endMission } from "../actions/end-mission";
-import { removePerson } from "../actions/remove-person";
 import { startAsNewHire } from "../actions/start-as-new-hire";
 import { turnOnMissions } from "../actions/turn-on-missions";
 import { firstName } from "../lib/first-name";
 import { BOOK_DELAY_S } from "../lib/people-motion";
 import { applyPeopleMove, type PeopleMove } from "../lib/people-moves";
-import type {
-  NoMissionRowView,
-  PeopleBoard,
-  PersonIdentity,
-  PlayingRowView,
-} from "../lib/people-view";
+import type { NoMissionRowView, PeopleBoard, PlayingRowView } from "../lib/people-view";
 import { EndMissionDialog } from "./end-mission-dialog";
 import { PeopleDone } from "./people-done";
 import { PeopleNoMission } from "./people-no-mission";
 import { PeoplePlaying } from "./people-playing";
-import { RemovePersonDialog } from "./remove-person-dialog";
 import { StartNewHireDialog } from "./start-new-hire-dialog";
 
 type PeopleView = "playing" | "noMission" | "done";
@@ -67,7 +60,6 @@ export function PeopleScreen({
   const [view, setView] = useState<PeopleView>("playing");
   const [ending, setEnding] = useState<PlayingRowView | null>(null);
   const [starting, setStarting] = useState<NoMissionRowView | null>(null);
-  const [removing, setRemoving] = useState<PersonIdentity | null>(null);
   // Nothing is saved in the preview, so its settled board is kept here.
   const [previewBoard, setPreviewBoard] = useState(serverBoard);
   const [board, applyMove] = useOptimistic(preview ? previewBoard : serverBoard, applyPeopleMove);
@@ -139,16 +131,6 @@ export function PeopleScreen({
     });
   }
 
-  function remove(row: PersonIdentity) {
-    setRemoving(null);
-    perform({
-      move: { type: "remove", key: row.key },
-      run: () => removePerson({ personId: row.key }),
-      previewData: undefined,
-      message: () => `${shortName(row)} was removed.`,
-    });
-  }
-
   return (
     <>
       <Reveal className="flex w-full flex-wrap items-center justify-between gap-4">
@@ -171,10 +153,9 @@ export function PeopleScreen({
             rows={board.noMission}
             onTurnOn={turnOn}
             onStartAsNewHire={setStarting}
-            onRemove={setRemoving}
           />
         ) : null}
-        {view === "done" ? <PeopleDone rows={board.done} onRemove={setRemoving} /> : null}
+        {view === "done" ? <PeopleDone rows={board.done} /> : null}
       </Reveal>
 
       <StartNewHireDialog
@@ -182,7 +163,6 @@ export function PeopleScreen({
         onConfirm={startNewHire}
         onClose={() => setStarting(null)}
       />
-      <RemovePersonDialog row={removing} onConfirm={remove} onClose={() => setRemoving(null)} />
       <EndMissionDialog row={ending} onEnd={end} onClose={() => setEnding(null)} />
     </>
   );

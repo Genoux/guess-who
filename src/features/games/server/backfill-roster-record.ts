@@ -78,7 +78,7 @@ export async function backfillRosterRecord({
       await seedTeams(tx as unknown as NeonDatabase<typeof schema>);
       const written: string[] = [];
       for (const deelPerson of roster) {
-        const change = toRosterChange(deelPerson.id, deelPerson);
+        const change = toRosterChange(deelPerson.id, deelPerson, now);
         if (change.kind !== "upsert") {
           skip(change.kind === "ignore" ? change.reason : "not active or leaver");
           continue;

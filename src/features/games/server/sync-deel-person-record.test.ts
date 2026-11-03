@@ -6,6 +6,8 @@ const upsert = vi.hoisted(() => ({ upsertRosterPersonRecord: vi.fn() }));
 vi.mock("./upsert-roster-person-record", () => upsert);
 const autoMission = vi.hoisted(() => ({ startAutoMissionRecord: vi.fn() }));
 vi.mock("./start-auto-mission-record", () => autoMission);
+const leaver = vi.hoisted(() => ({ removeLeaverRecord: vi.fn() }));
+vi.mock("./remove-leaver-record", () => leaver);
 vi.mock("@/shared/lib/db", () => ({
   db: { transaction: (run: (tx: string) => unknown) => run("tx") },
 }));
@@ -59,15 +61,19 @@ describe("syncDeelPersonRecord", () => {
     expect(upsert.upsertRosterPersonRecord).not.toHaveBeenCalled();
   });
 
-  it("only reports a leaver, never writes", async () => {
+  it("removes an inactive person through the leaver transaction, never upserting", async () => {
     deel.getPerson.mockResolvedValue({ ...activePerson, hiring_status: "inactive" });
-    expect(await sync({ kind: "person", id: "p1" })).toBe("leaver not removed yet");
+    leaver.removeLeaverRecord.mockResolvedValue("leaver removed");
+    expect(await sync({ kind: "person", id: "p1" })).toBe("leaver removed");
+    expect(leaver.removeLeaverRecord).toHaveBeenCalledWith({ deelId: "p1", now });
     expect(upsert.upsertRosterPersonRecord).not.toHaveBeenCalled();
   });
 
-  it("reports a deleted person as a leaver", async () => {
+  it("removes a person Deel no longer knows", async () => {
     deel.getPerson.mockResolvedValue(null);
-    expect(await sync({ kind: "person", id: "p1" })).toBe("leaver not removed yet");
+    leaver.removeLeaverRecord.mockResolvedValue("unknown person");
+    expect(await sync({ kind: "person", id: "p1" })).toBe("unknown person");
+    expect(leaver.removeLeaverRecord).toHaveBeenCalledWith({ deelId: "p1", now });
   });
 
   it("reports why a person is ignored", async () => {

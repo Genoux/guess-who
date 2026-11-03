@@ -85,11 +85,12 @@ export function createDeelClient({ baseUrl, token, fetchImpl = fetch }: DeelClie
 
   return {
     async getPerson(deelId: string): Promise<DeelPerson | null> {
-      // Deel answered 400, not 404, for an unknown well-formed uuid.
+      // Only a 404 means gone: any other refusal (a 400 included) throws, so an ambiguous answer
+      // never deletes someone.
       const found = await get(
         `/people/${encodeURIComponent(deelId)}`,
         deelPersonResponseSchema,
-        [404, 400],
+        [404],
       );
       return found?.data ?? null;
     },

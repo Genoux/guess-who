@@ -21,7 +21,7 @@ const gameColumns = {
   startDate: games.startDate,
   foundAt: games.foundAt,
   revealSeenAt: games.revealSeenAt,
-  welcomerName: welcomer.name,
+  welcomerName: sql<string | null>`coalesce(${welcomer.name}, ${games.welcomerName})`,
 };
 
 type GameColumns = {
@@ -41,9 +41,7 @@ const toGame = ({
   startDate,
   ...rest
 }: GameColumns): PersonRecord["game"] =>
-  id && status && welcomerPersonId && startDate
-    ? { id, status, welcomerPersonId, startDate, ...rest }
-    : null;
+  id && status && startDate ? { id, status, welcomerPersonId, startDate, ...rest } : null;
 
 const toTeam = (name: string | null, color: string | null) =>
   name && color ? { name, color } : null;
@@ -65,6 +63,7 @@ export async function listPeople(): Promise<PersonRecord[]> {
       imageUrl: people.imageUrl,
       newHire: people.newHire,
       cluesWritten: WRITTEN_CLUES,
+      welcomerLeft: sql<boolean>`${people.welcomerLeftAt} is not null`,
       ...gameColumns,
     })
     .from(people)
@@ -86,6 +85,7 @@ export async function listPeople(): Promise<PersonRecord[]> {
       imageUrl,
       newHire,
       cluesWritten,
+      welcomerLeft,
       ...game
     }) => ({
       personId,
@@ -100,6 +100,7 @@ export async function listPeople(): Promise<PersonRecord[]> {
       imageUrl,
       newHire,
       cluesWritten,
+      welcomerLeft,
       game: toGame(game),
     }),
   );

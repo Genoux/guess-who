@@ -25,12 +25,15 @@ export const games = pgTable(
     // Stored normalized (trimmed, lowercase), like people.email.
     playerEmail: text("player_email").notNull(),
     // A mission starts the moment it exists: the welcomer and day 1 are fixed with the row.
-    welcomerPersonId: uuid("welcomer_person_id")
-      .notNull()
-      .references(() => people.id, { onDelete: "restrict" }),
+    // Null once the welcomer left Deel and was deleted; the snapshot columns below keep the reveal.
+    welcomerPersonId: uuid("welcomer_person_id").references(() => people.id, {
+      onDelete: "set null",
+    }),
+    welcomerName: text("welcomer_name"),
+    welcomerImageUrl: text("welcomer_image_url"),
     startDate: date("start_date").notNull(),
     // The welcomer's team as it was at the start: clue 1 reads it, so a card edited mid-mission never
-    // changes what the player was told.
+    // changes what the player was told. Name and image are frozen alongside it.
     welcomerTeamName: text("welcomer_team_name"),
     status: gameStatus("status").notNull().default("active"),
     foundAt: timestamp("found_at", { withTimezone: true }),

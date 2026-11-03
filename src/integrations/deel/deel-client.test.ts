@@ -64,11 +64,15 @@ describe("deel client", () => {
     expect(isAppError(error, "timeout")).toBe(true);
   });
 
-  it("answers null when Deel rejects an unknown id with 400", async () => {
-    const found = await clientWith(() => reply({}, 400)).getPerson(
-      "00000000-0000-0000-0000-000000000000",
-    );
-    expect(found).toBeNull();
+  it("answers null only for a 404", async () => {
+    expect(await clientWith(() => reply({}, 404)).getPerson("x")).toBeNull();
+  });
+
+  it("raises a permanent external_service error on 400, never null, so nobody is deleted", async () => {
+    const error = await clientWith(() => reply({}, 400))
+      .getPerson("00000000-0000-0000-0000-000000000000")
+      .catch((caught: unknown) => caught);
+    expect(isAppError(error, "external_service") && error.isRetryable).toBe(false);
   });
 
   it("raises a timeout error when the body read times out", async () => {
