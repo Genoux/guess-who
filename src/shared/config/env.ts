@@ -2,7 +2,6 @@ import {
   appUrlEnv,
   clerkClientEnv,
   clerkServerEnv,
-  csv,
   dbEnv,
   sentryClientEnv,
   upstashEnv,
@@ -16,8 +15,6 @@ export const env = createEnv({
     ...dbEnv,
     ...clerkServerEnv,
     ...upstashEnv,
-    // Who may sign in without an invite (an admin-created person or game).
-    ALLOWED_EMAIL_DOMAINS: csv().optional().default(["inbeat.agency"]),
     DEEL_API_URL: z.url().default("https://api.letsdeel.com/rest/v2"),
     DEEL_API_TOKEN: z.string().min(1).optional(),
     // Without it the webhook route refuses every delivery.

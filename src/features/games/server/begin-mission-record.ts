@@ -1,6 +1,6 @@
 import "server-only";
 import { AppError, isUniqueViolation } from "@inbeat/core/errors";
-import { and, eq, or, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { clues, games, people, teams, welcomerClues } from "@/db/schema";
 import { todayInGameZone } from "@/entities/game-schedule";
 import { db } from "@/shared/lib/db";
@@ -12,7 +12,7 @@ import { listWelcomerCandidates } from "./people-records";
 export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 type BeginMissionInput = {
-  /** Normalized. */
+  /** Normalized; the legacy `games.player_email` column is still required. */
   playerEmail: string;
   /** The player's person row, whether or not they have signed in. */
   playerPersonId: string;
@@ -30,11 +30,11 @@ const MAX_PICKS = 2;
 // reasoning about the others' half-written state.
 const START_LOCK_KEY = 7_302_026;
 
-export const ALREADY_HAS_MISSION = "This email already has a mission.";
+export const ALREADY_HAS_MISSION = "They already have a mission.";
 
 class MutualWelcoming extends Error {}
 
-/** Starts and email changes queue behind one lock, held until the transaction ends. */
+/** Mission starts and person removals queue behind one lock, held until the transaction ends. */
 export async function lockMissionStarts(tx: Transaction) {
   await tx.execute(sql`select pg_advisory_xact_lock(${START_LOCK_KEY})`);
 }
@@ -124,23 +124,13 @@ async function insertStartedGame({
       throw new MutualWelcoming();
     }
 
-    // The share lock holds the player's row until commit. A first sign-in claims the row and then
-    // links games by email, so it either waits here and finds this game, or committed first and
-    // is seen here.
-    const [player] = await tx
-      .select({ clerkUserId: people.clerkUserId })
-      .from(people)
-      .where(eq(people.id, playerPersonId))
-      .for("share");
-    if (!player) throw new AppError("not_found", "player person missing");
-
     const [existing] = await tx
       .select({ id: games.id })
       .from(games)
-      .where(or(eq(games.playerEmail, playerEmail), eq(games.playerPersonId, playerPersonId)))
+      .where(eq(games.playerPersonId, playerPersonId))
       .limit(1);
     if (existing) {
-      throw new AppError("conflict", "email already has a mission", {
+      throw new AppError("conflict", "person already has a mission", {
         safeMessage: ALREADY_HAS_MISSION,
       });
     }
@@ -154,7 +144,7 @@ async function insertStartedGame({
       .insert(games)
       .values({
         playerEmail,
-        playerPersonId: player.clerkUserId ? playerPersonId : null,
+        playerPersonId,
         welcomerPersonId,
         startDate,
         welcomerTeamName: welcomerTeam?.name ?? null,

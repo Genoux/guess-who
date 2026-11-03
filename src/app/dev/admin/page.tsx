@@ -86,11 +86,11 @@ const person = (
   game,
 });
 
-const invite = (id: string, email: string, welcomerName: string): PersonRecord => ({
+const notSignedIn = (id: string, name: string, welcomerName: string): PersonRecord => ({
   personId: id,
   signedIn: false,
-  name: null,
-  email,
+  name,
+  email: `${id}@inbeat.agency`,
   team: null,
   teamId: null,
   location: null,
@@ -102,8 +102,8 @@ const invite = (id: string, email: string, welcomerName: string): PersonRecord =
   game: playing(id, welcomerName, "2026-10-28"),
 });
 
-const invitedNotStarted = (id: string, email: string): PersonRecord => ({
-  ...invite(id, email, ""),
+const notSignedInNoMission = (id: string, name: string): PersonRecord => ({
+  ...notSignedIn(id, name, ""),
   game: null,
 });
 
@@ -121,9 +121,9 @@ const NAMED: PersonRecord[] = [
     clues: 1,
     game: playing("chloe", "Theo Lindqvist", "2026-10-27"),
   }),
-  invite("jordan", "jordan.lee@example.com", "Sam Rivera"),
-  invite("dev", "dev.patel@example.com", "Grace Liu"),
-  invitedNotStarted("riley", "riley.kane@example.com"),
+  notSignedIn("jordan", "Jordan Lee", "Sam Rivera"),
+  notSignedIn("dev", "Dev Patel", "Grace Liu"),
+  notSignedInNoMission("riley", "Riley Kane"),
   person("Diego Alvarez", "Creative", {
     game: finished(
       "diego",

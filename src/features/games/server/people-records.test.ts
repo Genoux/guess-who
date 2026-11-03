@@ -105,12 +105,12 @@ describe("listPeople", () => {
     ]);
   });
 
-  it("reads every person row, with a game linked by player or by email, in one query", async () => {
+  it("reads every person row, with the game they play, in one query", async () => {
     await listPeople();
     expect(sentStatements(client)).toHaveLength(1);
     const [people] = sentStatements(client);
     expect(people?.sql).toMatch(
-      /from people left join teams on people\.team_id = teams\.id left join games on \(games\.player_person_id = people\.id or games\.player_email = people\.email\) left join people welcomer on games\.welcomer_person_id = welcomer\.id$/,
+      /from people left join teams on people\.team_id = teams\.id left join games on games\.player_person_id = people\.id left join people welcomer on games\.welcomer_person_id = welcomer\.id$/,
     );
     expect(people?.sql).not.toMatch(/ where people\.|clerk_user_id is/);
     expect(people?.sql).toMatch(/from welcomer_clues where welcomer_clues\.person_id = people\.id/);

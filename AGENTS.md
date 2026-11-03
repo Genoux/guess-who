@@ -136,15 +136,15 @@ Never commit, push or open a PR unless explicitly asked.
   mission starts); guess any collected sticker, a wrong guess rules that person out; found or
   revealed on day 14; then the player makes their own sticker. Only a teammate with a complete card
   and all three clues written can be picked as a welcomer. The admin People page has three views, each person in
-  exactly one by mission state: Playing, No mission (no game, signed in or only invited by email, with an icon
+  exactly one by mission state: Playing, No mission (no game, signed in or not, with an icon
   until they sign in; search, filter, and select people to turn missions on; people who find no
-  free welcomer stay here and the toast says so) and Done. Only an admin starts a mission: "Add new
-  hire" adds an email, flags it and starts the mission at once (no free welcomer: the person is
-  still added and stays in No mission, and the toast says so), and Turn on starts the others,
-  signed in or not (the person links on first sign-in). A running mission is ended with End mission only: it resets the game
+  free welcomer stay here and the toast says so) and Done. Only an admin starts a mission: "Start as
+  new hire" (No mission rows, confirmed first) flags the person and starts the mission at once (no
+  free welcomer: the person stays flagged in No mission, and the toast says so), and Turn on starts
+  the others, signed in or not. A running mission is ended with End mission only: it resets the game
   (guesses and clues cleared), keeps the album, notes and new hire flag, and starting again picks a
   new welcomer. One pipeline, the rite of passage: a new hire (`people.new_hire`,
-  set by "Add new hire" or "Set as new hire", the latter starting no mission, and cleared when their mission ends, found or revealed)
+  set by "Start as new hire", and cleared when their mission ends, found or revealed)
   earns their card and clues by playing. While the flag is set My card and My clues are hidden,
   /card and /clues redirect, and the card and clue actions refuse ("Finish your mission first.";
   one rule, `isLockedNewHire`). With no mission they have nothing to open, only the locked home.
@@ -154,7 +154,8 @@ Never commit, push or open a PR unless explicitly asked.
 
 ### Stack deltas
 
-- Clerk with Sign in with Slack and an email-domain allowlist (phase 1).
+- Clerk with Sign in with Slack (phase 1). Access is strict: the verified email must match exactly one
+  person, on `email` or `personal_email`; there is no domain allowlist.
 - Drizzle + Neon (phase 1). Cloudflare R2 for photos (phase 3).
 - Notifications leave the app as signed webhook events to n8n, which posts to Slack. No Slack API
   in the app.
@@ -203,19 +204,18 @@ Never commit, push or open a PR unless explicitly asked.
 - The album belongs to the person: `collections` has `collector_person_id`, not a game, so
   deleting a game never touches it. Anyone signed in can open it; nobody collects their own sticker.
 - A game exists only once its mission has started: `welcomer_person_id` and `start_date` are
-  required. `beginMissionRecord` (used by turn-on and Add new hire) takes one
+  required. `beginMissionRecord` (used by turn-on and Start as new hire) takes one
   advisory lock, picks the welcomer, inserts the game with `start_date` today and copies the
   welcomer's three `welcomer_clues` into the per-game `clues` table; the board and the reveal read
   that copy. A partial unique index allows one active game per welcomer; a lost race is retried
   once, then answers "No welcomer is free right now. Try again tomorrow." Bulk turn-on starts people
-  one by one and returns `{ started, skippedNoWelcomer }`. A person who has not signed in yet starts
-  with `games.player_person_id` null; their first sign-in links the game by email. The insert reads
-  the player's row `for share` inside the lock, so a sign-in racing it either is seen or waits and
-  finds the game. `games.intro_seen_at` records the
+  one by one and returns `{ started, skippedNoWelcomer }`. `games.player_person_id` is always set, signed in
+  or not (people rows come from Deel); `games.player_email` is a legacy column, written but never
+  read to find a game. `games.intro_seen_at` records the
   welcome tour, shown on the first visit to `/`.
-- `getViewerPerson()` creates or links the viewer's `people` row on first request (Clerk user id,
-  else verified primary email) and links unclaimed games whose `player_email` matches. A row
-  already linked to another Clerk user is never moved; an admin clears `clerk_user_id` first.
+- `getViewerPerson()` finds the viewer's `people` row by Clerk user id, else links the one row whose
+  `email` or `personal_email` equals the verified primary email. It never creates a row: no match,
+  or more than one, redirects to `/not-on-the-list`. A row already linked to another Clerk user is never moved; an admin clears `clerk_user_id` first.
   Once per Clerk session (`synced_session_id`) it re-reads the Clerk user for the Slack user id and
   the Slack photo, so a photo changed in Slack shows after the next sign-in.
 - Emails (`people.email`, `games.player_email`) are stored normalized with `normalizeEmail`.
@@ -227,7 +227,7 @@ Never commit, push or open a PR unless explicitly asked.
   can't be removed."): `games.welcomer_person_id` is `restrict` and the game is another player's
   record. It also refuses while they play a running mission ("End their mission first.", expired
   missions are revealed first), and an admin cannot remove themselves. Photos are Slack URLs, so no
-  storage objects; the Clerk user stays, and signing in again makes a fresh row. `hasWelcomed` on a
+  storage objects; the Clerk user stays, and signing in again is refused until Deel lists them again. `hasWelcomed` on a
   People row hides Remove.
 - The game runs on Montréal time (`America/Toronto`): day 1 is `games.start_date`, clues land at
   09:00 on days 3, 6, 9 and 12, the reveal at 09:00 on day 14 (`features/games/lib/game-schedule.ts`).

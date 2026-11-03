@@ -32,9 +32,8 @@ describe("turnOnMissionsRecord", () => {
     const select = statement("select");
     expect(select?.sql).toMatch(/where \(people\.id in \(\$1, \$2\) and \(people\.new_hire = /);
     expect(select?.sql).not.toMatch(/clerk_user_id is not null/);
-    expect(select?.sql).toMatch(
-      /games\.player_person_id = people\.id or games\.player_email = people\.email/,
-    );
+    expect(select?.sql).toMatch(/games\.player_person_id = people\.id/);
+    expect(select?.sql).not.toMatch(/player_email/);
     expect(select?.params).toEqual(expect.arrayContaining(["ana", "ben"]));
   });
 
@@ -79,7 +78,7 @@ describe("turnOnMissionsRecord", () => {
     ]);
   });
 
-  it("starts someone invited who has not signed in, by their own person id", async () => {
+  it("starts someone who has not signed in yet, by their own person id", async () => {
     client.query.mockResolvedValueOnce({ rows: [["kim", "kim@gmail.com"]] });
     await expect(turnOn(["kim"])).resolves.toEqual({ started: 1, skippedNoWelcomer: 0 });
     expect(begin.beginMissionRecord).toHaveBeenCalledWith({
