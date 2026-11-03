@@ -20,6 +20,7 @@ export const deelPersonSchema = z.object({
   country: z.string().nullish(),
   department: z.object({ id: z.string(), name: z.string() }).nullish(),
   client_legal_entity: z.object({ id: z.string(), name: z.string() }).nullish(),
+  employments: z.array(z.object({ id: z.string() })).default([]),
 });
 
 export type DeelPerson = z.infer<typeof deelPersonSchema>;

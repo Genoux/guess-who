@@ -126,4 +126,27 @@ describe("deel client", () => {
     expect(ids).toEqual([]);
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
+
+  describe("findPersonByContractId", () => {
+    const listing = (...people: object[]) =>
+      vi.fn<typeof fetch>(() =>
+        reply({
+          data: people,
+          page: { total_rows: people.length, items_per_page: 100, offset: 0 },
+        }),
+      );
+
+    it("returns the person whose employments include the contract", async () => {
+      const fetchImpl = listing(
+        { ...person, id: "p1", employments: [{ id: "c1" }] },
+        { ...person, id: "p2", employments: [{ id: "c2" }, { id: "c3" }] },
+      );
+      expect((await clientWith(fetchImpl).findPersonByContractId("c3"))?.id).toBe("p2");
+    });
+
+    it("returns null when no person has the contract", async () => {
+      const fetchImpl = listing({ ...person, id: "p1" });
+      expect(await clientWith(fetchImpl).findPersonByContractId("c9")).toBeNull();
+    });
+  });
 });
