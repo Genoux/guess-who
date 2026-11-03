@@ -13,9 +13,13 @@ export const addNewHire = action({
   schema: addNewHireSchema,
   authorize: authorizeAdminPerson,
   run: async ({ email }, admin) => {
-    await addNewHireRecord({ email });
-    logger.info("new hire added", { adminPersonId: admin.personId });
-    return ok();
+    const added = await addNewHireRecord({
+      email,
+      adminPersonId: admin.personId,
+      now: new Date(),
+    });
+    logger.info("new hire added", { ...added, adminPersonId: admin.personId });
+    return ok(added);
   },
-  revalidate: () => [ROUTES.admin],
+  revalidate: () => [ROUTES.admin, ROUTES.play, ROUTES.playMission],
 });

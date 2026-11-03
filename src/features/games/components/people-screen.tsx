@@ -59,6 +59,8 @@ type Action<Data> = {
   run: () => Promise<Result<Data>>;
   previewData: Data;
   message: (data: Data) => string;
+  /** Where the person ended up once the server answered, when that can differ from the move. */
+  settledView?: (data: Data) => PeopleView;
 };
 
 /**
@@ -89,7 +91,7 @@ export function PeopleScreen({
     onSelect: () => setView(value),
   });
 
-  function perform<Data>({ move, run, previewData, message }: Action<Data>) {
+  function perform<Data>({ move, run, previewData, message, settledView }: Action<Data>) {
     startTransition(async () => {
       applyMove(move);
       const result: Result<Data> = preview
@@ -100,6 +102,7 @@ export function PeopleScreen({
         return;
       }
       if (preview) setPreviewBoard((current) => applyPeopleMove(current, move));
+      if (settledView) setView(settledView(result.data));
       gameToast(message(result.data));
     });
   }
@@ -167,12 +170,16 @@ export function PeopleScreen({
       });
       return;
     }
-    setView("noMission");
+    setView("playing");
     perform({
       move: { type: "add", email },
       run: () => addNewHire({ email }),
-      previewData: undefined,
-      message: () => "Added. Turn on their mission when it's time.",
+      previewData: { started: true },
+      message: ({ started }) =>
+        started
+          ? "Added. Their mission started."
+          : "Added, but no mission could start: no free welcomer.",
+      settledView: ({ started }) => (started ? "playing" : "noMission"),
     });
   }
 
