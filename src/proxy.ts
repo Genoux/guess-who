@@ -22,5 +22,8 @@ export const config = {
     // Skips Next internals, static files and the Sentry tunnel (/monitoring).
     "/((?!_next/|monitoring(?:/|$)|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|otf|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     "/(api|trpc)(.*)",
+    // Clerk proxies its frontend API here in production (auto-proxy); its scripts end in .js, which
+    // the first matcher skips, so without this they 404 and sign-in renders blank.
+    "/__clerk/(.*)",
   ],
 };
