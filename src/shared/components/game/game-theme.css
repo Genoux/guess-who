@@ -282,6 +282,16 @@
   mask-image: linear-gradient(to bottom, #000 calc(100% - 1lh * var(--fact-edge, 0)), transparent);
 }
 
+/* A flat ink veil over a card's art that mutes the picture, at `--dim-max` of ink. */
+@utility sticker-dim {
+  --dim-max: 0.5;
+  background-color: color-mix(
+    in srgb,
+    var(--color-game-ink) calc(var(--dim-max) * 100%),
+    transparent
+  );
+}
+
 @utility sticker-scrim-blur {
   backdrop-filter: blur(var(--scrim-blur));
   mask-image: linear-gradient(
