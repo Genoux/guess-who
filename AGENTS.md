@@ -227,8 +227,9 @@ Never commit, push or open a PR unless explicitly asked.
   the Slack photo, so a photo changed in Slack shows after the next sign-in.
 - Emails (`people.email`, `games.player_email`) are stored normalized with `normalizeEmail`.
 - Deel is the source of truth for who exists (`src/integrations/deel`, read-only client). Env:
-  `DEEL_API_URL` (defaults to production), `DEEL_API_TOKEN` (people:read), `DEEL_WEBHOOK_SECRET`
-  (optional; without it the webhook answers 401) and the optional `DEEL_ORGANIZATION_ID`.
+  `DEEL_API_URL` (defaults to production), `DEEL_API_TOKEN` (people:read) and `DEEL_WEBHOOK_SECRET`
+  (both required when `VERCEL_ENV` is `production`, optional elsewhere; without the secret the
+  webhook answers 401) and the optional `DEEL_ORGANIZATION_ID`.
   `bun run deel:backfill` (dry run by default; `--apply`, plus `--confirm-production` against the
   production API) creates people and marks those already `active` with `auto_mission_done_at`, so
   they never auto-start; it runs `seedTeams` first. `people.deel_id` is the key; the work email
@@ -242,10 +243,13 @@ Never commit, push or open a PR unless explicitly asked.
   permanent outcomes (logged), 5xx only for transient failures so Deel retries. A replay only
   re-syncs current state.
 - Auto-mission: after any upsert, a person whose Deel `hiring_status` is `active`, with
-  `auto_mission_done_at` null and no game, is flagged `new_hire` and `startAutoMissionRecord` starts
+  `auto_mission_done_at` null, no game and a `start_date` within the last 30 days (`joinedRecently`),
+  is flagged `new_hire` and `startAutoMissionRecord` starts
   their mission. `beginMissionRecord` sets the marker for every start, so End mission never
   restarts it. No free welcomer: the person stays flagged and unmarked until a later event or an
-  admin starts them.
+  admin starts them. A person who is not a recent hire is never flagged.
+- A Deel department that maps to no team keeps the existing team and logs a warning with the Deel and
+  department ids only.
 - "Joined recently" (`joinedRecently`, `entities/game-schedule.ts`): `people.start_date` is at most
   30 days back in Montréal, or still ahead. No Mission rows show it as their small line.
 - There is no Remove person: Deel decides who exists. `removeLeaverRecord` runs when a webhook's

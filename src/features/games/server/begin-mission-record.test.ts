@@ -50,6 +50,16 @@ const start = (overrides = {}) =>
 /** Postgres' unique violation, as the Neon driver reports it. */
 const uniqueViolation = Object.assign(new Error("duplicate key"), { code: "23505" });
 
+/** Postgres' foreign key violation: the chosen welcomer row is gone. */
+const foreignKeyViolation = Object.assign(new Error("fk violation"), {
+  code: "23503",
+  constraint: "games_welcomer_person_id_people_id_fk",
+});
+const playerGoneViolation = Object.assign(new Error("fk violation"), {
+  code: "23503",
+  constraint: "games_player_person_id_people_id_fk",
+});
+
 const WELCOMER_CLUES = [
   [2, "Has never owned a car."],
   [3, "Learning the cello."],
@@ -59,6 +69,8 @@ const WELCOMER_CLUES = [
 type Behaviour = {
   /** The first inserts of games lose the welcomer race. */
   lostInserts?: number;
+  /** What a lost insert throws. */
+  lostWith?: Error;
   /** The first checks find the chosen welcomer already welcomed by the player's own player. */
   clashes?: number;
   /** The person already has a mission. */
@@ -67,14 +79,19 @@ type Behaviour = {
 
 const WELCOMER_TEAM = [["Creative", "Ana Welcomer", "https://img.test/ana.png"]];
 
-const behave = ({ lostInserts = 0, clashes = 0, hasMission = false }: Behaviour = {}) => {
+const behave = ({
+  lostInserts = 0,
+  lostWith = uniqueViolation,
+  clashes = 0,
+  hasMission = false,
+}: Behaviour = {}) => {
   let lost = lostInserts;
   let clash = clashes;
   client.query.mockImplementation(async (config) => {
     const text = config.text.replaceAll('"', "");
     if (text.includes("pg_advisory_xact_lock")) return { rows: [] };
     if (text.startsWith("insert into games")) {
-      if (lost-- > 0) throw uniqueViolation;
+      if (lost-- > 0) throw lostWith;
       return { rows: [["game_1"]] };
     }
     if (text.includes("from welcomer_clues")) return { rows: WELCOMER_CLUES };
@@ -267,6 +284,26 @@ describe("beginMissionRecord", () => {
     await start();
     const inserts = sentStatements(client).filter(({ sql }) => sql.startsWith("insert into games"));
     expect(inserts.map(({ params }) => params.includes("ben"))).toEqual([false, true]);
+  });
+
+  it("retries the pick once when the chosen welcomer was deleted meanwhile", async () => {
+    behave({ lostInserts: 1, lostWith: foreignKeyViolation });
+    records.listWelcomerCandidates
+      .mockResolvedValueOnce([candidate("ana"), candidate("ben")])
+      .mockResolvedValueOnce([candidate("ben")]);
+    await start();
+    const inserts = sentStatements(client).filter(({ sql }) => sql.startsWith("insert into games"));
+    expect(inserts.map(({ params }) => params.includes("ben"))).toEqual([false, true]);
+  });
+
+  it("answers no welcomer free when the retry hits a deleted welcomer too", async () => {
+    behave({ lostInserts: 2, lostWith: foreignKeyViolation });
+    await expect(start()).rejects.toMatchObject({ safeMessage: NO_WELCOMER_FREE });
+  });
+
+  it("rethrows a foreign key error that is not about the welcomer", async () => {
+    behave({ lostInserts: 1, lostWith: playerGoneViolation });
+    await expect(start()).rejects.toMatchObject({ cause: playerGoneViolation });
   });
 
   it("gives up with a conflict when the retry loses the race too", async () => {
