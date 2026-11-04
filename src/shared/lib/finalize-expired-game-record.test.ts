@@ -16,6 +16,8 @@ const game: Game = {
   welcomerPersonId: "welcomer",
   startDate: "2026-11-02",
   welcomerTeamName: null,
+  welcomerName: null,
+  welcomerImageUrl: null,
   status: "active",
   foundAt: null,
   foundWithClues: null,

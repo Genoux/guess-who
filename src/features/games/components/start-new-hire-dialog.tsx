@@ -5,24 +5,24 @@ import { GameModalActions } from "@/shared/components/game/game-modal-actions";
 import { firstName } from "../lib/first-name";
 import type { NoMissionRowView } from "../lib/people-view";
 
-type SetNewHireDialogProps = {
-  /** The person to flag; the dialog is open while it is set. */
+type StartNewHireDialogProps = {
+  /** The person to start; the dialog is open while it is set. */
   row: NoMissionRowView | null;
   onConfirm: (row: NoMissionRowView) => void;
   onClose: () => void;
 };
 
-export function SetNewHireDialog({ row, onConfirm, onClose }: SetNewHireDialogProps) {
+export function StartNewHireDialog({ row, onConfirm, onClose }: StartNewHireDialogProps) {
   return (
     <GameModal
       open={row !== null}
       onOpenChange={(open) => !open && onClose()}
-      title={`Set ${row ? firstName(row.name ?? row.email) : ""} as a new hire?`}
-      description="Their card and clues are hidden until they finish a mission."
+      title={`Start ${row ? firstName(row.name ?? row.email) : ""} as a new hire?`}
+      description="Their mission starts now. Their card and clues are hidden until it ends."
     >
       <GameModalActions
         secondary={{ label: "Cancel", onClick: onClose }}
-        primary={{ label: "Set as new hire", onClick: () => row && onConfirm(row) }}
+        primary={{ label: "Start mission", onClick: () => row && onConfirm(row) }}
       />
     </GameModal>
   );

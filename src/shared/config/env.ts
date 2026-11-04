@@ -2,13 +2,13 @@ import {
   appUrlEnv,
   clerkClientEnv,
   clerkServerEnv,
-  csv,
   dbEnv,
   sentryClientEnv,
   upstashEnv,
 } from "@inbeat/core/env";
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
+import { deelSecretsEnv } from "./deel-secrets-env";
 
 export const env = createEnv({
   server: {
@@ -16,8 +16,9 @@ export const env = createEnv({
     ...dbEnv,
     ...clerkServerEnv,
     ...upstashEnv,
-    // Who may sign in without an invite (an admin-created person or game).
-    ALLOWED_EMAIL_DOMAINS: csv().optional().default(["inbeat.agency"]),
+    DEEL_API_URL: z.url().default("https://api.letsdeel.com/rest/v2"),
+    ...deelSecretsEnv(process.env.VERCEL_ENV),
+    DEEL_ORGANIZATION_ID: z.string().min(1).optional(),
   },
   shared: {
     NODE_ENV: z.enum(["development", "test", "production"]).optional(),

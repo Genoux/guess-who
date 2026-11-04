@@ -1,26 +1,20 @@
 import { CountChip } from "@/shared/components/game/count-chip";
 import { GameBook } from "@/shared/components/game/game-book";
 import { gameCn } from "@/shared/components/game/game-cn";
-import { GameRowMenu } from "@/shared/components/game/game-row-menu";
 import type { DoneRowView } from "../lib/people-view";
 import { PeopleEmpty } from "./people-empty";
 import {
   PEOPLE_HOVER_GROUP,
   PEOPLE_LAST_CLASS,
-  PEOPLE_MENU_CLASS,
   PEOPLE_ROW_CLASS,
   PeopleTable,
 } from "./people-table";
 import { NumberCell, PersonCell, RoleTag, TeamTag, WelcomerCell } from "./person-cell";
 
-type PeopleDoneProps = {
-  rows: readonly DoneRowView[];
-  /** Asks to remove them and all their data (confirmed first), unless they welcome a running mission. */
-  onRemove: (row: DoneRowView) => void;
-};
+type PeopleDoneProps = { rows: readonly DoneRowView[] };
 
 /** Finished missions, most recently ended first. */
-export function PeopleDone({ rows, onRemove }: PeopleDoneProps) {
+export function PeopleDone({ rows }: PeopleDoneProps) {
   return (
     <GameBook
       as="section"
@@ -36,7 +30,6 @@ export function PeopleDone({ rows, onRemove }: PeopleDoneProps) {
         />
       ) : (
         <PeopleTable
-          menu
           heads={[
             { label: "Player" },
             { label: "Role" },
@@ -65,13 +58,6 @@ export function PeopleDone({ rows, onRemove }: PeopleDoneProps) {
               <NumberCell muted className={PEOPLE_LAST_CLASS}>
                 {row.endedOn}
               </NumberCell>
-              {row.hasWelcomed ? null : (
-                <GameRowMenu
-                  className={PEOPLE_MENU_CLASS}
-                  label={`Actions for ${row.name ?? row.email}`}
-                  items={[{ label: "Remove", onSelect: () => onRemove(row), destructive: true }]}
-                />
-              )}
             </li>
           ))}
         </PeopleTable>

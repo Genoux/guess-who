@@ -9,6 +9,8 @@ const game = (status: Game["status"]): Game => ({
   welcomerPersonId: "welcomer",
   startDate: "2026-11-02",
   welcomerTeamName: null,
+  welcomerName: null,
+  welcomerImageUrl: null,
   status,
   foundAt: null,
   foundWithClues: null,

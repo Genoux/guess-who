@@ -11,6 +11,9 @@ export const portraitSlug = (name: string) =>
 
 export const avatarUrlOf = (name: string) => `/demo/avatars/${portraitSlug(name)}.webp`;
 
+/** Seed rows carry a `seed-` Deel id, so they never collide with a real one. */
+export const deelIdOf = (name: string) => `seed-${portraitSlug(name)}`;
+
 export const demoCastEmail = (name: string) =>
   `${ascii(name).replace(/[^a-z0-9]+/g, ".")}@example.com`;
 

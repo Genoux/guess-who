@@ -21,7 +21,7 @@ vi.mock("@/shared/lib/find-active-welcomer-game", () => ({
   findActiveWelcomerGame: records.findActiveWelcomerGame,
 }));
 
-import { beginMissionRecord } from "./begin-mission-record";
+import { ALREADY_HAS_MISSION, beginMissionRecord } from "./begin-mission-record";
 import { NO_WELCOMER_FREE } from "./choose-welcomer";
 
 const candidate = (id: string, overrides = {}) => ({
@@ -50,6 +50,16 @@ const start = (overrides = {}) =>
 /** Postgres' unique violation, as the Neon driver reports it. */
 const uniqueViolation = Object.assign(new Error("duplicate key"), { code: "23505" });
 
+/** Postgres' foreign key violation: the chosen welcomer row is gone. */
+const foreignKeyViolation = Object.assign(new Error("fk violation"), {
+  code: "23503",
+  constraint: "games_welcomer_person_id_people_id_fk",
+});
+const playerGoneViolation = Object.assign(new Error("fk violation"), {
+  code: "23503",
+  constraint: "games_player_person_id_people_id_fk",
+});
+
 const WELCOMER_CLUES = [
   [2, "Has never owned a car."],
   [3, "Learning the cello."],
@@ -59,30 +69,29 @@ const WELCOMER_CLUES = [
 type Behaviour = {
   /** The first inserts of games lose the welcomer race. */
   lostInserts?: number;
+  /** What a lost insert throws. */
+  lostWith?: Error;
   /** The first checks find the chosen welcomer already welcomed by the player's own player. */
   clashes?: number;
-  /** The email or person already has a mission. */
+  /** The person already has a mission. */
   hasMission?: boolean;
-  /** The player has claimed their person row by signing in. */
-  signedIn?: boolean;
 };
 
-const WELCOMER_TEAM = [["Creative"]];
+const WELCOMER_TEAM = [["Creative", "Ana Welcomer", "https://img.test/ana.png"]];
 
 const behave = ({
   lostInserts = 0,
+  lostWith = uniqueViolation,
   clashes = 0,
   hasMission = false,
-  signedIn = true,
 }: Behaviour = {}) => {
   let lost = lostInserts;
   let clash = clashes;
   client.query.mockImplementation(async (config) => {
     const text = config.text.replaceAll('"', "");
     if (text.includes("pg_advisory_xact_lock")) return { rows: [] };
-    if (text.includes("for share")) return { rows: [[signedIn ? "user_player" : null]] };
     if (text.startsWith("insert into games")) {
-      if (lost-- > 0) throw uniqueViolation;
+      if (lost-- > 0) throw lostWith;
       return { rows: [["game_1"]] };
     }
     if (text.includes("from welcomer_clues")) return { rows: WELCOMER_CLUES };
@@ -90,7 +99,7 @@ const behave = ({
     if (text.includes("games.welcomer_person_id =")) {
       return { rows: clash-- > 0 ? [["game_9"]] : [] };
     }
-    if (text.includes("games.player_email")) return { rows: hasMission ? [["game_9"]] : [] };
+    if (text.includes("games.player_person_id")) return { rows: hasMission ? [["game_9"]] : [] };
     return { rows: [] };
   });
 };
@@ -119,6 +128,27 @@ describe("beginMissionRecord", () => {
     await start();
     expect(insert()?.sql).toMatch(/welcomer_team_name/);
     expect(insert()?.params).toContain("Creative");
+  });
+
+  it("freezes the welcomer's name and photo too, so the reveal survives them leaving Deel", async () => {
+    await start();
+    expect(insert()?.sql).toMatch(/welcomer_name/);
+    expect(insert()?.sql).toMatch(/welcomer_image_url/);
+    expect(insert()?.params).toEqual(
+      expect.arrayContaining(["Ana Welcomer", "https://img.test/ana.png"]),
+    );
+  });
+
+  it("clears the player's welcomer_left_at in the same transaction", async () => {
+    await start();
+    const statements = sentStatements(client).map(({ sql }) => sql);
+    const clear = sentStatements(client).find(({ sql }) =>
+      sql.startsWith("update people set welcomer_left_at"),
+    );
+    expect(clear?.params).toEqual(expect.arrayContaining([null, "player"]));
+    expect(statements.indexOf("commit")).toBeGreaterThan(
+      statements.findIndex((text) => text.startsWith("update people set welcomer_left_at")),
+    );
   });
 
   it("snapshots the welcomer's clues into the game's own", async () => {
@@ -157,34 +187,20 @@ describe("beginMissionRecord", () => {
     expect(insert()?.params).toContain("ben");
   });
 
-  it("never picks the player, signed in or not", async () => {
-    behave({ signedIn: false });
+  it("never picks the player", async () => {
     records.listWelcomerCandidates.mockResolvedValue([candidate("player"), candidate("ben")]);
     await start();
     expect(insert()?.params).toContain("ben");
-    expect(insert()?.params).not.toContain("player");
   });
 
-  it("links the player to the game when they have signed in by the time it is written", async () => {
+  it("always links the player's person row, signed in or not, and reads nothing by email", async () => {
     await start();
-    expect(insert()?.params).toContain("player");
-  });
-
-  it("leaves the game unlinked while the player has not signed in", async () => {
-    behave({ signedIn: false });
-    await start();
-    expect(insert()?.params).toEqual(expect.arrayContaining([null, "player@inbeat.agency", "ana"]));
-    expect(insert()?.params).not.toContain("player");
-  });
-
-  it("locks the player's row until commit, so a sign-in either shows or finds the game", async () => {
-    await start();
-    const sql = sentStatements(client).map((statement) => statement.sql);
-    const lock = sql.findIndex((text) => text.includes("pg_advisory_xact_lock"));
-    const claim = sql.findIndex((text) => text.includes("for share"));
-    const write = sql.findIndex((text) => text.startsWith("insert into games"));
-    expect(lock).toBeLessThan(claim);
-    expect(claim).toBeLessThan(write);
+    expect(insert()?.params).toEqual(
+      expect.arrayContaining(["player", "player@inbeat.agency", "ana"]),
+    );
+    expect(sentStatements(client).some(({ sql }) => sql.includes("games.player_email"))).toBe(
+      false,
+    );
   });
 
   it("answers a conflict when nobody is eligible, and writes nothing", async () => {
@@ -204,11 +220,34 @@ describe("beginMissionRecord", () => {
     expect(check).toBeLessThan(write);
   });
 
-  it("refuses a second mission for the same email or person, inside the lock", async () => {
+  it("marks the person's auto mission as done in the same transaction as the game", async () => {
+    await start();
+    const sql = sentStatements(client).map((statement) => statement.sql);
+    const marker = sentStatements(client).find(({ sql: text }) =>
+      text.startsWith("update people set auto_mission_done_at"),
+    );
+    expect(marker?.params).toEqual(expect.arrayContaining([now.toISOString(), "player"]));
+    expect(sql.findIndex((text) => text.startsWith("insert into games"))).toBeLessThan(
+      sql.findIndex((text) => text.startsWith("update people set auto_mission_done_at")),
+    );
+    expect(sql.indexOf("commit")).toBeGreaterThan(
+      sql.findIndex((text) => text.startsWith("update people set auto_mission_done_at")),
+    );
+  });
+
+  it("keeps an existing marker", async () => {
+    await start();
+    const marker = sentStatements(client).find(({ sql }) =>
+      sql.startsWith("update people set auto_mission_done_at"),
+    );
+    expect(marker?.sql).toMatch(/auto_mission_done_at is null/);
+  });
+
+  it("refuses a second mission for the same person, inside the lock", async () => {
     behave({ hasMission: true });
     await expect(start()).rejects.toMatchObject({
       kind: "conflict",
-      safeMessage: "This email already has a mission.",
+      safeMessage: ALREADY_HAS_MISSION,
     });
     expect(insert()).toBeUndefined();
   });
@@ -245,6 +284,26 @@ describe("beginMissionRecord", () => {
     await start();
     const inserts = sentStatements(client).filter(({ sql }) => sql.startsWith("insert into games"));
     expect(inserts.map(({ params }) => params.includes("ben"))).toEqual([false, true]);
+  });
+
+  it("retries the pick once when the chosen welcomer was deleted meanwhile", async () => {
+    behave({ lostInserts: 1, lostWith: foreignKeyViolation });
+    records.listWelcomerCandidates
+      .mockResolvedValueOnce([candidate("ana"), candidate("ben")])
+      .mockResolvedValueOnce([candidate("ben")]);
+    await start();
+    const inserts = sentStatements(client).filter(({ sql }) => sql.startsWith("insert into games"));
+    expect(inserts.map(({ params }) => params.includes("ben"))).toEqual([false, true]);
+  });
+
+  it("answers no welcomer free when the retry hits a deleted welcomer too", async () => {
+    behave({ lostInserts: 2, lostWith: foreignKeyViolation });
+    await expect(start()).rejects.toMatchObject({ safeMessage: NO_WELCOMER_FREE });
+  });
+
+  it("rethrows a foreign key error that is not about the welcomer", async () => {
+    behave({ lostInserts: 1, lostWith: playerGoneViolation });
+    await expect(start()).rejects.toMatchObject({ cause: playerGoneViolation });
   });
 
   it("gives up with a conflict when the retry loses the race too", async () => {

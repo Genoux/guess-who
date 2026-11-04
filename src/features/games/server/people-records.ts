@@ -1,5 +1,5 @@
 import "server-only";
-import { asc, eq, or, sql } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { games, people, teams } from "@/db/schema";
 import { db } from "@/shared/lib/db";
@@ -21,7 +21,7 @@ const gameColumns = {
   startDate: games.startDate,
   foundAt: games.foundAt,
   revealSeenAt: games.revealSeenAt,
-  welcomerName: welcomer.name,
+  welcomerName: sql<string | null>`coalesce(${welcomer.name}, ${games.welcomerName})`,
 };
 
 type GameColumns = {
@@ -41,14 +41,12 @@ const toGame = ({
   startDate,
   ...rest
 }: GameColumns): PersonRecord["game"] =>
-  id && status && welcomerPersonId && startDate
-    ? { id, status, welcomerPersonId, startDate, ...rest }
-    : null;
+  id && status && startDate ? { id, status, welcomerPersonId, startDate, ...rest } : null;
 
 const toTeam = (name: string | null, color: string | null) =>
   name && color ? { name, color } : null;
 
-/** Everyone with a person row, signed in or only invited, with their mission if they have one. */
+/** Everyone with a person row, signed in or not, with their mission if they have one. */
 export async function listPeople(): Promise<PersonRecord[]> {
   const rows = await db
     .select({
@@ -65,11 +63,13 @@ export async function listPeople(): Promise<PersonRecord[]> {
       imageUrl: people.imageUrl,
       newHire: people.newHire,
       cluesWritten: WRITTEN_CLUES,
+      welcomerLeft: sql<boolean>`${people.welcomerLeftAt} is not null`,
+      joinedOn: people.startDate,
       ...gameColumns,
     })
     .from(people)
     .leftJoin(teams, eq(people.teamId, teams.id))
-    .leftJoin(games, or(eq(games.playerPersonId, people.id), eq(games.playerEmail, people.email)))
+    .leftJoin(games, eq(games.playerPersonId, people.id))
     .leftJoin(welcomer, eq(games.welcomerPersonId, welcomer.id));
   return rows.map(
     ({
@@ -86,6 +86,8 @@ export async function listPeople(): Promise<PersonRecord[]> {
       imageUrl,
       newHire,
       cluesWritten,
+      welcomerLeft,
+      joinedOn,
       ...game
     }) => ({
       personId,
@@ -100,6 +102,8 @@ export async function listPeople(): Promise<PersonRecord[]> {
       imageUrl,
       newHire,
       cluesWritten,
+      welcomerLeft,
+      joinedOn,
       game: toGame(game),
     }),
   );

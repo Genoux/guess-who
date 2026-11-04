@@ -30,6 +30,11 @@ import { PersonCell, RoleTag, TeamTag } from "./person-cell";
 
 const PAGE_SIZE = 14;
 const NEEDS_CARD_AND_CLUES = "Needs card and clues";
+const WELCOMER_LEFT_NOTE = "Their welcomer left. Start them again.";
+const JOINED_RECENTLY_NOTE = "Joined recently";
+
+const noteFor = ({ welcomerLeft, joinedRecently }: NoMissionRowView) =>
+  welcomerLeft ? WELCOMER_LEFT_NOTE : joinedRecently ? JOINED_RECENTLY_NOTE : undefined;
 
 const READINESS_DOT: Record<AsWelcomer["kind"], string> = {
   canWelcome: "bg-game-ready",
@@ -43,14 +48,12 @@ type PeopleNoMissionProps = {
   rows: readonly NoMissionRowView[];
   /** Turns missions on for these people; they move to Playing at once. */
   onTurnOn: (keys: readonly string[]) => void;
-  /** Asks to make them a new hire (confirmed first); they stay here, tagged. */
-  onSetNewHire: (row: NoMissionRowView) => void;
-  /** Asks to remove them and all their data (confirmed first), unless they welcome a running mission. */
-  onRemove: (row: NoMissionRowView) => void;
+  /** Asks to start them as a new hire (confirmed first); they move to Playing at once. */
+  onStartAsNewHire: (row: NoMissionRowView) => void;
 };
 
-/** Everyone with no mission, invites included: search, filter, and a select mode that turns missions on. */
-export function PeopleNoMission({ rows, onTurnOn, onSetNewHire, onRemove }: PeopleNoMissionProps) {
+/** Everyone with no mission: search, filter, and a select mode that turns missions on. */
+export function PeopleNoMission({ rows, onTurnOn, onStartAsNewHire }: PeopleNoMissionProps) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<PeopleFilter>("all");
   const [limit, setLimit] = useState(PAGE_SIZE);
@@ -153,6 +156,7 @@ export function PeopleNoMission({ rows, onTurnOn, onSetNewHire, onRemove }: Peop
                       team={row.team}
                       imageUrl={row.imageUrl}
                       notSignedIn={!row.signedIn}
+                      note={noteFor(row)}
                       leading={
                         selecting ? (
                           <span title={canTurnOn(row) ? undefined : NEEDS_CARD_AND_CLUES}>
@@ -190,18 +194,7 @@ export function PeopleNoMission({ rows, onTurnOn, onSetNewHire, onRemove }: Peop
                           ...(canTurnOn(row)
                             ? [{ label: "Turn on mission", onSelect: () => onTurnOn([row.key]) }]
                             : []),
-                          ...(row.newHire
-                            ? []
-                            : [{ label: "Set as new hire", onSelect: () => onSetNewHire(row) }]),
-                          ...(row.hasWelcomed
-                            ? []
-                            : [
-                                {
-                                  label: "Remove",
-                                  onSelect: () => onRemove(row),
-                                  destructive: true,
-                                },
-                              ]),
+                          { label: "Start as new hire", onSelect: () => onStartAsNewHire(row) },
                         ]}
                       />
                     )}

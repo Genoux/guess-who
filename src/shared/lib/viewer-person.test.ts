@@ -4,12 +4,9 @@ import type { Person } from "@/db/schema";
 
 const records = vi.hoisted(() => ({
   findPersonByClerkUserId: vi.fn(),
-  findPersonByEmail: vi.fn(),
-  hasGameForPlayerEmail: vi.fn(),
+  findPeopleByAnyEmail: vi.fn(),
   claimPerson: vi.fn(),
-  insertPerson: vi.fn(),
   refreshPersonIdentity: vi.fn(),
-  linkPersonToGamesByEmail: vi.fn(),
 }));
 const { getVerifiedIdentity } = vi.hoisted(() => ({ getVerifiedIdentity: vi.fn() }));
 const { authorizeMember } = vi.hoisted(() => ({ authorizeMember: vi.fn() }));
@@ -23,7 +20,6 @@ vi.mock("./person-records", () => records);
 vi.mock("./clerk-identity", () => ({ getVerifiedIdentity }));
 vi.mock("./auth", () => ({ authorizeMember }));
 vi.mock("next/navigation", () => ({ redirect }));
-vi.mock("@/shared/config/env", () => ({ env: { ALLOWED_EMAIL_DOMAINS: ["inbeat.agency"] } }));
 
 import { getViewerPerson, syncViewerPerson } from "./viewer-person";
 
@@ -43,6 +39,11 @@ const person = (overrides: Partial<Person> = {}): Person => ({
   stickerNumber: 1,
   hidden: false,
   newHire: false,
+  personalEmail: null,
+  deelId: null,
+  startDate: null,
+  autoMissionDoneAt: null,
+  welcomerLeftAt: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   ...overrides,
@@ -63,8 +64,7 @@ beforeEach(() => {
   getVerifiedIdentity.mockReset();
   authorizeMember.mockReset();
   redirect.mockClear();
-  records.linkPersonToGamesByEmail.mockResolvedValue([]);
-  records.hasGameForPlayerEmail.mockResolvedValue(false);
+  records.findPeopleByAnyEmail.mockResolvedValue([]);
   identity("maya@inbeat.agency");
 });
 
@@ -76,8 +76,7 @@ describe("syncViewerPerson", () => {
     });
     expect(getVerifiedIdentity).not.toHaveBeenCalled();
     expect(records.refreshPersonIdentity).not.toHaveBeenCalled();
-    expect(records.insertPerson).not.toHaveBeenCalled();
-    expect(records.linkPersonToGamesByEmail).not.toHaveBeenCalled();
+    expect(records.findPeopleByAnyEmail).not.toHaveBeenCalled();
   });
 
   it("re-reads Clerk on a new session and refreshes the photo, Slack id and session", async () => {
@@ -130,99 +129,80 @@ describe("syncViewerPerson", () => {
     await expect(syncViewerPerson("user_1", "session_2")).rejects.toSatisfy(failsWith("forbidden"));
   });
 
-  it("creates a row for an email in the allowed domains and links its games", async () => {
-    firstSignIn();
-    records.insertPerson.mockResolvedValue(person());
-    await expect(syncViewerPerson("user_1", "session_1")).resolves.toMatchObject({
-      id: "person_1",
-    });
-    expect(records.insertPerson).toHaveBeenCalledWith({
-      clerkUserId: "user_1",
-      email: "maya@inbeat.agency",
-      name: "Maya",
-      imageUrl: null,
-      slackUserId: "U123",
-      syncedSessionId: "session_1",
-    });
-    expect(records.linkPersonToGamesByEmail).toHaveBeenCalledWith("person_1", "maya@inbeat.agency");
-  });
-
-  it("creates a row for an outside email that an admin set up a game for", async () => {
-    firstSignIn();
-    identity("new.hire@gmail.com");
-    records.hasGameForPlayerEmail.mockResolvedValue(true);
-    records.insertPerson.mockResolvedValue(person({ email: "new.hire@gmail.com" }));
-    await syncViewerPerson("user_1", "session_1");
-    expect(records.hasGameForPlayerEmail).toHaveBeenCalledWith("new.hire@gmail.com");
-    expect(records.linkPersonToGamesByEmail).toHaveBeenCalledWith("person_1", "new.hire@gmail.com");
-  });
-
-  it.each(["stranger@gmail.com", "maya@evil-inbeat.agency", "maya@inbeat.agency.evil.com"])(
-    "refuses %s when nobody invited it",
-    async (email) => {
+  it.each([
+    ["work", "maya@inbeat.agency"],
+    ["personal", "maya@gmail.com"],
+  ])(
+    "links the one person whose %s email matches, leaving their name alone",
+    async (_kind, email) => {
       firstSignIn();
       identity(email);
-      await expect(syncViewerPerson("user_1", "session_1")).rejects.toSatisfy(
-        failsWith("forbidden"),
-      );
-      expect(records.insertPerson).not.toHaveBeenCalled();
-      expect(records.linkPersonToGamesByEmail).not.toHaveBeenCalled();
+      records.findPeopleByAnyEmail.mockResolvedValue([person({ clerkUserId: null })]);
+      records.claimPerson.mockResolvedValue(person());
+      await expect(syncViewerPerson("user_1", "session_1")).resolves.toMatchObject({
+        id: "person_1",
+      });
+      expect(records.findPeopleByAnyEmail).toHaveBeenCalledWith(email);
+      expect(records.claimPerson).toHaveBeenCalledWith("person_1", "user_1", "session_1", {
+        imageUrl: null,
+        slackUserId: "U123",
+      });
     },
   );
 
-  it("claims a row an admin pre-created, even outside the allowed domains", async () => {
+  it("claims without the Slack id when another row already holds it", async () => {
     firstSignIn();
-    identity("contractor@gmail.com");
-    records.findPersonByEmail.mockResolvedValue(
-      person({ clerkUserId: null, email: "contractor@gmail.com" }),
-    );
-    records.claimPerson.mockResolvedValue(person({ email: "contractor@gmail.com" }));
-    await syncViewerPerson("user_1", "session_1");
-    expect(records.claimPerson).toHaveBeenCalledWith("person_1", "user_1", "session_1", {
-      email: "contractor@gmail.com",
-      name: "Maya",
-      imageUrl: null,
-      slackUserId: "U123",
+    records.findPeopleByAnyEmail.mockResolvedValue([person({ clerkUserId: null })]);
+    records.claimPerson
+      .mockRejectedValueOnce(Object.assign(new Error("duplicate key"), { code: "23505" }))
+      .mockResolvedValueOnce(person());
+    await expect(syncViewerPerson("user_1", "session_1")).resolves.toMatchObject({
+      id: "person_1",
     });
-    expect(records.insertPerson).not.toHaveBeenCalled();
-    expect(records.linkPersonToGamesByEmail).toHaveBeenCalledWith(
-      "person_1",
-      "contractor@gmail.com",
-    );
+    expect(records.claimPerson).toHaveBeenLastCalledWith("person_1", "user_1", "session_1", {
+      imageUrl: null,
+      slackUserId: null,
+    });
   });
 
-  it("links games by the current verified Clerk email at claim time", async () => {
+  it("lets any other claim failure through", async () => {
     firstSignIn();
-    identity("maya.chen@inbeat.agency");
-    records.findPersonByEmail.mockResolvedValue(person({ clerkUserId: null }));
-    records.claimPerson.mockResolvedValue(person({ email: "stale@inbeat.agency" }));
-    await syncViewerPerson("user_1", "session_1");
-    expect(records.linkPersonToGamesByEmail).toHaveBeenCalledWith(
-      "person_1",
-      "maya.chen@inbeat.agency",
-    );
+    records.findPeopleByAnyEmail.mockResolvedValue([person({ clerkUserId: null })]);
+    records.claimPerson.mockRejectedValue(new Error("db down"));
+    await expect(syncViewerPerson("user_1", "session_1")).rejects.toThrow("db down");
+    expect(records.claimPerson).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ["matches nobody", []],
+    ["matches two people", [person({ clerkUserId: null }), person({ id: "person_2" })]],
+  ])("refuses a viewer whose email %s, and creates no row", async (_case, matches) => {
+    firstSignIn();
+    identity("stranger@inbeat.agency");
+    records.findPeopleByAnyEmail.mockResolvedValue(matches);
+    await expect(syncViewerPerson("user_1", "session_1")).rejects.toSatisfy(failsWith("forbidden"));
+    expect(records.claimPerson).not.toHaveBeenCalled();
   });
 
   it("never moves a row linked to another Clerk user", async () => {
     firstSignIn();
-    records.findPersonByEmail.mockResolvedValue(person({ clerkUserId: "user_other" }));
+    records.findPeopleByAnyEmail.mockResolvedValue([person({ clerkUserId: "user_other" })]);
     await expect(syncViewerPerson("user_1", "session_1")).rejects.toSatisfy(failsWith("forbidden"));
     expect(records.claimPerson).not.toHaveBeenCalled();
-    expect(records.linkPersonToGamesByEmail).not.toHaveBeenCalled();
   });
 
   it("does not look anything up when Clerk has not verified the email", async () => {
     firstSignIn();
     getVerifiedIdentity.mockRejectedValue(new AppError("forbidden", "unverified"));
     await expect(syncViewerPerson("user_1", "session_1")).rejects.toSatisfy(failsWith("forbidden"));
-    expect(records.findPersonByEmail).not.toHaveBeenCalled();
-    expect(records.insertPerson).not.toHaveBeenCalled();
+    expect(records.findPeopleByAnyEmail).not.toHaveBeenCalled();
   });
 
-  it("returns the winner's row when a concurrent request inserted it first", async () => {
+  it("returns the winner's row when a concurrent request claimed it first", async () => {
     firstSignIn();
     records.findPersonByClerkUserId.mockResolvedValueOnce(person());
-    records.insertPerson.mockResolvedValue(undefined);
+    records.findPeopleByAnyEmail.mockResolvedValue([person({ clerkUserId: null })]);
+    records.claimPerson.mockResolvedValue(undefined);
     await expect(syncViewerPerson("user_1", "session_1")).resolves.toMatchObject({
       id: "person_1",
     });
@@ -230,18 +210,9 @@ describe("syncViewerPerson", () => {
 
   it("fails when another Clerk user claimed the row in between", async () => {
     records.findPersonByClerkUserId.mockResolvedValue(undefined);
-    records.findPersonByEmail.mockResolvedValue(person({ clerkUserId: null }));
+    records.findPeopleByAnyEmail.mockResolvedValue([person({ clerkUserId: null })]);
     records.claimPerson.mockResolvedValue(undefined);
     await expect(syncViewerPerson("user_1", "session_1")).rejects.toSatisfy(failsWith("conflict"));
-    expect(records.linkPersonToGamesByEmail).not.toHaveBeenCalled();
-  });
-
-  it("lets a database error (a sticker number collision) through", async () => {
-    firstSignIn();
-    records.insertPerson.mockRejectedValue(new Error("duplicate key people_sticker_number_unique"));
-    await expect(syncViewerPerson("user_1", "session_1")).rejects.toThrow(
-      "people_sticker_number_unique",
-    );
   });
 });
 

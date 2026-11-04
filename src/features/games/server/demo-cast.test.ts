@@ -6,6 +6,7 @@ import {
   DEMO_CAST,
   DEMO_PERSONAS,
   DEMO_PORTRAIT_SOURCES,
+  deelIdOf,
   demoCastEmail,
   portraitSlug,
 } from "./demo-cast";
@@ -78,5 +79,13 @@ describe("portraits", () => {
     for (const name of names) {
       expect(existsSync(`public${avatarUrlOf(name)}`)).toBe(true);
     }
+  });
+});
+
+describe("deelIdOf", () => {
+  it("gives every person a distinct seed- id, so a seed row can never collide with a real Deel id", () => {
+    expect(deelIdOf("Inès Moreau")).toBe("seed-ines-moreau");
+    const ids = [...DEMO_CAST, ...DEMO_PERSONAS].map(({ name }) => deelIdOf(name));
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });

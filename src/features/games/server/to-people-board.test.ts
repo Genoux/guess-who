@@ -17,6 +17,8 @@ const person = (overrides: Partial<PersonRecord> = {}): PersonRecord => ({
   imageUrl: "/demo/avatars/sam-taylor.webp",
   newHire: false,
   cluesWritten: 3,
+  welcomerLeft: false,
+  joinedOn: null,
   game: null,
   ...overrides,
 });
@@ -101,6 +103,21 @@ describe("toPeopleBoard playing", () => {
 
   it("keeps a mission that ran past day 14 out of Playing", () => {
     expect(board([person({ game: { ...base, startDate: "2026-10-01" } })]).playing).toEqual([]);
+  });
+});
+
+describe("toPeopleBoard joined recently", () => {
+  it("flags someone whose Deel start date is within 30 days", () => {
+    const { noMission } = board([
+      person({ personId: "new", joinedOn: "2026-10-09" }),
+      person({ personId: "old", joinedOn: "2026-09-27" }),
+      person({ personId: "none", joinedOn: null }),
+    ]);
+    expect(noMission.map(({ key, joinedRecently }) => [key, joinedRecently])).toEqual([
+      ["new", true],
+      ["old", false],
+      ["none", false],
+    ]);
   });
 });
 
@@ -266,24 +283,28 @@ describe("toPeopleBoard done", () => {
     expect(done[0]?.outcome.label).toBe("Revealed on day 14");
   });
 
-  it("marks anyone who welcomed a mission, running or finished, and no one else", () => {
-    const { noMission, playing, done } = board([
-      person({ personId: "ana", email: "ana@inbeat.agency" }),
+  it("flags a No mission row whose welcomer left, and no other", () => {
+    const { noMission } = board([
+      person({ personId: "ana", email: "ana@inbeat.agency", welcomerLeft: true }),
       person({ personId: "ben", email: "ben@inbeat.agency" }),
-      person({ personId: "cam", email: "cam@inbeat.agency" }),
-      person({ personId: "kim", email: "kim@gmail.com", game: { ...base, id: "kim" } }),
-      person({
-        personId: "lou",
-        email: "lou@gmail.com",
-        game: { ...base, id: "lou", welcomerPersonId: "cam", startDate: "2026-10-01" },
-      }),
     ]);
-    expect(noMission.map(({ key, hasWelcomed }) => [key, hasWelcomed])).toEqual([
+    expect(noMission.map(({ key, welcomerLeft }) => [key, welcomerLeft])).toEqual([
       ["ana", true],
       ["ben", false],
-      ["cam", true],
     ]);
-    expect(playing[0]?.hasWelcomed).toBe(false);
-    expect(done[0]?.hasWelcomed).toBe(false);
+  });
+
+  it("shows a finished mission whose welcomer was deleted by its snapshot name", () => {
+    const { done } = board([
+      person({
+        game: {
+          ...base,
+          welcomerPersonId: null,
+          welcomerName: "Ana Ferreira",
+          startDate: "2026-10-01",
+        },
+      }),
+    ]);
+    expect(done[0]?.welcomer).toBe("Ana Ferreira");
   });
 });

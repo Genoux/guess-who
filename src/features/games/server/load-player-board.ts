@@ -59,6 +59,38 @@ export type PlayerBoard = {
   collectedCount: number;
 };
 
+/**
+ * The welcomer of a finished mission who has since left Deel: their person row is gone, so the
+ * reveal is built from the name, team and photo frozen on the game. It carries no fact or city.
+ */
+function toDepartedWelcomerSticker(game: Game | null, teams: readonly Team[]): BoardSticker | null {
+  if (!game || game.welcomerPersonId || game.status === "active" || !game.welcomerName) {
+    return null;
+  }
+  const team = teams.find(({ name }) => name === game.welcomerTeamName);
+  const look = team ?? NO_TEAM;
+  return {
+    id: game.id,
+    teamId: team?.id ?? null,
+    name: game.welcomerName,
+    firstName: firstName(game.welcomerName),
+    person: {
+      name: game.welcomerName,
+      number: "",
+      team: look.name,
+      color: look.color,
+      tint: look.tint,
+      ask: "",
+      photoUrl: game.welcomerImageUrl,
+    },
+    mode: stickerModeFor({ locked: false, ruled: false, shortlisted: false, over: true }),
+    collected: false,
+    shortlisted: false,
+    ruled: false,
+    note: null,
+  };
+}
+
 /** The viewer's mission as player, ended first if day 14 passed; `game` is null without one. */
 export const loadPlayerGame = cache(
   async (): Promise<{ game: Game | null; viewer: GameViewer; person: Person }> => {
@@ -90,7 +122,7 @@ export const loadPlayerBoard = cache(async (): Promise<PlayerBoard> => {
       game ? listShortlistedIds(game.id) : [],
       game ? listGuesses(game.id) : [],
       game ? listGameClues(game.id) : [],
-      game ? findPersonById(game.welcomerPersonId) : undefined,
+      game?.welcomerPersonId ? findPersonById(game.welcomerPersonId) : undefined,
     ]);
 
   const gameView = game ? toGameView(game, viewer) : null;
@@ -149,7 +181,7 @@ export const loadPlayerBoard = cache(async (): Promise<PlayerBoard> => {
   const revealedWelcomer =
     gameView?.welcomerPersonId && welcomer?.id === gameView.welcomerPersonId
       ? toBoardSticker(welcomer, new Set([...collectedIds, welcomer.id]))
-      : null;
+      : toDepartedWelcomerSticker(game, teams);
 
   // Clue 1 is the welcomer's team as it was at Start; toClueView keeps it hidden until it lands.
   const clues = game
