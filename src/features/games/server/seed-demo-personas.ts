@@ -4,7 +4,7 @@ import type { NeonDatabase } from "drizzle-orm/neon-serverless";
 import * as schema from "@/db/schema";
 import { seedTeams } from "@/db/seed-teams";
 import { addDays, todayInGameZone, zonedTime } from "@/entities/game-schedule";
-import { avatarUrlOf, DEMO_CAST, DEMO_PERSONAS, demoCastEmail } from "./demo-cast";
+import { avatarUrlOf, DEMO_CAST, DEMO_PERSONAS, deelIdOf, demoCastEmail } from "./demo-cast";
 import { snapshotClues } from "./seed-demo-game";
 
 type SchemaDb = NeonDatabase<typeof schema>;
@@ -66,6 +66,7 @@ export async function seedDemoPersonas(db: SchemaDb, now: Date) {
       DEMO_CAST.map(({ name, team, location, fact, ask }) => ({
         name,
         email: demoCastEmail(name),
+        deelId: deelIdOf(name),
         imageUrl: avatarUrlOf(name),
         teamId: teamId(team),
         location,
@@ -79,6 +80,7 @@ export async function seedDemoPersonas(db: SchemaDb, now: Date) {
       target: schema.people.email,
       set: {
         name: sqlExcluded("name"),
+        deelId: sqlExcluded("deel_id"),
         imageUrl: sqlExcluded("image_url"),
         teamId: sqlExcluded("team_id"),
         location: sqlExcluded("location"),
@@ -104,12 +106,22 @@ export async function seedDemoPersonas(db: SchemaDb, now: Date) {
   } as const;
   for (const { key, name, email, newHire } of DEMO_PERSONAS) {
     const card = personaCard[key as keyof typeof personaCard];
+    // Deel-shaped: lockedhire is the one still unsettled, as a hire the auto-start has not reached.
+    const deel = { deelId: deelIdOf(name), autoMissionDoneAt: key === "lockedhire" ? null : now };
     await db
       .insert(schema.people)
-      .values({ name, email, imageUrl: avatarUrlOf(name), hidden: false, newHire, ...card })
+      .values({
+        name,
+        email,
+        imageUrl: avatarUrlOf(name),
+        hidden: false,
+        newHire,
+        ...card,
+        ...deel,
+      })
       .onConflictDoUpdate({
         target: schema.people.email,
-        set: { name, imageUrl: avatarUrlOf(name), hidden: false, newHire, ...card },
+        set: { name, imageUrl: avatarUrlOf(name), hidden: false, newHire, ...card, ...deel },
       });
   }
 

@@ -1,39 +1,24 @@
 "use client";
 
 import { fail, ok, type Result } from "@inbeat/core/result";
-import { PlusIcon } from "lucide-react";
 import { useOptimistic, useState, useTransition } from "react";
-import { GameButton } from "@/shared/components/game/game-button";
-import { GameModal } from "@/shared/components/game/game-modal";
 import { gameToast } from "@/shared/components/game/game-toaster";
 import { PillTabs } from "@/shared/components/game/pill-tabs";
 import { Reveal } from "@/shared/components/game/reveal";
-import { addNewHire } from "../actions/add-new-hire";
-import { changeInviteEmail } from "../actions/change-invite-email";
 import { endMission } from "../actions/end-mission";
-import { removePerson } from "../actions/remove-person";
-import { setAsNewHire } from "../actions/set-as-new-hire";
+import { startAsNewHire } from "../actions/start-as-new-hire";
 import { turnOnMissions } from "../actions/turn-on-missions";
 import { firstName } from "../lib/first-name";
 import { BOOK_DELAY_S } from "../lib/people-motion";
 import { applyPeopleMove, type PeopleMove } from "../lib/people-moves";
-import type {
-  NoMissionRowView,
-  PeopleBoard,
-  PersonIdentity,
-  PlayingRowView,
-} from "../lib/people-view";
+import type { NoMissionRowView, PeopleBoard, PlayingRowView } from "../lib/people-view";
 import { EndMissionDialog } from "./end-mission-dialog";
-import { NewHireEmailForm } from "./new-hire-email-form";
 import { PeopleDone } from "./people-done";
 import { PeopleNoMission } from "./people-no-mission";
 import { PeoplePlaying } from "./people-playing";
-import { RemovePersonDialog } from "./remove-person-dialog";
-import { SetNewHireDialog } from "./set-new-hire-dialog";
+import { StartNewHireDialog } from "./start-new-hire-dialog";
 
 type PeopleView = "playing" | "noMission" | "done";
-
-type EmailDialog = { invite?: PlayingRowView } | null;
 
 type PeopleScreenProps = {
   board: PeopleBoard;
@@ -59,8 +44,6 @@ type Action<Data> = {
   run: () => Promise<Result<Data>>;
   previewData: Data;
   message: (data: Data) => string;
-  /** Where the person ended up once the server answered, when that can differ from the move. */
-  settledView?: (data: Data) => PeopleView;
 };
 
 /**
@@ -75,10 +58,8 @@ export function PeopleScreen({
   previewRefuses = false,
 }: PeopleScreenProps) {
   const [view, setView] = useState<PeopleView>("playing");
-  const [emailDialog, setEmailDialog] = useState<EmailDialog>(null);
   const [ending, setEnding] = useState<PlayingRowView | null>(null);
-  const [flagging, setFlagging] = useState<NoMissionRowView | null>(null);
-  const [removing, setRemoving] = useState<PersonIdentity | null>(null);
+  const [starting, setStarting] = useState<NoMissionRowView | null>(null);
   // Nothing is saved in the preview, so its settled board is kept here.
   const [previewBoard, setPreviewBoard] = useState(serverBoard);
   const [board, applyMove] = useOptimistic(preview ? previewBoard : serverBoard, applyPeopleMove);
@@ -91,7 +72,7 @@ export function PeopleScreen({
     onSelect: () => setView(value),
   });
 
-  function perform<Data>({ move, run, previewData, message, settledView }: Action<Data>) {
+  function perform<Data>({ move, run, previewData, message }: Action<Data>) {
     startTransition(async () => {
       applyMove(move);
       const result: Result<Data> = preview
@@ -102,7 +83,6 @@ export function PeopleScreen({
         return;
       }
       if (preview) setPreviewBoard((current) => applyPeopleMove(current, move));
-      if (settledView) setView(settledView(result.data));
       gameToast(message(result.data));
     });
   }
@@ -128,13 +108,16 @@ export function PeopleScreen({
     });
   }
 
-  function setNewHire(row: NoMissionRowView) {
-    setFlagging(null);
+  function startNewHire(row: NoMissionRowView) {
+    setStarting(null);
     perform({
-      move: { type: "setNewHire", key: row.key },
-      run: () => setAsNewHire({ personId: row.key }),
-      previewData: undefined,
-      message: () => `${shortName(row)} is now a new hire. Turn on their mission when it's time.`,
+      move: { type: "startAsNewHire", key: row.key },
+      run: () => startAsNewHire({ personId: row.key }),
+      previewData: { started: true },
+      message: ({ started }) =>
+        started
+          ? `${shortName(row)}'s mission started.`
+          : `${shortName(row)} is a new hire, but no mission could start: no free welcomer.`,
     });
   }
 
@@ -148,49 +131,10 @@ export function PeopleScreen({
     });
   }
 
-  function remove(row: PersonIdentity) {
-    setRemoving(null);
-    perform({
-      move: { type: "remove", key: row.key },
-      run: () => removePerson({ personId: row.key }),
-      previewData: undefined,
-      message: () => `${shortName(row)} was removed.`,
-    });
-  }
-
-  function submitEmail(email: string) {
-    const invite = emailDialog?.invite;
-    setEmailDialog(null);
-    if (invite) {
-      perform({
-        move: { type: "changeEmail", gameId: invite.gameId, email },
-        run: () => changeInviteEmail({ gameId: invite.gameId, email }),
-        previewData: undefined,
-        message: () => "Saved.",
-      });
-      return;
-    }
-    setView("playing");
-    perform({
-      move: { type: "add", email },
-      run: () => addNewHire({ email }),
-      previewData: { started: true },
-      message: ({ started }) =>
-        started
-          ? "Added. Their mission started."
-          : "Added, but no mission could start: no free welcomer.",
-      settledView: ({ started }) => (started ? "playing" : "noMission"),
-    });
-  }
-
   return (
     <>
       <Reveal className="flex w-full flex-wrap items-center justify-between gap-4">
         <h1 className="font-game-serif text-hero-md md:text-hero">People</h1>
-        <GameButton onClick={() => setEmailDialog({})}>
-          <PlusIcon aria-hidden className="size-4.5" />
-          Add new hire
-        </GameButton>
       </Reveal>
 
       <Reveal delay={BOOK_DELAY_S} className="flex w-full flex-1 flex-col gap-5">
@@ -203,39 +147,22 @@ export function PeopleScreen({
             tab("done", "Done", board.done.length),
           ]}
         />
-        {view === "playing" ? (
-          <PeoplePlaying
-            rows={board.playing}
-            onEnd={setEnding}
-            onChangeEmail={(invite) => setEmailDialog({ invite })}
-          />
-        ) : null}
+        {view === "playing" ? <PeoplePlaying rows={board.playing} onEnd={setEnding} /> : null}
         {view === "noMission" ? (
           <PeopleNoMission
             rows={board.noMission}
             onTurnOn={turnOn}
-            onSetNewHire={setFlagging}
-            onRemove={setRemoving}
+            onStartAsNewHire={setStarting}
           />
         ) : null}
-        {view === "done" ? <PeopleDone rows={board.done} onRemove={setRemoving} /> : null}
+        {view === "done" ? <PeopleDone rows={board.done} /> : null}
       </Reveal>
 
-      <GameModal
-        open={emailDialog !== null}
-        onOpenChange={(open) => !open && setEmailDialog(null)}
-        title={emailDialog?.invite ? "Change email" : "Add new hire"}
-      >
-        <NewHireEmailForm
-          key={emailDialog?.invite?.gameId ?? "new"}
-          invite={emailDialog?.invite}
-          onSubmit={submitEmail}
-          onCancel={() => setEmailDialog(null)}
-        />
-      </GameModal>
-
-      <SetNewHireDialog row={flagging} onConfirm={setNewHire} onClose={() => setFlagging(null)} />
-      <RemovePersonDialog row={removing} onConfirm={remove} onClose={() => setRemoving(null)} />
+      <StartNewHireDialog
+        row={starting}
+        onConfirm={startNewHire}
+        onClose={() => setStarting(null)}
+      />
       <EndMissionDialog row={ending} onEnd={end} onClose={() => setEnding(null)} />
     </>
   );

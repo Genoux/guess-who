@@ -1,5 +1,5 @@
 import "server-only";
-import { gameDay, todayInGameZone } from "@/entities/game-schedule";
+import { gameDay, joinedRecently, todayInGameZone } from "@/entities/game-schedule";
 import { missionOutcome, missionStateAt, summarizeProgress } from "../lib/mission-progress";
 import type {
   DoneRowView,
@@ -25,6 +25,10 @@ export type PersonRecord = {
   newHire: boolean;
   /** Clues 2 to 4 written. */
   cluesWritten: number;
+  /** Their welcomer left Deel mid-mission and the mission was reset. */
+  welcomerLeft: boolean;
+  /** The Deel start date (YYYY-MM-DD). */
+  joinedOn: string | null;
   game:
     | (Pick<
         Game,
@@ -75,25 +79,24 @@ export function toPeopleBoard({
   const playing: PlayingRowView[] = [];
   const noMission: NoMissionRowView[] = [];
   const done: (DoneRowView & { endedAt: Date })[] = [];
-  const welcomerIds = new Set(people.flatMap(({ game }) => (game ? [game.welcomerPersonId] : [])));
 
   for (const record of people) {
     const { game } = record;
     const state = missionStateAt(game, now);
     const identity = {
       key: record.personId,
-      hasWelcomed: welcomerIds.has(record.personId),
       signedIn: record.signedIn,
       name: record.name,
       email: record.email,
       team: record.team,
       imageUrl: record.imageUrl,
       newHire: record.newHire,
+      joinedRecently: joinedRecently(record.joinedOn, now),
     };
 
     const standing = asWelcomer(record, record.cluesWritten);
     if (!game) {
-      noMission.push({ ...identity, asWelcomer: standing });
+      noMission.push({ ...identity, asWelcomer: standing, welcomerLeft: record.welcomerLeft });
       continue;
     }
 

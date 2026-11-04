@@ -93,6 +93,13 @@ export function todayInGameZone(now: Date): string {
   return new Date(Date.UTC(year, month - 1, day)).toISOString().slice(0, 10);
 }
 
+const RECENT_JOINER_DAYS = 30;
+
+/** Whether a Deel start date is at most 30 days back in Montréal, or still ahead. */
+export function joinedRecently(startDate: string | null, now: Date): boolean {
+  return startDate !== null && gameDay(startDate, now) - 1 <= RECENT_JOINER_DAYS;
+}
+
 /** The game day `now` falls on (1 on the start date); 0 or less before the game starts. */
 export function gameDay(startDate: string, now: Date): number {
   const p = zoneParts(now);

@@ -1,10 +1,13 @@
 import "server-only";
-import { AppError } from "@inbeat/core/errors";
+import { AppError, isAppError } from "@inbeat/core/errors";
 import type { Person } from "@/db/schema";
 import { cluesReady } from "../lib/welcomer-readiness";
 import { isInAlbum } from "./is-in-album";
 
 export const NO_WELCOMER_FREE = "No welcomer is free right now. Try again tomorrow.";
+
+export const hasNoFreeWelcomer = (err: unknown) =>
+  isAppError(err, "conflict") && err.safeMessage === NO_WELCOMER_FREE;
 
 export type WelcomerCandidate = Pick<
   Person,
@@ -17,8 +20,7 @@ export type WelcomerCandidate = Pick<
 type EligibleInput<T extends WelcomerCandidate> = {
   people: readonly T[];
   busyWelcomerIds: readonly string[];
-  /** Null for an invite who has no person row yet. */
-  playerPersonId: string | null;
+  playerPersonId: string;
   /** Who the player welcomes right now, so two people never welcome each other. */
   welcomedPersonId: string | null;
 };

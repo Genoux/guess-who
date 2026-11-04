@@ -1,8 +1,7 @@
 "use client";
 
-import { PencilIcon } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState, useTransition } from "react";
-import { CARD_LIMITS, isCardComplete } from "@/entities/card";
+import { CARD_LIMITS, hasOwnCardFields, isCardComplete } from "@/entities/card";
 import { GameBook } from "@/shared/components/game/game-book";
 import { GameButton } from "@/shared/components/game/game-button";
 import { gameCn } from "@/shared/components/game/game-cn";
@@ -15,7 +14,8 @@ import { updateMyCard } from "../actions/update-my-card";
 import { type UpdateMyCardInput, updateMyCardSchema } from "../schemas";
 import type { CardAudience, CardFields, MyCard } from "../types";
 
-type FieldErrors = Partial<Record<keyof CardFields, string>>;
+type EditableField = keyof UpdateMyCardInput;
+type FieldErrors = Partial<Record<EditableField, string>>;
 
 const COPY: Record<CardAudience, { title: string; lead: string }> = {
   teammate: { title: "Your sticker", lead: "Every new hire collects it." },
@@ -34,7 +34,7 @@ const SWITCH = "duration-slower ease-game motion-reduce:transition-none";
 function toFieldErrors(issues: readonly { path: readonly PropertyKey[]; message: string }[]) {
   const errors: FieldErrors = {};
   for (const issue of issues) {
-    const field = issue.path[0] as keyof CardFields;
+    const field = issue.path[0] as EditableField;
     errors[field] ??= issue.message;
   }
   return errors;
@@ -56,16 +56,17 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
   const [askFocused, setAskFocused] = useState(false);
   const switched = useRef(false);
   const editButton = useRef<HTMLButtonElement>(null);
-  const teamField = useRef<HTMLButtonElement>(null);
+  const factField = useRef<HTMLTextAreaElement>(null);
 
   // The clicked button goes inert with its state, so focus moves into the new one; never on load.
   useEffect(() => {
     if (switched.current)
-      (editing ? teamField : editButton).current?.focus({ preventScroll: true });
+      (editing ? factField : editButton).current?.focus({ preventScroll: true });
   }, [editing]);
 
   const copy = COPY[card.audience];
   const team = card.teams.find((option) => option.id === values.teamId) ?? EMPTY_TEAM;
+  const missingDeelField = !values.teamId ? "team" : !values.location ? "location" : null;
   const number = formatStickerNumber(card.stickerNumber);
   const sticker: StickerPerson = {
     name: card.name,
@@ -79,7 +80,7 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
     photoUrl: card.imageUrl,
   };
 
-  const set = (field: keyof CardFields) => (event: { target: { value: string } }) => {
+  const set = (field: EditableField) => (event: { target: { value: string } }) => {
     setValues((current) => ({ ...current, [field]: event.target.value }));
     setErrors((current) => ({ ...current, [field]: undefined }));
   };
@@ -98,19 +99,22 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const parsed = updateMyCardSchema.safeParse(values);
+    const parsed = updateMyCardSchema.safeParse({ fact: values.fact, ask: values.ask });
     if (!parsed.success) {
       setErrors(toFieldErrors(parsed.error.issues));
       return;
     }
     setErrors({});
-    if (isCardComplete(parsed.data)) save(parsed.data);
+    // Only what the person can fix asks first; a team or location missing from Deel is shown in the form.
+    if (hasOwnCardFields(parsed.data)) save(parsed.data);
     else setIncompleteCard(parsed.data);
   }
 
   function save(input: UpdateMyCardInput) {
     startTransition(async () => {
-      const result = preview ? ({ ok: true, data: input } as const) : await updateMyCard(input);
+      const result = preview
+        ? ({ ok: true, data: { ...values, ...input } } as const)
+        : await updateMyCard(input);
       if (!result.ok) {
         gameToast(result.errorId ? `${result.error} Ref ${result.errorId}` : result.error, {
           duration: 6000,
@@ -147,27 +151,12 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
           celebrateChanges={false}
           askToggle
           askRevealed={askFocused}
-          className="group justify-self-center"
-          edgeAction={
-            // Shown on hover or keyboard focus; always on a touch screen, which has no hover.
-            <div
-              inert={editing}
-              className={gameCn(
-                "scale-90 opacity-0 transition-[opacity,scale] duration-fast ease-game motion-reduce:transition-none",
-                !editing &&
-                  "group-hover:scale-100 group-hover:opacity-100 group-has-[:focus-visible]:scale-100 group-has-[:focus-visible]:opacity-100 pointer-coarse:scale-100 pointer-coarse:opacity-100",
-              )}
-            >
-              <GameButton
-                ref={editButton}
-                size="sm"
-                className="[&_svg]:size-4"
-                onClick={() => switchTo(true)}
-              >
-                <PencilIcon />
-                Edit
-              </GameButton>
-            </div>
+          className="justify-self-center"
+          centerActionEnabled={!editing}
+          centerAction={
+            <GameButton ref={editButton} variant="light" size="sm" onClick={() => switchTo(true)}>
+              Edit
+            </GameButton>
           }
         />
 
@@ -182,32 +171,13 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
           <div className="pt-14 md:pt-0">
             <GameBook as="div" className="w-full p-7">
               <form noValidate onSubmit={submit} className="flex w-full flex-col gap-4.5">
-                <div className="grid w-full grid-cols-2 gap-3">
-                  <GameField
-                    ref={teamField}
-                    label="Team"
-                    name="teamId"
-                    options={card.teams.map((option) => ({
-                      value: option.id,
-                      label: option.name,
-                      color: option.color,
-                    }))}
-                    placeholder="Pick one"
-                    value={values.teamId ?? ""}
-                    onValueChange={(teamId) => set("teamId")({ target: { value: teamId } })}
-                    error={errors.teamId}
-                  />
-                  <GameField
-                    label="Location"
-                    name="location"
-                    autoComplete="address-level2"
-                    maxLength={CARD_LIMITS.location}
-                    value={values.location}
-                    onChange={set("location")}
-                    error={errors.location}
-                  />
-                </div>
+                {missingDeelField && (
+                  <p className="text-game-muted text-small">
+                    Your {missingDeelField} isn't set yet. Ask People Strategy.
+                  </p>
+                )}
                 <GameField
+                  ref={factField}
                   label="Random fact"
                   name="fact"
                   multiline
@@ -229,6 +199,9 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
                   onChange={set("ask")}
                   error={errors.ask}
                 />
+                <p className="text-game-muted text-small">
+                  Name, team and location come from Deel.
+                </p>
                 {/* The view switches a moment before the save stops pending, so the button keeps
                     its saving look while the form fades out instead of flashing back on. */}
                 <GameButton type="submit" className="w-full" disabled={pending || !editing}>

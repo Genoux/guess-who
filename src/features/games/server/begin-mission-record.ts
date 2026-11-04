@@ -1,6 +1,6 @@
 import "server-only";
-import { AppError, isUniqueViolation } from "@inbeat/core/errors";
-import { and, eq, or, sql } from "drizzle-orm";
+import { AppError, isUniqueViolation, PG_CODES } from "@inbeat/core/errors";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { clues, games, people, teams, welcomerClues } from "@/db/schema";
 import { todayInGameZone } from "@/entities/game-schedule";
 import { db } from "@/shared/lib/db";
@@ -12,7 +12,7 @@ import { listWelcomerCandidates } from "./people-records";
 export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 type BeginMissionInput = {
-  /** Normalized. */
+  /** Normalized; the legacy `games.player_email` column is still required. */
   playerEmail: string;
   /** The player's person row, whether or not they have signed in. */
   playerPersonId: string;
@@ -21,20 +21,32 @@ type BeginMissionInput = {
   random?: () => number;
 };
 
-// A lost race on the welcomer index, or a pick that turned out to welcome the player's own
-// player, re-reads who is busy and picks once more; a second loss means the pool is too tight to
+// A lost race on the welcomer index, a welcomer deleted by a leaver between the pick and the
+// insert, or a pick that turned out to welcome the player's own player, re-reads who is busy and
+// picks once more; a second loss means the pool is too tight to
 // keep guessing.
 const MAX_PICKS = 2;
+const WELCOMER_FOREIGN_KEY = "games_welcomer_person_id_people_id_fk";
+
+// A leaver can delete the chosen welcomer before the insert; any other missing row is a real error.
+function welcomerRowDeleted(err: unknown): boolean {
+  for (let cause = err; cause && typeof cause === "object"; ) {
+    const { code, constraint } = cause as { code?: string; constraint?: string };
+    if (code === PG_CODES.foreignKeyViolation) return constraint === WELCOMER_FOREIGN_KEY;
+    cause = (cause as { cause?: unknown }).cause;
+  }
+  return false;
+}
 
 // Starts are rare (one per person, ever), so they queue behind one lock instead of each
 // reasoning about the others' half-written state.
 const START_LOCK_KEY = 7_302_026;
 
-export const ALREADY_HAS_MISSION = "This email already has a mission.";
+export const ALREADY_HAS_MISSION = "They already have a mission.";
 
 class MutualWelcoming extends Error {}
 
-/** Starts and email changes queue behind one lock, held until the transaction ends. */
+/** Mission starts and person removals queue behind one lock, held until the transaction ends. */
 export async function lockMissionStarts(tx: Transaction) {
   await tx.execute(sql`select pg_advisory_xact_lock(${START_LOCK_KEY})`);
 }
@@ -64,7 +76,7 @@ export async function welcomesEachOther(
 
 /**
  * Starts a person's mission: a random eligible welcomer is picked, day 1 is today, the welcomer's
- * team name is frozen for clue 1, and their three clues are copied into the game. The copies keep
+ * team name is frozen for clue 1, their name and photo for the reveal, and their three clues are copied into the game. The copies keep
  * a welcomer's later edits from changing what this player reads or sees at the reveal.
  */
 export async function beginMissionRecord({
@@ -98,15 +110,20 @@ export async function beginMissionRecord({
         createdBy,
         welcomerPersonId: welcomer.id,
         startDate: todayInGameZone(now),
+        now,
       });
     } catch (err) {
-      if (!isUniqueViolation(err) && !(err instanceof MutualWelcoming)) throw err;
+      const lostWelcomer = isUniqueViolation(err) || welcomerRowDeleted(err);
+      if (!lostWelcomer && !(err instanceof MutualWelcoming)) throw err;
     }
   }
   throw new AppError("conflict", "welcomer taken twice", { safeMessage: NO_WELCOMER_FREE });
 }
 
-type InsertInput = Pick<BeginMissionInput, "playerEmail" | "playerPersonId" | "createdBy"> & {
+type InsertInput = Pick<
+  BeginMissionInput,
+  "playerEmail" | "playerPersonId" | "createdBy" | "now"
+> & {
   welcomerPersonId: string;
   startDate: string;
 };
@@ -117,6 +134,7 @@ async function insertStartedGame({
   createdBy,
   welcomerPersonId,
   startDate,
+  now,
 }: InsertInput) {
   return db.transaction(async (tx) => {
     await lockMissionStarts(tx);
@@ -124,29 +142,19 @@ async function insertStartedGame({
       throw new MutualWelcoming();
     }
 
-    // The share lock holds the player's row until commit. A first sign-in claims the row and then
-    // links games by email, so it either waits here and finds this game, or committed first and
-    // is seen here.
-    const [player] = await tx
-      .select({ clerkUserId: people.clerkUserId })
-      .from(people)
-      .where(eq(people.id, playerPersonId))
-      .for("share");
-    if (!player) throw new AppError("not_found", "player person missing");
-
     const [existing] = await tx
       .select({ id: games.id })
       .from(games)
-      .where(or(eq(games.playerEmail, playerEmail), eq(games.playerPersonId, playerPersonId)))
+      .where(eq(games.playerPersonId, playerPersonId))
       .limit(1);
     if (existing) {
-      throw new AppError("conflict", "email already has a mission", {
+      throw new AppError("conflict", "person already has a mission", {
         safeMessage: ALREADY_HAS_MISSION,
       });
     }
 
-    const [welcomerTeam] = await tx
-      .select({ name: teams.name })
+    const [welcomer] = await tx
+      .select({ teamName: teams.name, name: people.name, imageUrl: people.imageUrl })
       .from(people)
       .leftJoin(teams, eq(people.teamId, teams.id))
       .where(eq(people.id, welcomerPersonId));
@@ -154,10 +162,12 @@ async function insertStartedGame({
       .insert(games)
       .values({
         playerEmail,
-        playerPersonId: player.clerkUserId ? playerPersonId : null,
+        playerPersonId,
         welcomerPersonId,
         startDate,
-        welcomerTeamName: welcomerTeam?.name ?? null,
+        welcomerTeamName: welcomer?.teamName ?? null,
+        welcomerName: welcomer?.name ?? null,
+        welcomerImageUrl: welcomer?.imageUrl ?? null,
         createdBy,
       })
       .returning({ id: games.id });
@@ -171,6 +181,12 @@ async function insertStartedGame({
       .filter(({ text }) => text.trim() !== "")
       .map(({ number, text }) => ({ gameId: game.id, number, text }));
     if (snapshot.length > 0) await tx.insert(clues).values(snapshot);
+    await tx.update(people).set({ welcomerLeftAt: null }).where(eq(people.id, playerPersonId));
+    // The marker outlives End mission, so no start, manual or automatic, is ever repeated.
+    await tx
+      .update(people)
+      .set({ autoMissionDoneAt: now })
+      .where(and(eq(people.id, playerPersonId), isNull(people.autoMissionDoneAt)));
     return { gameId: game.id };
   });
 }

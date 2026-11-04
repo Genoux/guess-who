@@ -4,22 +4,22 @@ import { ok } from "@inbeat/core/result";
 import { action } from "@inbeat/next/action";
 import { ROUTES } from "@/shared/config/routes";
 import { logger } from "@/shared/lib/logger";
-import { addNewHireSchema } from "../schemas";
-import { addNewHireRecord } from "../server/add-new-hire-record";
+import { startAsNewHireSchema } from "../schemas";
 import { authorizeAdminPerson } from "../server/authorize-admin-person";
+import { startAsNewHireRecord } from "../server/start-as-new-hire-record";
 
-export const addNewHire = action({
-  name: "games.addNewHire",
-  schema: addNewHireSchema,
+export const startAsNewHire = action({
+  name: "games.startAsNewHire",
+  schema: startAsNewHireSchema,
   authorize: authorizeAdminPerson,
-  run: async ({ email }, admin) => {
-    const added = await addNewHireRecord({
-      email,
+  run: async ({ personId }, admin) => {
+    const started = await startAsNewHireRecord({
+      personId,
       adminPersonId: admin.personId,
       now: new Date(),
     });
-    logger.info("new hire added", { ...added, adminPersonId: admin.personId });
-    return ok(added);
+    logger.info("person started as new hire", { ...started, adminPersonId: admin.personId });
+    return ok(started);
   },
   revalidate: () => [ROUTES.admin, ROUTES.play, ROUTES.playMission],
 });

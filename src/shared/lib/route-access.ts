@@ -15,7 +15,7 @@ const PUBLIC_SECTIONS = [
   ROUTES.devClues,
   ROUTES.devLocked,
 ];
-const PUBLIC_PATHS = ["/api/health", "/robots.txt"];
+const PUBLIC_PATHS = ["/api/health", "/api/webhooks/deel", "/robots.txt"];
 
 const isWithin = (pathname: string, section: string) =>
   pathname === section || pathname.startsWith(`${section}/`);

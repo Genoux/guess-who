@@ -17,6 +17,8 @@
     "db:migrate": "bun scripts/db-migrate.ts",
     "db:check": "drizzle-kit check",
     "db:seed": "bun scripts/db-seed.ts",
+    "deel:backfill": "bun --conditions=react-server scripts/deel-backfill.ts",
+    "deel:replay": "bun scripts/deel-replay.ts",
     "db:seed:demo": "bun --conditions=react-server scripts/db-seed-demo.ts",
     "ib:sync": "ib sync",
     "ib:check": "ib check",

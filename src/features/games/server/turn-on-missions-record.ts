@@ -1,21 +1,17 @@
 import "server-only";
-import { isAppError } from "@inbeat/core/errors";
 import { and, eq, inArray, notExists, or, sql } from "drizzle-orm";
 import { games, people } from "@/db/schema";
 import { completeCardCondition } from "@/shared/lib/complete-card-condition";
 import { db } from "@/shared/lib/db";
 import { CLUE_NUMBERS_TO_WRITE } from "../lib/welcomer-readiness";
 import { beginMissionRecord } from "./begin-mission-record";
-import { NO_WELCOMER_FREE } from "./choose-welcomer";
+import { hasNoFreeWelcomer } from "./choose-welcomer";
 
 type TurnOnMissionsInput = { personIds: readonly string[]; adminPersonId: string; now: Date };
 
 // A teammate has to be able to welcome before they play: a complete card and all three clues.
-// A new hire skips this, whether added by email or flagged from No mission.
+// A new hire skips this.
 const WRITTEN_CLUES = sql`(select count(*) from "welcomer_clues" where "welcomer_clues"."person_id" = ${people.id} and btrim("welcomer_clues"."text") <> '')`;
-
-const hasNoFreeWelcomer = (err: unknown) =>
-  isAppError(err, "conflict") && err.safeMessage === NO_WELCOMER_FREE;
 
 /**
  * Starts missions for the chosen people, signed in or not, who have none and can welcome or are
@@ -34,10 +30,7 @@ export async function turnOnMissionsRecord({ personIds, adminPersonId, now }: Tu
           and(completeCardCondition, eq(WRITTEN_CLUES, CLUE_NUMBERS_TO_WRITE.length)),
         ),
         notExists(
-          db
-            .select({ id: games.id })
-            .from(games)
-            .where(or(eq(games.playerPersonId, people.id), eq(games.playerEmail, people.email))),
+          db.select({ id: games.id }).from(games).where(eq(games.playerPersonId, people.id)),
         ),
       ),
     );
