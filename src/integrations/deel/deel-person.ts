@@ -1,6 +1,13 @@
 import { z } from "zod";
 
-const emailTypeSchema = z.object({ type: z.string(), value: z.string() });
+// Real records hold email slots without an address, and departments or legal entities with no
+// id or name; both read as absent.
+const emailTypeSchema = z.object({ type: z.string(), value: z.string().nullish() });
+
+const namedRefSchema = z
+  .object({ id: z.string().nullish(), name: z.string().nullish() })
+  .nullish()
+  .transform((ref) => (ref?.id && ref.name ? { id: ref.id, name: ref.name } : null));
 
 /**
  * Pinned from a read-only probe of `GET /people` (engram `integrations/deel-person-shape`).
@@ -18,8 +25,8 @@ export const deelPersonSchema = z.object({
   hiring_status: z.string(),
   start_date: z.string().nullish(),
   country: z.string().nullish(),
-  department: z.object({ id: z.string(), name: z.string() }).nullish(),
-  client_legal_entity: z.object({ id: z.string(), name: z.string() }).nullish(),
+  department: namedRefSchema,
+  client_legal_entity: namedRefSchema,
   // Where Deel reports the last working day, depending on the record; see `endDateOf`.
   termination_last_day: z.string().nullish(),
   last_day_of_work_local_date: z.string().nullish(),
@@ -37,7 +44,7 @@ export const deelPeoplePageSchema = z.object({
 });
 
 function emailOfType(person: DeelPerson, type: "work" | "personal"): string | null {
-  return person.emails.find((email) => email.type === type)?.value ?? null;
+  return person.emails.find((email) => email.type === type && email.value)?.value ?? null;
 }
 
 export const workEmail = (person: DeelPerson) => emailOfType(person, "work");
