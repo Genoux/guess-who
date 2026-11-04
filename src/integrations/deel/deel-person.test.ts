@@ -22,6 +22,28 @@ const rawPerson = {
 };
 
 describe("deelPersonSchema", () => {
+  it("treats an email slot without an address as no email", () => {
+    const person = deelPersonSchema.parse({
+      ...rawPerson,
+      emails: [
+        { type: "work", value: null },
+        { type: "personal", value: "" },
+      ],
+    });
+    expect(workEmail(person)).toBeNull();
+    expect(personalEmail(person)).toBeNull();
+  });
+
+  it("treats a department or legal entity without a name as none", () => {
+    const person = deelPersonSchema.parse({
+      ...rawPerson,
+      department: { id: null, name: null },
+      client_legal_entity: { id: null, name: null },
+    });
+    expect(person.department).toBeNull();
+    expect(person.client_legal_entity).toBeNull();
+  });
+
   it("reads the pinned fields and keeps an unknown hiring status", () => {
     const person = deelPersonSchema.parse(rawPerson);
     expect(person.hiring_status).toBe("some_future_status");
