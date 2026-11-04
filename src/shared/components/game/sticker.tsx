@@ -51,8 +51,13 @@ export type StickerProps = {
   askToggle?: boolean;
   /** Holds the ask open while true, e.g. while its field is being edited; needs `askToggle`. */
   askRevealed?: boolean;
-  /** Hangs on the card's bottom edge and tilts and turns with it, e.g. an Edit button. */
-  edgeAction?: ReactNode;
+  /**
+   * Sits centered over the card, in front of the ask panel, and tilts with it, e.g. an Edit button.
+   * It shows on hover or keyboard focus, always on a touch screen, with the art dimmed behind it.
+   */
+  centerAction?: ReactNode;
+  /** Turns `centerAction` off: hidden, inert and without the dim, e.g. while the card is edited. */
+  centerActionEnabled?: boolean;
   className?: string;
 };
 
@@ -73,6 +78,13 @@ const artVariants = cva("relative flex min-h-min flex-1 flex-col overflow-hidden
     size: { sm: "rounded-card-art", lg: "rounded-card-art-lg" },
   },
 });
+
+// The center action and the dim behind it fade in together: on hover, on keyboard focus, and
+// always on a touch screen, which has no hover.
+const CENTER_REVEAL =
+  "transition-[opacity,scale] duration-fast ease-game motion-reduce:transition-none";
+const CENTER_SHOWN =
+  "group-hover/center:opacity-100 group-has-[:focus-visible]/center:opacity-100 pointer-coarse:opacity-100";
 
 // Sized so a 55 character ask fits the locked face's box on both stickers; see `getAskTextStep`.
 const ASK_TEXT: Record<StickerSize, Record<AskTextStep, string>> = {
@@ -200,7 +212,8 @@ export function Sticker({
   expandTransition = TRANSITION.enter,
   askToggle = false,
   askRevealed,
-  edgeAction,
+  centerAction,
+  centerActionEnabled = true,
   className,
 }: StickerProps) {
   const view = getStickerView(person, mode);
@@ -275,6 +288,16 @@ export function Sticker({
               onError={() => setFailedPhoto(photoUrl)}
             />
           ) : null}
+          {centerAction ? (
+            <span
+              aria-hidden
+              className={gameCn(
+                "pointer-events-none absolute inset-0 sticker-dim opacity-0",
+                CENTER_REVEAL,
+                centerActionEnabled && CENTER_SHOWN,
+              )}
+            />
+          ) : null}
           <div className="relative flex min-h-0 flex-1 items-center justify-center [container-type:size]">
             {photoUrl ? null : (
               <span
@@ -332,12 +355,34 @@ export function Sticker({
   );
 
   return (
-    <div ref={rootRef} className={gameCn(stickerVariants({ size }), className)}>
+    <div
+      ref={rootRef}
+      className={gameCn(stickerVariants({ size }), centerAction && "group/center", className)}
+    >
       <Tilt className="relative size-full" disabled={!tilt}>
         <div
           className="relative size-full"
           style={rot ? { transform: `rotate(${rot}deg)` } : undefined}
         >
+          {centerAction ? (
+            // First in the tab order, painted over the ask panel (z-10) and its + button (z-20).
+            <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center">
+              <div
+                inert={!centerActionEnabled}
+                className={gameCn(
+                  "pointer-events-auto scale-90 opacity-0",
+                  CENTER_REVEAL,
+                  centerActionEnabled &&
+                    gameCn(
+                      CENTER_SHOWN,
+                      "group-hover/center:scale-100 group-has-[:focus-visible]/center:scale-100 pointer-coarse:scale-100",
+                    ),
+                )}
+              >
+                {centerAction}
+              </div>
+            </div>
+          ) : null}
           <Flip
             className="size-full"
             flipped={view.open}
@@ -355,9 +400,6 @@ export function Sticker({
               <StickerStampMark key={view.stamp} stamp={view.stamp} size={size} />
             ) : null}
           </AnimatePresence>
-          {edgeAction ? (
-            <div className="absolute -bottom-7 left-1/2 -translate-x-1/2">{edgeAction}</div>
-          ) : null}
         </div>
       </Tilt>
     </div>

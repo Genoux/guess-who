@@ -1,6 +1,5 @@
 "use client";
 
-import { PencilIcon } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState, useTransition } from "react";
 import { CARD_LIMITS, hasOwnCardFields, isCardComplete } from "@/entities/card";
 import { GameBook } from "@/shared/components/game/game-book";
@@ -39,15 +38,6 @@ function toFieldErrors(issues: readonly { path: readonly PropertyKey[]; message:
     errors[field] ??= issue.message;
   }
   return errors;
-}
-
-function ReadOnlyField({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex min-w-0 flex-col gap-1">
-      <dt className="font-medium text-game-ink">{label}</dt>
-      <dd className="truncate text-game-muted">{value || "Not set"}</dd>
-    </div>
-  );
 }
 
 type CardEditorProps = {
@@ -161,27 +151,12 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
           celebrateChanges={false}
           askToggle
           askRevealed={askFocused}
-          className="group justify-self-center"
-          edgeAction={
-            // Shown on hover or keyboard focus; always on a touch screen, which has no hover.
-            <div
-              inert={editing}
-              className={gameCn(
-                "scale-90 opacity-0 transition-[opacity,scale] duration-fast ease-game motion-reduce:transition-none",
-                !editing &&
-                  "group-hover:scale-100 group-hover:opacity-100 group-has-[:focus-visible]:scale-100 group-has-[:focus-visible]:opacity-100 pointer-coarse:scale-100 pointer-coarse:opacity-100",
-              )}
-            >
-              <GameButton
-                ref={editButton}
-                size="sm"
-                className="[&_svg]:size-4"
-                onClick={() => switchTo(true)}
-              >
-                <PencilIcon />
-                Edit
-              </GameButton>
-            </div>
+          className="justify-self-center"
+          centerActionEnabled={!editing}
+          centerAction={
+            <GameButton ref={editButton} variant="light" size="sm" onClick={() => switchTo(true)}>
+              Edit
+            </GameButton>
           }
         />
 
@@ -196,11 +171,6 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
           <div className="pt-14 md:pt-0">
             <GameBook as="div" className="w-full p-7">
               <form noValidate onSubmit={submit} className="flex w-full flex-col gap-4.5">
-                <dl className="grid w-full grid-cols-3 gap-3 text-small">
-                  <ReadOnlyField label="Name" value={card.name} />
-                  <ReadOnlyField label="Team" value={team === EMPTY_TEAM ? "" : team.name} />
-                  <ReadOnlyField label="Location" value={values.location} />
-                </dl>
                 {missingDeelField && (
                   <p className="text-game-muted text-small">
                     Your {missingDeelField} isn't set yet. Ask People Strategy.
@@ -229,6 +199,9 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
                   onChange={set("ask")}
                   error={errors.ask}
                 />
+                <p className="text-game-muted text-small">
+                  Name, team and location come from Deel.
+                </p>
                 {/* The view switches a moment before the save stops pending, so the button keeps
                     its saving look while the form fades out instead of flashing back on. */}
                 <GameButton type="submit" className="w-full" disabled={pending || !editing}>
