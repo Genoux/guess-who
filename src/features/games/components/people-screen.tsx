@@ -2,6 +2,7 @@
 
 import { fail, ok, type Result } from "@inbeat/core/result";
 import { useOptimistic, useState, useTransition } from "react";
+import { GameFilterMenu } from "@/shared/components/game/game-filter-menu";
 import { gameToast } from "@/shared/components/game/game-toaster";
 import { PillTabs } from "@/shared/components/game/pill-tabs";
 import { Reveal } from "@/shared/components/game/reveal";
@@ -9,6 +10,7 @@ import { endMission } from "../actions/end-mission";
 import { startAsNewHire } from "../actions/start-as-new-hire";
 import { turnOnMissions } from "../actions/turn-on-missions";
 import { firstName } from "../lib/first-name";
+import { ALL_TEAMS, matchesTeam, teamFilterOptions } from "../lib/people-filter";
 import { BOOK_DELAY_S } from "../lib/people-motion";
 import { applyPeopleMove, type PeopleMove } from "../lib/people-moves";
 import type { NoMissionRowView, PeopleBoard, PlayingRowView } from "../lib/people-view";
@@ -58,12 +60,17 @@ export function PeopleScreen({
   previewRefuses = false,
 }: PeopleScreenProps) {
   const [view, setView] = useState<PeopleView>("playing");
+  const [team, setTeam] = useState(ALL_TEAMS);
   const [ending, setEnding] = useState<PlayingRowView | null>(null);
   const [starting, setStarting] = useState<NoMissionRowView | null>(null);
   // Nothing is saved in the preview, so its settled board is kept here.
   const [previewBoard, setPreviewBoard] = useState(serverBoard);
   const [board, applyMove] = useOptimistic(preview ? previewBoard : serverBoard, applyPeopleMove);
   const [, startTransition] = useTransition();
+
+  const inTeam = <Row extends { team: { name: string; color: string } | null }>(
+    rows: readonly Row[],
+  ) => rows.filter((row) => matchesTeam(row, team));
 
   const tab = (value: PeopleView, label: string, count: number) => ({
     label,
@@ -138,24 +145,34 @@ export function PeopleScreen({
       </Reveal>
 
       <Reveal delay={BOOK_DELAY_S} className="flex w-full flex-1 flex-col gap-5">
-        <PillTabs
-          tone="page"
-          label="People views"
-          tabs={[
-            tab("playing", "Playing", board.playing.length),
-            tab("noMission", "No mission", board.noMission.length),
-            tab("done", "Done", board.done.length),
-          ]}
-        />
-        {view === "playing" ? <PeoplePlaying rows={board.playing} onEnd={setEnding} /> : null}
+        <div className="flex w-full flex-wrap items-center justify-between gap-3">
+          <PillTabs
+            tone="page"
+            label="People views"
+            tabs={[
+              tab("playing", "Playing", board.playing.length),
+              tab("noMission", "No mission", board.noMission.length),
+              tab("done", "Done", board.done.length),
+            ]}
+          />
+          <GameFilterMenu
+            label="Team"
+            value={team}
+            options={teamFilterOptions([...board.playing, ...board.noMission, ...board.done])}
+            onValueChange={setTeam}
+          />
+        </div>
+        {view === "playing" ? (
+          <PeoplePlaying rows={inTeam(board.playing)} onEnd={setEnding} />
+        ) : null}
         {view === "noMission" ? (
           <PeopleNoMission
-            rows={board.noMission}
+            rows={inTeam(board.noMission)}
             onTurnOn={turnOn}
             onStartAsNewHire={setStarting}
           />
         ) : null}
-        {view === "done" ? <PeopleDone rows={board.done} /> : null}
+        {view === "done" ? <PeopleDone rows={inTeam(board.done)} /> : null}
       </Reveal>
 
       <StartNewHireDialog
