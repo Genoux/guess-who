@@ -1,5 +1,7 @@
+import type { ReactNode } from "react";
 import { GameBook } from "@/shared/components/game/game-book";
 import { gameCn } from "@/shared/components/game/game-cn";
+import { GAME_FILTER_GROUP_CLASS } from "@/shared/components/game/game-filter-menu";
 import { GameRowMenu } from "@/shared/components/game/game-row-menu";
 import type { PlayingRowView } from "../lib/people-view";
 import { PeopleEmpty } from "./people-empty";
@@ -8,17 +10,19 @@ import {
   PEOPLE_LAST_CLASS,
   PEOPLE_MENU_CLASS,
   PEOPLE_ROW_CLASS,
+  PEOPLE_TOOLBAR_CLASS,
   PeopleTable,
 } from "./people-table";
 import { NumberCell, PersonCell, RoleTag, TeamTag, WelcomerCell } from "./person-cell";
 
 type PeoplePlayingProps = {
   rows: readonly PlayingRowView[];
+  filters: ReactNode;
   onEnd: (row: PlayingRowView) => void;
 };
 
 /** One row per started mission, furthest day first. */
-export function PeoplePlaying({ rows, onEnd }: PeoplePlayingProps) {
+export function PeoplePlaying({ rows, filters, onEnd }: PeoplePlayingProps) {
   return (
     <GameBook
       as="section"
@@ -27,6 +31,9 @@ export function PeoplePlaying({ rows, onEnd }: PeoplePlayingProps) {
         rows.length === 0 && "flex-1",
       )}
     >
+      <div className={PEOPLE_TOOLBAR_CLASS}>
+        <div className={GAME_FILTER_GROUP_CLASS}>{filters}</div>
+      </div>
       {rows.length === 0 ? (
         <PeopleEmpty
           title="No one is playing"

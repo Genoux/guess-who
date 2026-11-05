@@ -8,6 +8,7 @@ import { GameTooltip } from "@/shared/components/game/game-tooltip";
 import { personSubline } from "../lib/person-line";
 
 const NO_TEAM_COLOR = "#edede8";
+const NOT_SIGNED_IN = "Hasn't signed in yet";
 
 type PersonCellProps = {
   name: string | null;
@@ -45,21 +46,22 @@ export function PersonCell({
       />
       <div className="flex min-w-0 flex-col gap-0.5">
         <span className="flex min-w-0 items-center gap-1.5">
-          <span title={who} className="truncate font-game-serif text-base">
+          <span title={who} className="wrap-anywhere font-game-serif text-base md:truncate">
             {who}
           </span>
           {notSignedIn ? (
-            <GameTooltip label="Hasn't signed in yet" side="top">
-              <CircleAlertIcon
-                role="img"
-                aria-label="Hasn't signed in yet"
-                tabIndex={0}
-                className="size-4 flex-none text-game-muted outline-none focus-visible:outline-2 focus-visible:outline-game-found"
-              />
+            <GameTooltip label={NOT_SIGNED_IN} side="top" openOnTap>
+              <button
+                type="button"
+                aria-label={NOT_SIGNED_IN}
+                className="relative grid flex-none cursor-help place-items-center rounded-full text-game-muted outline-none after:absolute after:-inset-3.5 focus-visible:outline-2 focus-visible:outline-game-found"
+              >
+                <CircleAlertIcon aria-hidden className="size-4" />
+              </button>
             </GameTooltip>
           ) : null}
         </span>
-        <span title={subline} className="truncate text-game-muted text-xs">
+        <span title={subline} className="wrap-anywhere text-game-muted text-xs md:truncate">
           {subline}
         </span>
       </div>

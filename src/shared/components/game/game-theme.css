@@ -7,7 +7,12 @@
  */
 @theme {
   /* The narrowest the app lays out at: below it the page scrolls sideways. */
-  --container-app-min: 20rem;
+  --container-app-min: 22.5rem;
+
+  /* Where GameTopNav puts its tabs inline beside the logo: the widest squeezed bar (six tabs at
+     full size, the count and the avatar) plus a little headroom. Narrower, the tabs take a row
+     of their own. */
+  --breakpoint-nav: 48rem;
 
   /* Colors */
   --color-game-bg: #f7f7f3;

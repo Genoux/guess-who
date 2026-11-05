@@ -3,7 +3,7 @@
  * left, down to a minimum) and the free space is shared equally between them, so the gap between
  * two columns is the same everywhere. The caption row and each row take the table's columns as a
  * subgrid. Below the content width the table scrolls sideways inside its book, with the person
- * column stuck on the left.
+ * column stuck on the left from a tablet up.
  */
 .people-scroll {
   width: 100%;
@@ -11,19 +11,13 @@
 }
 
 .people-table {
-  --person: minmax(min(45vw, 14rem), max-content);
+  --person: minmax(14rem, max-content);
   --menu: 2.75rem;
   display: grid;
   grid-template-columns: var(--cols);
   column-gap: 2rem;
   justify-content: space-between;
   min-width: min-content;
-}
-
-@media (min-width: 48rem) {
-  .people-table {
-    --person: minmax(14rem, max-content);
-  }
 }
 
 .people--playing .people-table {
@@ -75,9 +69,21 @@
   background: inherit;
 }
 
+/* Phones wrap a long name or email instead of cutting it. Pinned, this wide column would cover
+   the ones scrolled under it, so it scrolls with them. */
 @media (max-width: 47.999rem) {
+  .people-table {
+    --person: minmax(16rem, 20rem);
+  }
+
+  .people-row {
+    height: auto;
+    min-height: 4rem;
+    padding-block: 0.75rem;
+  }
+
   .people-who {
-    border-right: 1px solid var(--color-game-border);
+    position: static;
   }
 }
 

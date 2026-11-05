@@ -71,11 +71,7 @@ function OverlayBody({ target, find, onFound, flightId, rotation, onClose }: Ove
 
   return (
     <>
-      <motion.div
-        // Same bar as FoundReveal's, so the logo lines up with GameTopNav's under it.
-        className="flex items-center justify-between px-4 pt-1 pb-2.5 md:h-18 md:px-6 md:py-0 lg:px-10 [&>*]:pointer-events-auto"
-        {...OVERLAY_FADE}
-      >
+      <motion.div className="[&>*]:pointer-events-auto" {...OVERLAY_FADE}>
         <CollectBar
           onClose={onClose}
           reveal={find ? (sequence.told ? "told" : "playing") : undefined}

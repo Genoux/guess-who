@@ -21,7 +21,7 @@ export function GameSearchField({ label, className, ...props }: GameSearchFieldP
       <input
         type="search"
         autoComplete="off"
-        className="h-11 w-full rounded-full bg-game-surface pr-4.5 pl-11.5 font-game-sans text-base text-game-ink shadow-edge outline-none placeholder:text-game-muted hover:shadow-edge-strong focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2"
+        className="h-11 w-full rounded-full bg-game-surface pr-4.5 pl-11.5 font-game-sans text-base text-game-ink shadow-edge outline-none placeholder:text-game-muted hover:shadow-edge-strong [&::-webkit-search-cancel-button]:appearance-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2"
         {...props}
       />
     </label>
