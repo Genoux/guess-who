@@ -24,6 +24,14 @@ type GameFilterMenuProps<Value extends string> = {
   className?: string;
 };
 
+/**
+ * The filter pills of a toolbar, kept on one line: where they don't fit they scroll sideways
+ * instead of stacking. The padding, taken back by the margin, keeps the pills' shadow and focus
+ * ring from being cut by the scroll box.
+ */
+export const GAME_FILTER_GROUP_CLASS =
+  "-m-1 flex min-w-0 max-w-[calc(100%+--spacing(2))] flex-nowrap items-center gap-2 overflow-x-auto p-1 [scrollbar-width:none] md:gap-3 [&::-webkit-scrollbar]:hidden";
+
 /** A pill that opens a one-choice menu, for filters that sit beside the team pills. */
 export function GameFilterMenu<Value extends string>({
   label,
@@ -41,7 +49,7 @@ export function GameFilterMenu<Value extends string>({
       <DropdownMenu.Trigger
         aria-label={`${label}: ${selected?.label}`}
         className={gameCn(
-          "inline-flex h-10 flex-none cursor-pointer items-center gap-2 rounded-full pr-3.5 pl-4 text-button-sm outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2",
+          "inline-flex h-11 flex-none cursor-pointer items-center gap-2 rounded-full pr-3.5 pl-4 text-button-sm outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2",
           filtering
             ? "bg-game-ink text-white"
             : "bg-game-surface text-game-ink shadow-edge hover:bg-game-sidebar",

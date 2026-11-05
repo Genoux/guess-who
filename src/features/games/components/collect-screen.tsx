@@ -14,9 +14,7 @@ export function CollectScreen({ target }: { target: CollectTarget }) {
 
   return (
     <div className="screen-center flex-1">
-      <div className="flex items-center justify-between px-4 pt-1 pb-2.5 md:h-18 md:px-6 md:py-0 lg:px-10">
-        <CollectBar reveal={find ? (sequence.told ? "told" : "playing") : undefined} />
-      </div>
+      <CollectBar reveal={find ? (sequence.told ? "told" : "playing") : undefined} />
       <GameStage className="py-8 md:py-8">
         <CollectDetail target={target} find={find} onFound={setFind} sequence={sequence} />
       </GameStage>

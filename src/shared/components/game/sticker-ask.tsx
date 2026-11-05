@@ -113,7 +113,7 @@ export function StickerAsk({
           initial={{ opacity: shownFrom ? 1 : 0 }}
           animate={{ opacity: shown ? 1 : 0 }}
           transition={askToggleFade(reducedMotion)}
-          className="group absolute top-(--ask-offset) right-(--ask-offset) z-20 grid size-(--ask-button) cursor-pointer place-items-center rounded-full border-[1.5px] border-game-ink bg-game-surface text-game-ink outline-none hover:bg-game-hover focus-visible:shadow-[0_0_0_2px_var(--color-game-surface),0_0_0_4px_var(--color-game-ink)]"
+          className="group absolute top-(--ask-offset) right-(--ask-offset) z-20 grid size-(--ask-button) cursor-pointer after:absolute after:-inset-1.5 place-items-center rounded-full border-[1.5px] border-game-ink bg-game-surface text-game-ink outline-none hover:bg-game-hover focus-visible:shadow-[0_0_0_2px_var(--color-game-surface),0_0_0_4px_var(--color-game-ink)]"
         >
           <svg viewBox="0 0 14 14" aria-hidden className="size-(--ask-icon)">
             <path d="M1 7h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />

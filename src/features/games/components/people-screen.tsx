@@ -138,6 +138,16 @@ export function PeopleScreen({
     });
   }
 
+  const teamFilter = (
+    <GameFilterMenu
+      label="Team"
+      value={team}
+      options={teamFilterOptions([...board.playing, ...board.noMission, ...board.done])}
+      onValueChange={setTeam}
+      align="start"
+    />
+  );
+
   return (
     <>
       <Reveal className="flex w-full flex-wrap items-center justify-between gap-4">
@@ -145,34 +155,27 @@ export function PeopleScreen({
       </Reveal>
 
       <Reveal delay={BOOK_DELAY_S} className="flex w-full flex-1 flex-col gap-5">
-        <div className="flex w-full flex-wrap items-center justify-between gap-3">
-          <PillTabs
-            tone="page"
-            label="People views"
-            tabs={[
-              tab("playing", "Playing", board.playing.length),
-              tab("noMission", "No mission", board.noMission.length),
-              tab("done", "Done", board.done.length),
-            ]}
-          />
-          <GameFilterMenu
-            label="Team"
-            value={team}
-            options={teamFilterOptions([...board.playing, ...board.noMission, ...board.done])}
-            onValueChange={setTeam}
-          />
-        </div>
+        <PillTabs
+          tone="page"
+          label="People views"
+          tabs={[
+            tab("playing", "Playing", board.playing.length),
+            tab("noMission", "No mission", board.noMission.length),
+            tab("done", "Done", board.done.length),
+          ]}
+        />
         {view === "playing" ? (
-          <PeoplePlaying rows={inTeam(board.playing)} onEnd={setEnding} />
+          <PeoplePlaying rows={inTeam(board.playing)} filters={teamFilter} onEnd={setEnding} />
         ) : null}
         {view === "noMission" ? (
           <PeopleNoMission
             rows={inTeam(board.noMission)}
+            filters={teamFilter}
             onTurnOn={turnOn}
             onStartAsNewHire={setStarting}
           />
         ) : null}
-        {view === "done" ? <PeopleDone rows={inTeam(board.done)} /> : null}
+        {view === "done" ? <PeopleDone rows={inTeam(board.done)} filters={teamFilter} /> : null}
       </Reveal>
 
       <StartNewHireDialog

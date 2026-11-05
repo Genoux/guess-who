@@ -6,6 +6,7 @@ import { type ElementType, type ReactNode, useId, useRef, useState } from "react
 import { CardDetail } from "@/shared/components/game/card-detail";
 import { CloseButton } from "@/shared/components/game/close-button";
 import { GameButton } from "@/shared/components/game/game-button";
+import { GameTopNav } from "@/shared/components/game/game-top-nav";
 import { Sticker } from "@/shared/components/game/sticker";
 import { ROUTES } from "@/shared/config/routes";
 import type { FoundSequence } from "../hooks/use-found-sequence";
@@ -29,29 +30,31 @@ type CollectBarProps = {
 /** The logo and the close control above a collect detail. */
 export function CollectBar({ onClose, reveal, tone = "soft" }: CollectBarProps) {
   return (
-    <div className="flex w-full items-center justify-between">
-      <span className="font-game-serif whitespace-nowrap text-heading lg:text-logo">The Album</span>
-      {reveal === "playing" ? (
-        <CloseButton
-          tone={tone}
-          label="Back to album"
-          className="invisible"
-          disabled
-          aria-hidden
-          tabIndex={-1}
-        />
-      ) : reveal === "told" ? (
-        <CloseButton asChild tone={tone} label="Go to your mission">
-          <Link href={ROUTES.playMission} />
-        </CloseButton>
-      ) : onClose ? (
-        <CloseButton tone={tone} label="Back to album" onClick={onClose} />
-      ) : (
-        <CloseButton asChild tone={tone} label="Back to album">
-          <Link href={ROUTES.play} />
-        </CloseButton>
-      )}
-    </div>
+    <GameTopNav
+      tone="clear"
+      end={
+        reveal === "playing" ? (
+          <CloseButton
+            tone={tone}
+            label="Back to album"
+            className="invisible"
+            disabled
+            aria-hidden
+            tabIndex={-1}
+          />
+        ) : reveal === "told" ? (
+          <CloseButton asChild tone={tone} label="Go to your mission">
+            <Link href={ROUTES.playMission} />
+          </CloseButton>
+        ) : onClose ? (
+          <CloseButton tone={tone} label="Back to album" onClick={onClose} />
+        ) : (
+          <CloseButton asChild tone={tone} label="Back to album">
+            <Link href={ROUTES.play} />
+          </CloseButton>
+        )
+      }
+    />
   );
 }
 

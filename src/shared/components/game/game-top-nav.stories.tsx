@@ -35,3 +35,4 @@ export const Default: Story = {};
 export const WithoutTabs: Story = { args: { tabs: undefined } };
 export const PlainLogo: Story = { args: { logoHref: undefined } };
 export const Mobile: Story = { globals: { viewport: { value: "mobile1", isRotated: false } } };
+export const Clear: Story = { args: { tone: "clear", tabs: undefined, logoHref: undefined } };
