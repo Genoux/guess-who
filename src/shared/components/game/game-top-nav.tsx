@@ -9,14 +9,16 @@ type GameTopNavProps = {
   tabs?: ReactNode;
   /** Right side: a CountChip and the AccountButton. */
   end?: ReactNode;
-  /** ink sits on an ink page, so the bar and the page read as one surface. */
-  tone?: "light" | "ink";
+  /** ink sits on an ink page, so the bar and the page read as one surface; clear tops a
+      full-screen moment, in place and see-through, so its logo sits where the page's did. */
+  tone?: "light" | "ink" | "clear";
   className?: string;
 };
 
 const TONES = {
   light: "border-game-border bg-game-surface text-game-ink",
   ink: "border-transparent bg-game-ink text-white",
+  clear: "static border-transparent text-game-ink",
 } as const;
 
 const logoClass =
@@ -46,7 +48,9 @@ export function GameTopNav({ logoHref, tabs, end, tone = "light", className }: G
           {tabs}
         </div>
       ) : null}
-      <div className="col-start-2 row-start-1 flex items-center gap-3 justify-self-end md:col-start-3">
+      {/* min-h-11 holds the row at a close button's height, so the logo sits at the same height
+          whether the end is the 40px avatar or a 44px close. */}
+      <div className="col-start-2 row-start-1 flex min-h-11 items-center gap-3 justify-self-end md:col-start-3">
         {end}
       </div>
     </header>

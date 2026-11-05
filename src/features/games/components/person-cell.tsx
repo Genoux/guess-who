@@ -8,6 +8,7 @@ import { GameTooltip } from "@/shared/components/game/game-tooltip";
 import { personSubline } from "../lib/person-line";
 
 const NO_TEAM_COLOR = "#edede8";
+const NOT_SIGNED_IN = "Hasn't signed in yet";
 
 type PersonCellProps = {
   name: string | null;
@@ -45,34 +46,46 @@ export function PersonCell({
       />
       <div className="flex min-w-0 flex-col gap-0.5">
         <span className="flex min-w-0 items-center gap-1.5">
-          <span title={who} className="truncate font-game-serif text-base">
+          <span title={who} className="wrap-anywhere font-game-serif text-base md:truncate">
             {who}
           </span>
           {notSignedIn ? (
-            <GameTooltip label="Hasn't signed in yet" side="top">
+            <GameTooltip label={NOT_SIGNED_IN} side="top">
               <CircleAlertIcon
                 role="img"
-                aria-label="Hasn't signed in yet"
+                aria-label={NOT_SIGNED_IN}
                 tabIndex={0}
-                className="size-4 flex-none text-game-muted outline-none focus-visible:outline-2 focus-visible:outline-game-found"
+                className="size-4 flex-none text-game-muted outline-none focus-visible:outline-2 focus-visible:outline-game-found max-md:hidden"
               />
             </GameTooltip>
           ) : null}
         </span>
-        <span title={subline} className="truncate text-game-muted text-xs">
+        <span title={subline} className="wrap-anywhere text-game-muted text-xs md:truncate">
           {subline}
         </span>
+        {/* A tooltip needs a pointer, so a phone shows the words instead of the icon. */}
+        {notSignedIn ? (
+          <span className="flex items-center gap-1.5 text-game-muted text-xs md:hidden">
+            <CircleAlertIcon aria-hidden className="size-3.5 flex-none" />
+            {NOT_SIGNED_IN}
+          </span>
+        ) : null}
       </div>
     </div>
   );
 }
 
 /** A teammate named in a row, with a small avatar: "Omar Aziz". */
-export function WelcomerCell({ name }: { name: string | null }) {
-  if (name === "") return <div className="min-w-0 text-game-muted text-sm">Picking…</div>;
-  if (name === null) return <div className="min-w-0 text-game-muted text-sm">Secret from you</div>;
+export function WelcomerCell({ name, label }: { name: string | null; label?: string }) {
+  if (name === "" || name === null) {
+    return (
+      <div data-label={label} className="min-w-0 text-game-muted text-sm">
+        {name === "" ? "Picking…" : "Secret from you"}
+      </div>
+    );
+  }
   return (
-    <div className="flex min-w-0 items-center gap-2 text-sm">
+    <div data-label={label} className="flex min-w-0 items-center gap-2 text-sm">
       <GameAvatar name={name} color={NO_TEAM_COLOR} className="size-7 flex-none text-sm" />
       <span title={name} className="truncate">
         {name}
@@ -118,15 +131,19 @@ export function TeamTag({ team }: { team: { name: string; color: string } | null
 /** A number or time under a right-aligned caption. */
 export function NumberCell({
   children,
+  label,
   muted = false,
   className,
 }: {
   children: ReactNode;
+  /** The column's caption, shown before the value where phones stack the row. */
+  label?: string;
   muted?: boolean;
   className?: string;
 }) {
   return (
     <div
+      data-label={label}
       className={gameCn("text-right text-sm tabular-nums", muted && "text-game-muted", className)}
     >
       {children}

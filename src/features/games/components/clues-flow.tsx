@@ -120,7 +120,7 @@ export function CluesFlow({ desk, nav, preview = false }: CluesFlowProps) {
       const last = index === desk.clues.length - 1;
       const needsTeam = clueNeedsTeam(clue);
       return (
-        <GameStage className="gap-8 pt-4">
+        <GameStage className="gap-8 md:pt-4">
           <Stepper
             count={desk.clues.length}
             current={index + 1}
@@ -192,7 +192,7 @@ export function CluesFlow({ desk, nav, preview = false }: CluesFlowProps) {
       );
     },
     done: () => (
-      <GameStage className="gap-9 pt-4">
+      <GameStage className="gap-9 md:pt-4">
         <div className="flex flex-col items-center gap-3">
           <h1
             ref={focusHeading}

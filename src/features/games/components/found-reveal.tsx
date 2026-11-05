@@ -8,6 +8,7 @@ import { flushSync } from "react-dom";
 import { CloseButton } from "@/shared/components/game/close-button";
 import { Flip } from "@/shared/components/game/flip";
 import { GameButton } from "@/shared/components/game/game-button";
+import { GameTopNav } from "@/shared/components/game/game-top-nav";
 import { Sticker } from "@/shared/components/game/sticker";
 import { ROUTES } from "@/shared/config/routes";
 import { celebrate } from "@/shared/lib/celebrate";
@@ -170,31 +171,28 @@ function FoundBody({ outcome, phase, onReveal, onRevealed, flightId, onClose }: 
 
   return (
     <>
-      <motion.div
-        // Lines the logo up with GameTopNav's so it stays put as this opens over the page; py-2.5
-        // makes up for the close button being 4px taller than the nav's avatar.
-        className="flex items-center justify-between border-transparent border-b px-4 pt-1 pb-2.5 md:h-18 md:px-6 md:py-0 lg:px-10 [&>*]:pointer-events-auto"
-        {...OVERLAY_FADE}
-      >
-        <span className="font-game-serif whitespace-nowrap text-heading lg:text-logo">
-          The Album
-        </span>
-        {phase === "gate" ? (
-          <CloseButton asChild tone="on-color" label="Back to album">
-            <Link href={ROUTES.play} />
-          </CloseButton>
-        ) : phase === "revealed" ? (
-          <CloseButton tone="on-color" label="Close" onClick={onClose} />
-        ) : (
-          <CloseButton
-            tone="on-color"
-            label="Close"
-            className="invisible"
-            disabled
-            aria-hidden
-            tabIndex={-1}
-          />
-        )}
+      <motion.div className="[&>*]:pointer-events-auto" {...OVERLAY_FADE}>
+        <GameTopNav
+          tone="clear"
+          end={
+            phase === "gate" ? (
+              <CloseButton asChild tone="on-color" label="Back to album">
+                <Link href={ROUTES.play} />
+              </CloseButton>
+            ) : phase === "revealed" ? (
+              <CloseButton tone="on-color" label="Close" onClick={onClose} />
+            ) : (
+              <CloseButton
+                tone="on-color"
+                label="Close"
+                className="invisible"
+                disabled
+                aria-hidden
+                tabIndex={-1}
+              />
+            )
+          }
+        />
       </motion.div>
 
       <div className="mx-auto flex w-full max-w-260 flex-col items-center gap-8 px-4 text-center md:px-8">

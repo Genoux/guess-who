@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { SearchIcon, XIcon } from "lucide-react";
+import { type ReactNode, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { GameBook } from "@/shared/components/game/game-book";
 import { GameButton } from "@/shared/components/game/game-button";
 import { GameCheckbox } from "@/shared/components/game/game-checkbox";
@@ -10,6 +12,7 @@ import { GameModal } from "@/shared/components/game/game-modal";
 import { GameModalActions } from "@/shared/components/game/game-modal-actions";
 import { GameRowMenu } from "@/shared/components/game/game-row-menu";
 import { GameSearchField } from "@/shared/components/game/game-search-field";
+import { GameTooltip } from "@/shared/components/game/game-tooltip";
 import {
   matchesPeopleFilter,
   matchesPeopleSearch,
@@ -20,15 +23,18 @@ import type { NoMissionRowView } from "../lib/people-view";
 import { type AsWelcomer, asWelcomerLabel, canTurnOn } from "../lib/welcomer-readiness";
 import { PeopleEmpty } from "./people-empty";
 import {
+  PEOPLE_FILTER_CLASS,
   PEOPLE_HOVER_GROUP,
   PEOPLE_LAST_CLASS,
   PEOPLE_MENU_CLASS,
   PEOPLE_ROW_CLASS,
+  PEOPLE_TOOLBAR_CLASS,
   PeopleTable,
 } from "./people-table";
 import { PersonCell, RoleTag, TeamTag } from "./person-cell";
 
 const PAGE_SIZE = 14;
+const SEARCH_LABEL = "Search people";
 const NEEDS_CARD_AND_CLUES = "Needs card and clues";
 const WELCOMER_LEFT_NOTE = "Their welcomer left. Start them again.";
 const JOINED_RECENTLY_NOTE = "Joined recently";
@@ -46,6 +52,8 @@ const peopleCount = (count: number) => `${count} ${count === 1 ? "person" : "peo
 
 type PeopleNoMissionProps = {
   rows: readonly NoMissionRowView[];
+  /** The team filter, first in the toolbar. */
+  filters: ReactNode;
   /** Turns missions on for these people; they move to Playing at once. */
   onTurnOn: (keys: readonly string[]) => void;
   /** Asks to start them as a new hire (confirmed first); they move to Playing at once. */
@@ -53,13 +61,21 @@ type PeopleNoMissionProps = {
 };
 
 /** Everyone with no mission: search, filter, and a select mode that turns missions on. */
-export function PeopleNoMission({ rows, onTurnOn, onStartAsNewHire }: PeopleNoMissionProps) {
+export function PeopleNoMission({
+  rows,
+  filters,
+  onTurnOn,
+  onStartAsNewHire,
+}: PeopleNoMissionProps) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<PeopleFilter>("all");
   const [limit, setLimit] = useState(PAGE_SIZE);
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [confirming, setConfirming] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const searchField = useRef<HTMLInputElement>(null);
+  const searchToggle = useRef<HTMLButtonElement>(null);
 
   const matching = rows.filter(
     (row) => matchesPeopleFilter(row, filter) && matchesPeopleSearch(row, query),
@@ -68,6 +84,21 @@ export function PeopleNoMission({ rows, onTurnOn, onStartAsNewHire }: PeopleNoMi
   // Only people who can welcome are turned on from here; the others wait for their card and clues.
   const choosable = matching.filter(canTurnOn);
   const unselected = choosable.filter((row) => !selected.has(row.key));
+
+  // flushSync renders the field (or the toggle) before focus moves to it.
+  const openSearch = () => {
+    flushSync(() => setSearching(true));
+    searchField.current?.focus();
+  };
+
+  const closeSearch = () => {
+    flushSync(() => {
+      setSearching(false);
+      setQuery("");
+      setLimit(PAGE_SIZE);
+    });
+    searchToggle.current?.focus();
+  };
 
   const stopSelecting = () => {
     setSelecting(false);
@@ -97,31 +128,69 @@ export function PeopleNoMission({ rows, onTurnOn, onStartAsNewHire }: PeopleNoMi
           matching.length === 0 && "flex-1",
         )}
       >
-        <div className="flex flex-wrap items-center gap-2 pb-2 md:flex-nowrap md:gap-3">
-          <GameSearchField
-            label="Search people"
-            placeholder="Search people"
-            value={query}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setLimit(PAGE_SIZE);
-            }}
-            className="w-full md:max-w-105 md:flex-1"
-          />
-          <GameFilterMenu
-            label="Show"
-            value={filter}
-            options={PEOPLE_FILTERS}
-            onValueChange={(next) => {
-              setFilter(next);
-              setLimit(PAGE_SIZE);
-            }}
-            className="ml-auto"
-          />
-          {selecting ? null : (
-            <GameButton variant="light" size="sm" onClick={() => setSelecting(true)}>
-              Select
-            </GameButton>
+        <div className={PEOPLE_TOOLBAR_CLASS}>
+          {searching ? (
+            <>
+              <GameSearchField
+                ref={searchField}
+                label={SEARCH_LABEL}
+                placeholder={SEARCH_LABEL}
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setLimit(PAGE_SIZE);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== "Escape") return;
+                  event.preventDefault();
+                  closeSearch();
+                }}
+                className="flex-1"
+              />
+              <GameTooltip label="Close search">
+                <GameButton
+                  variant="light"
+                  size="round-sm"
+                  aria-label="Close search"
+                  onClick={closeSearch}
+                >
+                  <XIcon />
+                </GameButton>
+              </GameTooltip>
+            </>
+          ) : (
+            <>
+              {filters}
+              <GameFilterMenu
+                label="Show"
+                value={filter}
+                options={PEOPLE_FILTERS}
+                onValueChange={(next) => {
+                  setFilter(next);
+                  setLimit(PAGE_SIZE);
+                }}
+                align="start"
+                className={PEOPLE_FILTER_CLASS}
+              />
+              <div className="ml-auto flex items-center gap-2 md:gap-3">
+                <GameTooltip label={SEARCH_LABEL}>
+                  <GameButton
+                    ref={searchToggle}
+                    variant="light"
+                    size="round-sm"
+                    aria-label={SEARCH_LABEL}
+                    onClick={openSearch}
+                  >
+                    <SearchIcon />
+                  </GameButton>
+                </GameTooltip>
+                {selecting ? null : (
+                  <GameButton variant="light" size="sm" onClick={() => setSelecting(true)}>
+                    Select
+                  </GameButton>
+                )}
+              </div>
+            </>
           )}
         </div>
 
