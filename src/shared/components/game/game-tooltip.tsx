@@ -1,7 +1,7 @@
 "use client";
 
 import { TooltipContent, TooltipRoot, TooltipTrigger } from "@inbeat/ui/components/tooltip";
-import { type ReactElement, useState } from "react";
+import { type MouseEvent, type PointerEvent, type ReactElement, useRef, useState } from "react";
 
 type GameTooltipProps = {
   /** Text shown on hover and keyboard focus; usually the control's accessible name. */
@@ -22,10 +22,28 @@ export function GameTooltip({
   openOnTap = false,
 }: GameTooltipProps) {
   const [open, setOpen] = useState(false);
-  const tap = openOnTap ? { open, onOpenChange: setOpen } : {};
+  const openAtPress = useRef(false);
+  // Radix closes the tooltip on the trigger's pointerdown and click; preventDefault skips those
+  // handlers, so a tap toggles it here instead. The open state is read at pointerdown, because the
+  // open tooltip's outside-press dismissal closes it before the click lands.
+  const tap = openOnTap
+    ? {
+        root: { open, onOpenChange: setOpen },
+        trigger: {
+          onPointerDown: (event: PointerEvent<HTMLElement>) => {
+            event.preventDefault();
+            openAtPress.current = open;
+          },
+          onClick: (event: MouseEvent<HTMLElement>) => {
+            event.preventDefault();
+            setOpen(!openAtPress.current);
+          },
+        },
+      }
+    : { root: {}, trigger: {} };
   return (
-    <TooltipRoot delayDuration={300} {...tap}>
-      <TooltipTrigger asChild onClick={openOnTap ? () => setOpen(true) : undefined}>
+    <TooltipRoot delayDuration={300} {...tap.root}>
+      <TooltipTrigger asChild {...tap.trigger}>
         {children}
       </TooltipTrigger>
       <TooltipContent

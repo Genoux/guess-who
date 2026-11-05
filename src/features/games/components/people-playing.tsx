@@ -17,7 +17,6 @@ import { NumberCell, PersonCell, RoleTag, TeamTag, WelcomerCell } from "./person
 
 type PeoplePlayingProps = {
   rows: readonly PlayingRowView[];
-  /** The team filter. */
   filters: ReactNode;
   onEnd: (row: PlayingRowView) => void;
 };

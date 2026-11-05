@@ -127,7 +127,21 @@ export function PeopleNoMission({
           matching.length === 0 && "flex-1",
         )}
       >
+        {/* The filters stay in view while searching: they still narrow the list. */}
         <div className={PEOPLE_TOOLBAR_CLASS}>
+          <div className={GAME_FILTER_GROUP_CLASS}>
+            {filters}
+            <GameFilterMenu
+              label="Show"
+              value={filter}
+              options={PEOPLE_FILTERS}
+              onValueChange={(next) => {
+                setFilter(next);
+                setLimit(PAGE_SIZE);
+              }}
+              align="start"
+            />
+          </div>
           {searching ? (
             <>
               <GameSearchField
@@ -144,7 +158,7 @@ export function PeopleNoMission({
                   event.preventDefault();
                   closeSearch();
                 }}
-                className="flex-1"
+                className="min-w-0 grow basis-48"
               />
               <GameTooltip label="Close search">
                 <GameButton
@@ -158,39 +172,24 @@ export function PeopleNoMission({
               </GameTooltip>
             </>
           ) : (
-            <>
-              <div className={GAME_FILTER_GROUP_CLASS}>
-                {filters}
-                <GameFilterMenu
-                  label="Show"
-                  value={filter}
-                  options={PEOPLE_FILTERS}
-                  onValueChange={(next) => {
-                    setFilter(next);
-                    setLimit(PAGE_SIZE);
-                  }}
-                  align="start"
-                />
-              </div>
-              <div className="flex items-center gap-2 sm:ml-auto md:gap-3">
-                <GameTooltip label={SEARCH_LABEL}>
-                  <GameButton
-                    ref={searchToggle}
-                    variant="light"
-                    size="round-sm"
-                    aria-label={SEARCH_LABEL}
-                    onClick={openSearch}
-                  >
-                    <SearchIcon />
-                  </GameButton>
-                </GameTooltip>
-                {selecting ? null : (
-                  <GameButton variant="light" size="sm" onClick={() => setSelecting(true)}>
-                    Select
-                  </GameButton>
-                )}
-              </div>
-            </>
+            <div className="flex items-center gap-2 sm:ml-auto md:gap-3">
+              <GameTooltip label={SEARCH_LABEL}>
+                <GameButton
+                  ref={searchToggle}
+                  variant="light"
+                  size="round-sm"
+                  aria-label={SEARCH_LABEL}
+                  onClick={openSearch}
+                >
+                  <SearchIcon />
+                </GameButton>
+              </GameTooltip>
+              {selecting ? null : (
+                <GameButton variant="light" size="sm" onClick={() => setSelecting(true)}>
+                  Select
+                </GameButton>
+              )}
+            </div>
           )}
         </div>
 

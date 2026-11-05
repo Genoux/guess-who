@@ -69,14 +69,11 @@
   background: inherit;
 }
 
-/*
- * Phones wrap a long name or email in a wider person column instead of cutting it, and the row
- * grows to fit. That column is still most of the screen: pinned, it would cover the columns scrolled under it, so there it
- * scrolls with the rest.
- */
+/* Phones wrap a long name or email instead of cutting it. Pinned, this wide column would cover
+   the ones scrolled under it, so it scrolls with them. */
 @media (max-width: 47.999rem) {
   .people-table {
-    --person: minmax(16rem, max-content);
+    --person: minmax(16rem, 20rem);
   }
 
   .people-row {
@@ -87,7 +84,6 @@
 
   .people-who {
     position: static;
-    max-width: none;
   }
 }
 

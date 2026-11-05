@@ -10,8 +10,8 @@
   --container-app-min: 22.5rem;
 
   /* Where GameTopNav puts its tabs inline beside the logo: the widest squeezed bar (six tabs at
-     full size, the count and the avatar: 752px) plus 16px. Narrower, the tabs take a row of
-     their own. */
+     full size, the count and the avatar) plus a little headroom. Narrower, the tabs take a row
+     of their own. */
   --breakpoint-nav: 48rem;
 
   /* Colors */
