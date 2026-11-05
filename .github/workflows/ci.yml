@@ -19,3 +19,5 @@ jobs:
   release:
     if: github.event_name == 'repository_dispatch' && github.event.client_payload.environment == 'production'
     uses: Genoux/ib-toolkit/.github/workflows/release-gate.yml@main
+    with: { db-check: true, migrate: true }
+    secrets: { DATABASE_URL: "${{ secrets.DATABASE_URL }}" }
