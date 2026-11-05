@@ -44,14 +44,14 @@ const TONES = {
   light: {
     bar: "bg-game-sidebar",
     text: "text-game-ink",
-    hover: "hoverable:hover:bg-game-hover md:hoverable:hover:bg-game-sidebar",
-    pill: "bg-game-surface shadow-edge md:bg-game-sidebar md:shadow-none",
+    hover: "hoverable:hover:bg-game-hover nav:hoverable:hover:bg-game-sidebar",
+    pill: "bg-game-surface shadow-edge nav:bg-game-sidebar nav:shadow-none",
   },
   ink: {
     bar: "bg-game-ink-soft",
     text: "text-white",
-    hover: "hoverable:hover:bg-game-ink-hover md:hoverable:hover:bg-game-ink-soft",
-    pill: "bg-game-ink-hover md:bg-game-ink-soft",
+    hover: "hoverable:hover:bg-game-ink-hover nav:hoverable:hover:bg-game-ink-soft",
+    pill: "bg-game-ink-hover nav:bg-game-ink-soft",
   },
 } as const;
 
@@ -73,24 +73,25 @@ export function PillTabs({ tabs, label = "Main", tone = "light", className }: Pi
       aria-label={label}
       className={gameCn(
         "flex w-full gap-1 overflow-x-auto rounded-full p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-        tone === "page" ? "md:w-fit" : "md:w-auto md:overflow-visible md:bg-transparent md:p-0",
-        tabs.length > 5 && "max-md:gap-0.5",
-        tone === "page" && "max-md:gap-0.5 max-md:p-0.5",
+        tone === "page"
+          ? "max-md:gap-0.5 max-md:p-0.5 md:w-fit"
+          : "nav:w-auto nav:overflow-visible nav:bg-transparent nav:p-0",
         TONES[tone].bar,
         className,
       )}
     >
       {tabs.map((tab) => {
         const classes = gameCn(
-          "relative inline-flex h-11 flex-auto shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-full border-0 px-3 text-base transition-colors duration-fast ease-game md:flex-none md:px-5 no-underline outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2 motion-reduce:transition-none",
-          // Four or more tabs share a phone's width: tighter padding and a smaller label keep each on one line.
-          tabs.length > 3 && "max-md:px-2 max-md:text-small",
-          tabs.length > 5 && "max-md:px-1 max-md:text-[0.8125rem]",
-          // Five or six nav tabs beside the logo on a tablet: tighter until there is room.
-          tabs.length > 4 && tone !== "page" && "md:max-lg:px-2.5 md:max-lg:text-small",
-          // Tabs that carry a count are wider: tighter on a phone so four of them fit.
-          tone === "page" &&
-            "max-md:gap-1 max-md:px-1.5 max-md:text-[0.8125rem] max-[24rem]:px-1 max-[24rem]:text-xs",
+          "relative inline-flex h-11 flex-auto shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-full border-0 px-3 text-base transition-colors duration-fast ease-game no-underline outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2 motion-reduce:transition-none",
+          // The label keeps its size at every width: where the tabs don't fit, the row scrolls.
+          tone === "page"
+            ? "max-md:gap-1 max-md:px-1.5 md:flex-none md:px-5"
+            : gameCn(
+                "nav:flex-none nav:px-5",
+                tabs.length > 3 && "max-nav:px-2",
+                // Five or six tabs beside the logo: tighter until the centered layout has room.
+                tabs.length > 4 && "nav:max-lg:px-2",
+              ),
           TONES[tone].text,
           !tab.current && TONES[tone].hover,
         );

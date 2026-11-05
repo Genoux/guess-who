@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { type MouseEvent, useEffect, useState } from "react";
 import { GameBook } from "@/shared/components/game/game-book";
-import { GameFilterMenu } from "@/shared/components/game/game-filter-menu";
+import { GAME_FILTER_GROUP_CLASS, GameFilterMenu } from "@/shared/components/game/game-filter-menu";
 import { stagger, TRANSITION } from "@/shared/components/game/game-motion";
 import { Sticker } from "@/shared/components/game/sticker";
 import { ROUTES } from "@/shared/config/routes";
@@ -97,7 +97,7 @@ export function AlbumBoard({
     // Positioned so it slides over the AlbumCover above it.
     <GameBook className="relative px-2 pt-6 pb-10 sm:px-6 sm:pt-8">
       <div className="flex w-full flex-col gap-8">
-        <div className="flex w-full items-center justify-between gap-3">
+        <div className={GAME_FILTER_GROUP_CLASS}>
           <GameFilterMenu
             label="Team"
             align="start"
@@ -115,6 +115,7 @@ export function AlbumBoard({
           />
           <GameFilterMenu
             label="Show"
+            align="start"
             value={status}
             options={statusOptions}
             onValueChange={(next) => {

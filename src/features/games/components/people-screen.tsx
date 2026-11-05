@@ -18,7 +18,6 @@ import { EndMissionDialog } from "./end-mission-dialog";
 import { PeopleDone } from "./people-done";
 import { PeopleNoMission } from "./people-no-mission";
 import { PeoplePlaying } from "./people-playing";
-import { PEOPLE_FILTER_CLASS } from "./people-table";
 import { StartNewHireDialog } from "./start-new-hire-dialog";
 
 type PeopleView = "playing" | "noMission" | "done";
@@ -146,7 +145,6 @@ export function PeopleScreen({
       options={teamFilterOptions([...board.playing, ...board.noMission, ...board.done])}
       onValueChange={setTeam}
       align="start"
-      className={PEOPLE_FILTER_CLASS}
     />
   );
 

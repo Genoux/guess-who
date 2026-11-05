@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { CountChip } from "@/shared/components/game/count-chip";
 import { GameBook } from "@/shared/components/game/game-book";
 import { gameCn } from "@/shared/components/game/game-cn";
+import { GAME_FILTER_GROUP_CLASS } from "@/shared/components/game/game-filter-menu";
 import type { DoneRowView } from "../lib/people-view";
 import { PeopleEmpty } from "./people-empty";
 import {
@@ -9,19 +10,9 @@ import {
   PEOPLE_LAST_CLASS,
   PEOPLE_ROW_CLASS,
   PEOPLE_TOOLBAR_CLASS,
-  type PeopleHead,
   PeopleTable,
 } from "./people-table";
 import { NumberCell, PersonCell, RoleTag, TeamTag, WelcomerCell } from "./person-cell";
-
-const HEADS = {
-  player: { label: "Player" },
-  role: { label: "Role" },
-  team: { label: "Team" },
-  welcomer: { label: "Welcomed by" },
-  result: { label: "Result" },
-  ended: { label: "Ended", end: true },
-} as const satisfies Record<string, PeopleHead>;
 
 type PeopleDoneProps = {
   rows: readonly DoneRowView[];
@@ -39,14 +30,25 @@ export function PeopleDone({ rows, filters }: PeopleDoneProps) {
         rows.length === 0 && "flex-1",
       )}
     >
-      <div className={PEOPLE_TOOLBAR_CLASS}>{filters}</div>
+      <div className={PEOPLE_TOOLBAR_CLASS}>
+        <div className={GAME_FILTER_GROUP_CLASS}>{filters}</div>
+      </div>
       {rows.length === 0 ? (
         <PeopleEmpty
           title="Nothing here yet"
           text="Finished missions land here, found or revealed."
         />
       ) : (
-        <PeopleTable heads={Object.values(HEADS)}>
+        <PeopleTable
+          heads={[
+            { label: "Player" },
+            { label: "Role" },
+            { label: "Team" },
+            { label: "Welcomed by" },
+            { label: "Result" },
+            { label: "Ended", end: true },
+          ]}
+        >
           {rows.map((row) => (
             <li key={row.key} className={gameCn(PEOPLE_HOVER_GROUP, PEOPLE_ROW_CLASS)}>
               <PersonCell
@@ -57,13 +59,13 @@ export function PeopleDone({ rows, filters }: PeopleDoneProps) {
               />
               <RoleTag newHire={row.newHire} />
               <TeamTag team={row.team} />
-              <WelcomerCell name={row.welcomer} label={HEADS.welcomer.label} />
+              <WelcomerCell name={row.welcomer} />
               <div>
                 <CountChip size="row" variant={row.outcome.found ? "found" : "soft"}>
                   {row.outcome.label}
                 </CountChip>
               </div>
-              <NumberCell muted label={HEADS.ended.label} className={PEOPLE_LAST_CLASS}>
+              <NumberCell muted className={PEOPLE_LAST_CLASS}>
                 {row.endedOn}
               </NumberCell>
             </li>

@@ -3,7 +3,7 @@
  * left, down to a minimum) and the free space is shared equally between them, so the gap between
  * two columns is the same everywhere. The caption row and each row take the table's columns as a
  * subgrid. Below the content width the table scrolls sideways inside its book, with the person
- * column stuck on the left. Phones get no table (below).
+ * column stuck on the left from a tablet up.
  */
 .people-scroll {
   width: 100%;
@@ -69,15 +69,37 @@
   background: inherit;
 }
 
+/*
+ * Phones wrap a long name or email in a wider person column instead of cutting it, and the row
+ * grows to fit. That column is still most of the screen: pinned, it would cover the columns scrolled under it, so there it
+ * scrolls with the rest.
+ */
+@media (max-width: 47.999rem) {
+  .people-table {
+    --person: minmax(16rem, max-content);
+  }
+
+  .people-row {
+    height: auto;
+    min-height: 4rem;
+    padding-block: 0.75rem;
+  }
+
+  .people-who {
+    position: static;
+    max-width: none;
+  }
+}
+
 .people-menu {
   justify-self: center;
 }
 
 /*
- * With a pointer on a wide screen the row menu has no column: its dots appear over the row's last value on hover,
+ * With a pointer the row menu has no column: its dots appear over the row's last value on hover,
  * focus or while open. Touch keeps a column with the dots always in view.
  */
-@media (hover: hover) and (min-width: 48rem) {
+@media (hover: hover) {
   .people-table {
     --menu: ;
   }
@@ -104,55 +126,5 @@
   .people-row:has(.people-menu):focus-within .people-last,
   .people-row:has(.people-menu[data-state="open"]) .people-last {
     opacity: 0;
-  }
-}
-
-/*
- * Phones: each person is a row of their own, the person on top with the whole email, the other
- * values wrapped under it, each after its caption (`data-label`), and the menu top right.
- */
-@media (max-width: 47.999rem) {
-  .people-table,
-  .people-list {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  }
-
-  .people-heads {
-    display: none;
-  }
-
-  .people-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem 1rem;
-    height: auto;
-    padding-block: 0.75rem;
-  }
-
-  /* z-index goes too: a flex item stacks by it even when static, which hid the menu. */
-  .people-who {
-    flex-basis: 100%;
-    max-width: none;
-    position: static;
-    z-index: auto;
-  }
-
-  .people-row:has(.people-menu) .people-who {
-    padding-inline-end: calc(var(--menu) + 0.5rem);
-  }
-
-  .people-menu {
-    position: absolute;
-    top: 0.75rem;
-    inset-inline-end: 0.75rem;
-  }
-
-  .people-row [data-label]::before {
-    content: attr(data-label);
-    color: var(--color-game-muted);
-    margin-inline-end: 0.375rem;
   }
 }

@@ -7,7 +7,7 @@ import { GameBook } from "@/shared/components/game/game-book";
 import { GameButton } from "@/shared/components/game/game-button";
 import { GameCheckbox } from "@/shared/components/game/game-checkbox";
 import { gameCn } from "@/shared/components/game/game-cn";
-import { GameFilterMenu } from "@/shared/components/game/game-filter-menu";
+import { GAME_FILTER_GROUP_CLASS, GameFilterMenu } from "@/shared/components/game/game-filter-menu";
 import { GameModal } from "@/shared/components/game/game-modal";
 import { GameModalActions } from "@/shared/components/game/game-modal-actions";
 import { GameRowMenu } from "@/shared/components/game/game-row-menu";
@@ -23,7 +23,6 @@ import type { NoMissionRowView } from "../lib/people-view";
 import { type AsWelcomer, asWelcomerLabel, canTurnOn } from "../lib/welcomer-readiness";
 import { PeopleEmpty } from "./people-empty";
 import {
-  PEOPLE_FILTER_CLASS,
   PEOPLE_HOVER_GROUP,
   PEOPLE_LAST_CLASS,
   PEOPLE_MENU_CLASS,
@@ -160,19 +159,20 @@ export function PeopleNoMission({
             </>
           ) : (
             <>
-              {filters}
-              <GameFilterMenu
-                label="Show"
-                value={filter}
-                options={PEOPLE_FILTERS}
-                onValueChange={(next) => {
-                  setFilter(next);
-                  setLimit(PAGE_SIZE);
-                }}
-                align="start"
-                className={PEOPLE_FILTER_CLASS}
-              />
-              <div className="ml-auto flex items-center gap-2 md:gap-3">
+              <div className={GAME_FILTER_GROUP_CLASS}>
+                {filters}
+                <GameFilterMenu
+                  label="Show"
+                  value={filter}
+                  options={PEOPLE_FILTERS}
+                  onValueChange={(next) => {
+                    setFilter(next);
+                    setLimit(PAGE_SIZE);
+                  }}
+                  align="start"
+                />
+              </div>
+              <div className="flex items-center gap-2 sm:ml-auto md:gap-3">
                 <GameTooltip label={SEARCH_LABEL}>
                   <GameButton
                     ref={searchToggle}

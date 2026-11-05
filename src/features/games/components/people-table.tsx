@@ -30,9 +30,6 @@ export const PEOPLE_MENU_CLASS =
 /** The filters and actions over a view's rows: one row, wrapping on a phone. */
 export const PEOPLE_TOOLBAR_CLASS = "flex flex-wrap items-center gap-2 pb-2 md:gap-3";
 
-/** A filter pill in the toolbar, as tall as the buttons beside it. */
-export const PEOPLE_FILTER_CLASS = "h-11";
-
 /** The last value of a row with a menu, which the dots replace on hover. */
 export const PEOPLE_LAST_CLASS =
   "people-last transition-opacity duration-fast ease-game motion-reduce:transition-none";
