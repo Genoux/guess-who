@@ -22,7 +22,7 @@ export function GameStage({
   return (
     <Tag
       className={gameCn(
-        "mx-auto flex w-full flex-1 flex-col items-center justify-center gap-10 p-10 text-center",
+        "mx-auto flex w-full flex-1 flex-col items-center justify-center gap-10 px-4 py-10 text-center sm:px-10",
         WIDTHS[width],
         className,
       )}

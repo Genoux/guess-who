@@ -12,7 +12,7 @@ const gameButtonVariants = cva(
         yellow: "bg-game-shortlist text-game-ink hover:bg-game-shortlist-hover",
         light: "bg-game-surface text-game-ink shadow-edge hover:shadow-edge-strong",
         "on-dark": "bg-game-surface text-game-ink hover:bg-game-sidebar",
-        link: "rounded-sm text-game-muted underline underline-offset-3 hover:text-game-ink focus-visible:outline-offset-3",
+        link: "relative rounded-sm text-game-muted underline after:absolute after:inset-x-0 after:-inset-y-3 underline-offset-3 hover:text-game-ink focus-visible:outline-offset-3",
       },
       size: {
         lg: "h-15 gap-3 px-9 text-lead",

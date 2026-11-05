@@ -82,7 +82,7 @@ export function PillTabs({ tabs, label = "Main", tone = "light", className }: Pi
     >
       {tabs.map((tab) => {
         const classes = gameCn(
-          "relative inline-flex h-10 flex-auto shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-full border-0 px-3 text-base transition-colors duration-fast ease-game md:h-11 md:flex-none md:px-5 no-underline outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2 motion-reduce:transition-none",
+          "relative inline-flex h-11 flex-auto shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-full border-0 px-3 text-base transition-colors duration-fast ease-game md:flex-none md:px-5 no-underline outline-none focus-visible:outline-2 focus-visible:outline-game-found focus-visible:outline-offset-2 motion-reduce:transition-none",
           // Four or more tabs share a phone's width: tighter padding and a smaller label keep each on one line.
           tabs.length > 3 && "max-md:px-2 max-md:text-small",
           tabs.length > 5 && "max-md:px-1 max-md:text-[0.8125rem]",

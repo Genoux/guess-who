@@ -234,7 +234,7 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
       {/* Full width on the welcome, the left column during the tour. */}
       <header
         className={gameCn(
-          "relative z-10 col-start-1 row-start-1 flex items-center justify-between px-6 pt-6 md:px-12 md:pt-10",
+          "relative z-10 col-start-1 row-start-1 flex items-center justify-between px-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] md:px-12 md:pt-[calc(env(safe-area-inset-top)+2.5rem)]",
           step === 0 && "md:col-span-full",
         )}
       >
@@ -358,7 +358,7 @@ export function WelcomeIntro({ firstName, preview = false }: WelcomeIntroProps) 
                 </div>
               </main>
 
-              <footer className="flex items-center justify-between gap-4 px-6 pb-8 md:col-start-1 md:row-start-3 md:px-12 md:pb-10">
+              <footer className="flex items-center justify-between gap-4 px-6 pb-[calc(env(safe-area-inset-bottom)+2rem)] md:col-start-1 md:row-start-3 md:px-12 md:pb-[calc(env(safe-area-inset-bottom)+2.5rem)]">
                 <GameButton
                   variant="light"
                   size="round"
