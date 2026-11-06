@@ -3,6 +3,7 @@ import {
   formatStickerNumber,
   getAskTextStep,
   getStickerView,
+  isLongFact,
   type StickerPerson,
   stickerCelebration,
 } from "./sticker-view";
@@ -109,5 +110,16 @@ describe("getAskTextStep", () => {
 
   it("measures the text as written, not the padding around it", () => {
     expect(getAskTextStep(`  ${"x".repeat(16)}  `, "sm")).toBe("large");
+  });
+});
+
+describe("isLongFact", () => {
+  it("flags facts over 90 characters, so they take one line less", () => {
+    expect(isLongFact("x".repeat(90))).toBe(false);
+    expect(isLongFact("x".repeat(91))).toBe(true);
+  });
+
+  it("measures the text as written, not the padding around it", () => {
+    expect(isLongFact(`  ${"x".repeat(90)}  `)).toBe(false);
   });
 });

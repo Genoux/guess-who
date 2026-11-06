@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { ana, longest, noor, unbroken } from "./fixtures";
+import { GameButton } from "./game-button";
 import { Sticker } from "./sticker";
 import type { StickerMode, StickerSize } from "./sticker-view";
 
@@ -93,4 +94,19 @@ export const Gallery: Story = {
       )}
     </div>
   ),
+};
+export const AlbumExpandedCenterAction: Story = {
+  args: {
+    person: ana,
+    size: "sm",
+    mode: "collected",
+    expanded: true,
+    askToggle: true,
+    centerAction: (
+      <GameButton variant="light" size="sm" className="shadow-none hover:shadow-none">
+        Edit
+      </GameButton>
+    ),
+  },
+  decorators: AlbumExpanded.decorators,
 };
