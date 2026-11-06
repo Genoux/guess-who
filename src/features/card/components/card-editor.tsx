@@ -137,28 +137,36 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
           On a phone, content-start stops the opening form row stretching the sticker's row. */}
       <div
         className={gameCn(
-          "grid w-full grid-cols-[minmax(0,1fr)] content-start justify-center [--form:23.75rem] [--gap:2.5rem] transition-[translate,grid-template-rows] md:grid-cols-[auto_minmax(0,var(--form))] md:grid-rows-1 md:gap-x-(--gap)",
+          "@container grid w-full grid-cols-[minmax(0,1fr)] content-start justify-center [--form:23.75rem] [--gap:2.5rem] transition-[translate,grid-template-rows] md:grid-cols-[auto_minmax(0,var(--form))] md:grid-rows-1 md:gap-x-(--gap)",
           SWITCH,
           editing
             ? "grid-rows-[auto_1fr]"
             : "grid-rows-[auto_0fr] md:translate-x-[calc((var(--form)+var(--gap))/2)]",
         )}
       >
-        <Sticker
-          person={sticker}
-          size="lg"
-          rot={-2}
-          celebrateChanges={false}
-          askToggle
-          askRevealed={askFocused}
-          className="justify-self-center"
-          centerActionEnabled={!editing}
-          centerAction={
-            <GameButton ref={editButton} variant="light" size="sm" onClick={() => switchTo(true)}>
-              Edit
-            </GameButton>
-          }
-        />
+        <div className="zoom-open justify-self-center">
+          <Sticker
+            person={sticker}
+            size="sm"
+            expanded
+            rot={-2}
+            celebrateChanges={false}
+            askToggle
+            askRevealed={askFocused}
+            centerActionEnabled={!editing}
+            centerAction={
+              <GameButton
+                ref={editButton}
+                variant="light"
+                size="sm"
+                className="shadow-none hover:shadow-none"
+                onClick={() => switchTo(true)}
+              >
+                Edit
+              </GameButton>
+            }
+          />
+        </div>
 
         <div
           inert={!editing}

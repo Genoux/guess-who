@@ -52,6 +52,14 @@ export function getAskTextStep(ask: string, size: StickerSize): AskTextStep {
   return length <= max.medium ? "medium" : "small";
 }
 
+// At the album card's fact size a 120 character fact wraps to five lines and squeezes the photo;
+// one size down holds it in four.
+const LONG_FACT_LENGTH = 90;
+
+export function isLongFact(fact: string): boolean {
+  return fact.trim().length > LONG_FACT_LENGTH;
+}
+
 export function formatStickerNumber(value: number | string): string {
   const text = String(value).trim();
   return /^\d$/.test(text) ? `0${text}` : text;
