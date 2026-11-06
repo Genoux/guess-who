@@ -15,6 +15,7 @@ import {
   type AskTextStep,
   getAskTextStep,
   getStickerView,
+  isLongFact,
   type StickerMode,
   type StickerPerson,
   type StickerSize,
@@ -52,7 +53,7 @@ export type StickerProps = {
   /** Holds the ask open while true, e.g. while its field is being edited; needs `askToggle`. */
   askRevealed?: boolean;
   /**
-   * Sits centered over the card, in front of the ask panel, and tilts with it, e.g. an Edit button.
+   * Sits centered on the photo, in front of the ask panel, and tilts with it, e.g. an Edit button.
    * It shows on hover or keyboard focus, always on a touch screen, with the art dimmed behind it.
    */
   centerAction?: ReactNode;
@@ -106,9 +107,9 @@ const captionVariants = cva("relative flex flex-none flex-col gap-0.5", {
     scrim: {
       none: "pt-3",
       album:
-        "pt-(--fade) text-white sticker-scrim [--fade:calc(var(--spacing)*8)] [--scrim-max:0.74]",
+        "pt-(--fade) text-white sticker-scrim [--fade:calc(var(--spacing)*8)] in-[.zoom-open]:[--fade:calc(var(--spacing)*10)] [--scrim-max:0.74]",
       large:
-        "pt-(--fade) text-white sticker-scrim [--fade:calc(var(--spacing)*10)] [--scrim-blur:10px] [--scrim-max:0.62]",
+        "pt-(--fade) text-white sticker-scrim [--fade:calc(var(--spacing)*10)] [--scrim-max:0.74]",
     },
   },
 });
@@ -139,11 +140,15 @@ function StickerCaption({ name, subtitle, size, overPhoto }: StickerCaptionProps
   const scrim = !overPhoto ? "none" : size === "lg" ? "large" : "album";
   return (
     <div className={captionVariants({ size, scrim })}>
-      {scrim === "large" ? (
-        <span aria-hidden className="pointer-events-none absolute inset-0 sticker-scrim-blur" />
-      ) : null}
       <span className={nameVariants({ size })}>{name}</span>
-      <span className="relative max-w-full text-small wrap-anywhere">{subtitle}</span>
+      <span
+        className={gameCn(
+          "relative max-w-full wrap-anywhere",
+          size === "sm" ? "text-meta tracking-normal" : "text-small",
+        )}
+      >
+        {subtitle}
+      </span>
     </div>
   );
 }
@@ -298,6 +303,26 @@ export function Sticker({
               )}
             />
           ) : null}
+          {centerAction ? (
+            // Centered on the photo, over the ask panel (z-10) and its + button (z-20), and before
+            // them in the tab order.
+            <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center">
+              <div
+                inert={!centerActionEnabled}
+                className={gameCn(
+                  "pointer-events-auto scale-90 opacity-0 zoom-open-reset",
+                  CENTER_REVEAL,
+                  centerActionEnabled &&
+                    gameCn(
+                      CENTER_SHOWN,
+                      "group-hover/center:scale-100 group-has-[:focus-visible]/center:scale-100 pointer-coarse:scale-100",
+                    ),
+                )}
+              >
+                {centerAction}
+              </div>
+            </div>
+          ) : null}
           <div className="relative flex min-h-0 flex-1 items-center justify-center [container-type:size]">
             {photoUrl ? null : (
               <span
@@ -328,7 +353,14 @@ export function Sticker({
             initial={factFrom ? "shown" : "hidden"}
             animate={factShown ? "shown" : "hidden"}
           >
-            <div className={gameCn("fact-reveal-mask min-h-0 overflow-hidden", FACT_TEXT[size])}>
+            <div
+              className={gameCn(
+                "fact-reveal-mask min-h-0 overflow-hidden",
+                size === "sm" && isLongFact(person.fact)
+                  ? "text-meta tracking-normal"
+                  : FACT_TEXT[size],
+              )}
+            >
               <motion.p
                 className={factVariants({ size })}
                 variants={factTextVariants(expandTransition, reducedMotion)}
@@ -364,25 +396,6 @@ export function Sticker({
           className="relative size-full"
           style={rot ? { transform: `rotate(${rot}deg)` } : undefined}
         >
-          {centerAction ? (
-            // First in the tab order, painted over the ask panel (z-10) and its + button (z-20).
-            <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center">
-              <div
-                inert={!centerActionEnabled}
-                className={gameCn(
-                  "pointer-events-auto scale-90 opacity-0",
-                  CENTER_REVEAL,
-                  centerActionEnabled &&
-                    gameCn(
-                      CENTER_SHOWN,
-                      "group-hover/center:scale-100 group-has-[:focus-visible]/center:scale-100 pointer-coarse:scale-100",
-                    ),
-                )}
-              >
-                {centerAction}
-              </div>
-            </div>
-          ) : null}
           <Flip
             className="size-full"
             flipped={view.open}

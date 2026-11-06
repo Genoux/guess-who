@@ -192,17 +192,31 @@
    container (an `@container`) when that is narrower, e.g. on a phone. tan(atan2(a, b)) is a / b
    as a plain number: calc() cannot divide one length by another outside Chrome 140+. */
 @utility zoom-open {
-  zoom: min(
+  --zoom-open: min(
     tan(atan2(var(--sticker-width-lg), var(--sticker-width-sm))),
     tan(atan2(100cqi, var(--sticker-width-sm)))
   );
+  zoom: var(--zoom-open);
+}
+
+/* Undoes `zoom-open` for a control placed on the open card, so it keeps its own size. A transform,
+   not `zoom`: a zoomed grid item lost its centring. */
+@utility zoom-open-reset {
+  transform: scale(calc(1 / var(--zoom-open, 1)));
+}
+
+/* Registered so `100cqi` resolves on the `zoom-open` element and children inherit the number, not
+   the expression re-read against their own, nearer container. */
+@property --zoom-open {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
 }
 
 /* The name and team over a card's photo: ink at `--scrim-max` under the text, easing out to nothing
    over `--fade` above it. The ramp is the eased alpha at 30%, 60% and 85% of the fade, as
-   multipliers of the max. The caller sets `--scrim-max` per card size: the album card's is a plain
-   gradient, the large card's is lighter because it also sits on a blur (`sticker-scrim-blur`,
-   sized by `--scrim-blur`). White text on the large max (0.62) over a white photo is 4.9:1. */
+   multipliers of the max. The caller sets `--scrim-max` and `--fade` per card size. No backdrop
+   blur: Chrome renders it banded on the masked edge. */
 @utility sticker-scrim {
   --scrim-ramp-1: 0.7;
   --scrim-ramp-2: 0.33;
@@ -293,16 +307,6 @@
   background-color: color-mix(
     in srgb,
     var(--color-game-ink) calc(var(--dim-max) * 100%),
-    transparent
-  );
-}
-
-@utility sticker-scrim-blur {
-  backdrop-filter: blur(var(--scrim-blur));
-  mask-image: linear-gradient(
-    to top,
-    #000 calc(100% - var(--fade)),
-    rgb(0 0 0 / 0.5) calc(100% - var(--fade) * 0.5),
     transparent
   );
 }
