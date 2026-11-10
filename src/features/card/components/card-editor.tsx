@@ -32,7 +32,7 @@ const EMPTY_TEAM = {
 // Radix Select refuses an empty item value, so clearing the team goes through a sentinel.
 const NO_TEAM = "none";
 
-const SWITCH ="duration-slower ease-game motion-reduce:transition-none";
+const SWITCH = "duration-slower ease-game motion-reduce:transition-none";
 
 function toFieldErrors(issues: readonly { path: readonly PropertyKey[]; message: string }[]) {
   const errors: FieldErrors = {};
