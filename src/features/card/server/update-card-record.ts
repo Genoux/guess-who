@@ -1,7 +1,7 @@
 import "server-only";
 import { AppError } from "@inbeat/core/errors";
 import { eq } from "drizzle-orm";
-import { people } from "@/db/schema";
+import { people, teams } from "@/db/schema";
 import { isCardComplete } from "@/entities/card";
 import { WELCOMING_LOCKED_MESSAGE } from "@/entities/new-hire";
 import { db } from "@/shared/lib/db";
@@ -10,8 +10,8 @@ import type { UpdateMyCardInput } from "../schemas";
 import type { CardFields } from "../types";
 
 /**
- * Saves the person's fact and ask. Team and location come from Deel and are never written here.
- * A draft saves, except while they welcome a started mission: their card has to stay complete for
+ * Saves the person's team, fact and ask. Location comes from Deel and is never written here. A
+ * draft saves, except while they welcome a started mission: their card has to stay complete for
  * the player.
  */
 export async function updateCardRecord(
@@ -20,7 +20,7 @@ export async function updateCardRecord(
   now: Date,
 ): Promise<CardFields> {
   const [deelFields] = await db
-    .select({ teamId: people.teamId, location: people.location })
+    .select({ location: people.location })
     .from(people)
     .where(eq(people.id, personId))
     .limit(1);
@@ -35,9 +35,19 @@ export async function updateCardRecord(
     });
   }
 
+  if (input.teamId) {
+    const [team] = await db
+      .select({ id: teams.id })
+      .from(teams)
+      .where(eq(teams.id, input.teamId))
+      .limit(1);
+    if (!team) throw new AppError("validation", "unknown team", { safeMessage: "Pick your team." });
+  }
+
   const [saved] = await db
     .update(people)
     .set({
+      teamId: input.teamId,
       fact: input.fact || null,
       ask: input.ask || null,
     })

@@ -9,7 +9,6 @@ let holders: unknown[][] = [];
 const person: RosterPerson = {
   deelId: "deel-1",
   name: "Sam Seed",
-  team: "Creative",
   location: "Canada",
   email: "sam@work.example",
   personalEmail: "sam@gmail.example",
@@ -28,21 +27,20 @@ beforeEach(() => {
   client.query.mockReset();
   client.query.mockImplementation(async (config: { text: string }) => {
     if (config.text.includes('from "people"')) return { rows: holders };
-    if (config.text.includes('from "teams"')) return { rows: [["team_creative"]] };
     return { rows: [] };
   });
 });
 
 describe("upsertRosterPersonRecord", () => {
-  it("creates a person with the Deel fields and the team id", async () => {
+  it("creates a person with the Deel fields and no team", async () => {
     await expect(upsert()).resolves.toBe("created");
     const [insert] = writes();
     expect(insert?.sql).toMatch(/^insert into people/);
+    expect(insert?.sql).toMatch(/team_id, location.*values \(.*default, \$5/);
     expect(insert?.params).toEqual(
       expect.arrayContaining([
         "deel-1",
         "Sam Seed",
-        "team_creative",
         "Canada",
         "sam@work.example",
         "sam@gmail.example",
@@ -57,7 +55,7 @@ describe("upsertRosterPersonRecord", () => {
     const [update] = writes();
     expect(update?.sql).toMatch(/^update people set /);
     expect(update?.sql).not.toMatch(
-      /fact|ask|new_hire|auto_mission_done_at|clerk_user_id|image_url/,
+      /team_id|fact|ask|new_hire|auto_mission_done_at|clerk_user_id|image_url/,
     );
     expect(update?.params).toContain("person_1");
   });
@@ -72,15 +70,14 @@ describe("upsertRosterPersonRecord", () => {
     expect(second).toEqual(first);
   });
 
-  it("keeps the team and location on update when Deel has none", async () => {
+  it("keeps the location on update when Deel has none", async () => {
     holders = [["person_1", "deel-1", "sam@work.example"]];
-    await upsert({ ...person, team: null, location: null });
-    expect(writes()[0]?.sql).not.toMatch(/team_id|location/);
-    expect(sentStatements(client).some(({ sql }) => sql.includes("from teams"))).toBe(false);
+    await upsert({ ...person, location: null });
+    expect(writes()[0]?.sql).not.toMatch(/location/);
   });
 
-  it("writes a null team and location on insert", async () => {
-    await upsert({ ...person, team: null, location: null });
+  it("writes a null location on insert", async () => {
+    await upsert({ ...person, location: null });
     expect(writes()[0]?.sql).toMatch(/^insert into people/);
   });
 

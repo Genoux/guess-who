@@ -11,9 +11,12 @@ export type CardContent = {
 
 const isFilled = (text: string | null) => Boolean(text?.trim());
 
-/** The part of a card its person writes; team and location come from Deel. */
-export const hasOwnCardFields = ({ fact, ask }: Pick<CardContent, "fact" | "ask">) =>
-  [fact, ask].every(isFilled);
+/** The part of a card its person writes; location comes from Deel. */
+export const hasOwnCardFields = ({
+  teamId,
+  fact,
+  ask,
+}: Pick<CardContent, "teamId" | "fact" | "ask">) => teamId !== null && [fact, ask].every(isFilled);
 
 /** A card joins the album and can welcome only when team, location, fact and ask are all filled in. */
 export const isCardComplete = ({ teamId, location, fact, ask }: CardContent) =>
