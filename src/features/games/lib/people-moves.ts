@@ -13,6 +13,7 @@ const toPlaying = ({ welcomerLeft: _welcomerLeft, ...row }: NoMissionRowView): P
   ...row,
   gameId: `pending-${row.key}`,
   welcomer: PICKING_WELCOMER,
+  welcomerPhotoUrl: null,
   day: 1,
   progress: { label: "0", activity: "Not yet" },
 });

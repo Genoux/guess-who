@@ -35,6 +35,7 @@ export type PersonRecord = {
         "id" | "status" | "welcomerPersonId" | "startDate" | "foundAt" | "revealSeenAt"
       > & {
         welcomerName: string | null;
+        welcomerImageUrl: string | null;
       })
     | null;
 };
@@ -101,8 +102,9 @@ export function toPeopleBoard({
     }
 
     // A player never learns the welcomer before the reveal, even an admin looking at their own row.
-    const welcomer =
-      record.personId === viewerPersonId && !game.revealSeenAt ? null : (game.welcomerName ?? "");
+    const secret = record.personId === viewerPersonId && !game.revealSeenAt;
+    const welcomer = secret ? null : (game.welcomerName ?? "");
+    const welcomerPhotoUrl = secret ? null : game.welcomerImageUrl;
     if (state === "playing") {
       const stats = activity.find(({ gameId }) => gameId === game.id);
       playing.push({
@@ -110,6 +112,7 @@ export function toPeopleBoard({
         asWelcomer: standing,
         gameId: game.id,
         welcomer,
+        welcomerPhotoUrl,
         day: gameDay(game.startDate, now),
         progress: summarizeProgress({
           collected: stats?.collected ?? 0,
@@ -123,6 +126,7 @@ export function toPeopleBoard({
         ...identity,
         gameId: game.id,
         welcomer,
+        welcomerPhotoUrl,
         outcome: { label, found },
         endedOn: formatEndedOn(endedAt),
         endedAt,

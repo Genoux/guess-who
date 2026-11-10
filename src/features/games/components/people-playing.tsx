@@ -63,7 +63,7 @@ export function PeoplePlaying({ rows, filters, onEnd }: PeoplePlayingProps) {
               />
               <RoleTag newHire={row.newHire} />
               <TeamTag team={row.team} />
-              <WelcomerCell name={row.welcomer} />
+              <WelcomerCell name={row.welcomer} photoUrl={row.welcomerPhotoUrl} />
               <NumberCell>{row.day}</NumberCell>
               <NumberCell>{row.progress.label}</NumberCell>
               <NumberCell muted className={PEOPLE_LAST_CLASS}>
