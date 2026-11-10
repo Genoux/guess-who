@@ -23,6 +23,7 @@ export type PlayingRowView = PersonIdentity & {
   gameId: string;
   /** Null on the viewing admin's own mission: a player never learns the welcomer. */
   welcomer: string | null;
+  welcomerPhotoUrl: string | null;
   day: number;
   progress: PlayerProgress;
 };
@@ -37,6 +38,7 @@ export type DoneRowView = PersonIdentity & {
   gameId: string;
   /** Null on the viewing admin's own mission until they have seen the reveal. */
   welcomer: string | null;
+  welcomerPhotoUrl: string | null;
   outcome: { label: string; found: boolean };
   /** "Oct 22". */
   endedOn: string;

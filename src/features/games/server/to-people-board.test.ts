@@ -28,6 +28,7 @@ const base = {
   status: "active" as const,
   welcomerPersonId: "ana",
   welcomerName: "Ana Ferreira",
+  welcomerImageUrl: "https://img.example/ana.jpg",
   startDate: "2026-10-26",
   foundAt: null,
   revealSeenAt: null,
@@ -84,6 +85,7 @@ describe("toPeopleBoard playing", () => {
       name: "Sam Taylor",
       team: { name: "Creative" },
       welcomer: "Ana Ferreira",
+      welcomerPhotoUrl: "https://img.example/ana.jpg",
       progress: { label: "4", activity: "1h ago" },
     });
   });
@@ -98,7 +100,7 @@ describe("toPeopleBoard playing", () => {
       ["mine", null],
       ["theirs", "Ana Ferreira"],
     ]);
-    expect(JSON.stringify(playing.find(({ gameId }) => gameId === "mine"))).not.toContain("Ana");
+    expect(JSON.stringify(playing.find(({ gameId }) => gameId === "mine"))).not.toMatch(/ana/i);
   });
 
   it("keeps a mission that ran past day 14 out of Playing", () => {

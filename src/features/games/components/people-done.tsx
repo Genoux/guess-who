@@ -58,7 +58,7 @@ export function PeopleDone({ rows, filters }: PeopleDoneProps) {
               />
               <RoleTag newHire={row.newHire} />
               <TeamTag team={row.team} />
-              <WelcomerCell name={row.welcomer} />
+              <WelcomerCell name={row.welcomer} photoUrl={row.welcomerPhotoUrl} />
               <div>
                 <CountChip size="row" variant={row.outcome.found ? "found" : "soft"}>
                   {row.outcome.label}

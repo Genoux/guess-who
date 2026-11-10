@@ -22,6 +22,7 @@ const gameColumns = {
   foundAt: games.foundAt,
   revealSeenAt: games.revealSeenAt,
   welcomerName: sql<string | null>`coalesce(${welcomer.name}, ${games.welcomerName})`,
+  welcomerImageUrl: sql<string | null>`coalesce(${welcomer.imageUrl}, ${games.welcomerImageUrl})`,
 };
 
 type GameColumns = {
@@ -32,6 +33,7 @@ type GameColumns = {
   foundAt: Date | null;
   revealSeenAt: Date | null;
   welcomerName: string | null;
+  welcomerImageUrl: string | null;
 };
 
 const toGame = ({

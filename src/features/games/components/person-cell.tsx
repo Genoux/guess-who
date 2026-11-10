@@ -70,12 +70,23 @@ export function PersonCell({
 }
 
 /** A teammate named in a row, with a small avatar: "Omar Aziz". */
-export function WelcomerCell({ name }: { name: string | null }) {
+export function WelcomerCell({
+  name,
+  photoUrl = null,
+}: {
+  name: string | null;
+  photoUrl?: string | null;
+}) {
   if (name === "") return <div className="min-w-0 text-game-muted text-sm">Picking…</div>;
   if (name === null) return <div className="min-w-0 text-game-muted text-sm">Secret from you</div>;
   return (
     <div className="flex min-w-0 items-center gap-2 text-sm">
-      <GameAvatar name={name} color={NO_TEAM_COLOR} className="size-7 flex-none text-sm" />
+      <GameAvatar
+        name={name}
+        color={NO_TEAM_COLOR}
+        photoUrl={photoUrl}
+        className="size-7 flex-none text-sm"
+      />
       <span title={name} className="truncate">
         {name}
       </span>
