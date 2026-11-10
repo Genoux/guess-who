@@ -29,7 +29,10 @@ const EMPTY_TEAM = {
   tint: "var(--color-game-sidebar)",
 };
 
-const SWITCH = "duration-slower ease-game motion-reduce:transition-none";
+// Radix Select refuses an empty item value, so clearing the team goes through a sentinel.
+const NO_TEAM = "none";
+
+const SWITCH ="duration-slower ease-game motion-reduce:transition-none";
 
 function toFieldErrors(issues: readonly { path: readonly PropertyKey[]; message: string }[]) {
   const errors: FieldErrors = {};
@@ -56,17 +59,16 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
   const [askFocused, setAskFocused] = useState(false);
   const switched = useRef(false);
   const editButton = useRef<HTMLButtonElement>(null);
-  const factField = useRef<HTMLTextAreaElement>(null);
+  const teamField = useRef<HTMLButtonElement>(null);
 
   // The clicked button goes inert with its state, so focus moves into the new one; never on load.
   useEffect(() => {
     if (switched.current)
-      (editing ? factField : editButton).current?.focus({ preventScroll: true });
+      (editing ? teamField : editButton).current?.focus({ preventScroll: true });
   }, [editing]);
 
   const copy = COPY[card.audience];
   const team = card.teams.find((option) => option.id === values.teamId) ?? EMPTY_TEAM;
-  const missingDeelField = !values.teamId ? "team" : !values.location ? "location" : null;
   const number = formatStickerNumber(card.stickerNumber);
   const sticker: StickerPerson = {
     name: card.name,
@@ -80,10 +82,13 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
     photoUrl: card.imageUrl,
   };
 
-  const set = (field: EditableField) => (event: { target: { value: string } }) => {
-    setValues((current) => ({ ...current, [field]: event.target.value }));
+  const set = (field: EditableField) => (value: string) => {
+    const next = field === "teamId" && value === NO_TEAM ? null : value;
+    setValues((current) => ({ ...current, [field]: next }));
     setErrors((current) => ({ ...current, [field]: undefined }));
   };
+  const setText = (field: "fact" | "ask") => (event: { target: { value: string } }) =>
+    set(field)(event.target.value);
 
   const switchTo = (edit: boolean) => {
     switched.current = true;
@@ -99,13 +104,17 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const parsed = updateMyCardSchema.safeParse({ fact: values.fact, ask: values.ask });
+    const parsed = updateMyCardSchema.safeParse({
+      teamId: values.teamId,
+      fact: values.fact,
+      ask: values.ask,
+    });
     if (!parsed.success) {
       setErrors(toFieldErrors(parsed.error.issues));
       return;
     }
     setErrors({});
-    // Only what the person can fix asks first; a team or location missing from Deel is shown in the form.
+    // Only what the person can fix asks first; a location missing from Deel is shown in the form.
     if (hasOwnCardFields(parsed.data)) save(parsed.data);
     else setIncompleteCard(parsed.data);
   }
@@ -179,20 +188,36 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
           <div className="pt-14 md:pt-0">
             <GameBook as="div" className="w-full p-7">
               <form noValidate onSubmit={submit} className="flex w-full flex-col gap-4.5">
-                {missingDeelField && (
+                {!values.location && (
                   <p className="text-game-muted text-small">
-                    Your {missingDeelField} isn't set yet. Ask People Strategy.
+                    Your location isn't set yet. Ask People Strategy.
                   </p>
                 )}
                 <GameField
-                  ref={factField}
+                  ref={teamField}
+                  label="Team"
+                  name="teamId"
+                  options={[
+                    { value: NO_TEAM, label: "No team" },
+                    ...card.teams.map((option) => ({
+                      value: option.id,
+                      label: option.name,
+                      color: option.color,
+                    })),
+                  ]}
+                  placeholder="Pick one"
+                  value={values.teamId ?? ""}
+                  onValueChange={set("teamId")}
+                  error={errors.teamId}
+                />
+                <GameField
                   label="Random fact"
                   name="fact"
                   multiline
                   maxLength={CARD_LIMITS.fact}
                   showCount
                   value={values.fact}
-                  onChange={set("fact")}
+                  onChange={setText("fact")}
                   error={errors.fact}
                 />
                 <GameField
@@ -204,12 +229,10 @@ export function CardEditor({ card, preview = false }: CardEditorProps) {
                   value={values.ask}
                   onFocus={() => setAskFocused(true)}
                   onBlur={() => setAskFocused(false)}
-                  onChange={set("ask")}
+                  onChange={setText("ask")}
                   error={errors.ask}
                 />
-                <p className="text-game-muted text-small">
-                  Name, team and location come from Deel.
-                </p>
+                <p className="text-game-muted text-small">Name and location come from Deel.</p>
                 {/* The view switches a moment before the save stops pending, so the button keeps
                     its saving look while the form fades out instead of flashing back on. */}
                 <GameButton type="submit" className="w-full" disabled={pending || !editing}>

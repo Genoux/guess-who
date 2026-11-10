@@ -44,7 +44,7 @@ export const DEMO_CAST: readonly CastMember[] = [
   },
   {
     name: "Mateo Ruiz",
-    team: "Creative",
+    team: "UGC",
     location: "Madrid",
     fact: "Owns more records than plates.",
     ask: "Why vinyl sounds better",
@@ -56,7 +56,7 @@ export const DEMO_CAST: readonly CastMember[] = [
   },
   {
     name: "Noor Haddad",
-    team: "Creative",
+    team: "UGC",
     location: "Toronto",
     fact: "Won a pie-eating contest by accident.",
     ask: "The best bakery in any city",
@@ -92,7 +92,7 @@ export const DEMO_CAST: readonly CastMember[] = [
   },
   {
     name: "Sofia Rossi",
-    team: "Strategy",
+    team: "People",
     location: "Lisbon",
     fact: "Once met a president by accident.",
     ask: "Board games",
@@ -244,7 +244,7 @@ export const DEMO_CAST: readonly CastMember[] = [
   },
   {
     name: "Marta Silva",
-    team: "Ops",
+    team: "People",
     location: "Porto",
     fact: "Fixes old radios on weekends.",
     ask: "Old radios",
@@ -256,7 +256,7 @@ export const DEMO_CAST: readonly CastMember[] = [
   },
   {
     name: "Felix Novak",
-    team: "Freelancers",
+    team: "Creative",
     location: "Vienna",
     fact: "Sketches strangers on the tram.",
     ask: "Tram sketches",
@@ -268,7 +268,7 @@ export const DEMO_CAST: readonly CastMember[] = [
   },
   {
     name: "Theo Lindqvist",
-    team: "Freelancers",
+    team: "Client Services",
     location: "Stockholm",
     fact: "Restores bicycles from the 70s.",
     ask: "Vintage bicycles",
@@ -280,7 +280,7 @@ export const DEMO_CAST: readonly CastMember[] = [
   },
   {
     name: "Nita Rao",
-    team: "Freelancers",
+    team: "Ops",
     location: "Bangalore",
     fact: "Learned to juggle during lockdown.",
     ask: "Juggling",

@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { eq, notInArray, sql } from "drizzle-orm";
 import type { NeonDatabase } from "drizzle-orm/neon-serverless";
 import { TEAM_DEFINITIONS } from "@/entities/teams";
 import * as schema from "./schema";
@@ -6,8 +6,9 @@ import * as schema from "./schema";
 type SchemaDb = NeonDatabase<typeof schema>;
 
 /**
- * Upserts the teams from the one definition, by name, and returns their ids. A team that changed
- * its name is renamed in place first, so the people on it stay on it.
+ * Makes the teams table match the one definition, by name, and returns the ids. A team that
+ * changed its name is renamed in place first, so the people on it stay on it; a team no longer
+ * defined is deleted, and its people are left with no team.
  */
 export async function seedTeams(db: SchemaDb): Promise<Map<string, string>> {
   const existing = await db.select({ name: schema.teams.name }).from(schema.teams);
@@ -39,6 +40,12 @@ export async function seedTeams(db: SchemaDb): Promise<Map<string, string>> {
         sortOrder: sql`excluded.sort_order`,
       },
     });
+  await db.delete(schema.teams).where(
+    notInArray(
+      schema.teams.name,
+      TEAM_DEFINITIONS.map(({ name }) => name),
+    ),
+  );
 
   const rows = await db.select({ id: schema.teams.id, name: schema.teams.name }).from(schema.teams);
   return new Map(rows.map((team) => [team.name, team.id]));

@@ -22,8 +22,10 @@ import { updateCardRecord } from "./update-card-record";
 const now = new Date("2026-11-05T15:00:00Z");
 
 const TEAM_ID = "6f0c1d2e-3b4a-4c5d-8e9f-0a1b2c3d4e5f";
-const input = { fact: "Bakes bread", ask: "Sourdough" };
-const deelRow = [TEAM_ID, "Canada"];
+const OTHER_TEAM_ID = "7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d";
+const input = { teamId: TEAM_ID, fact: "Bakes bread", ask: "Sourdough" };
+const deelRow = ["Canada"];
+const teamRow = [TEAM_ID];
 
 const sql = (call: number) => client.query.mock.calls[call]?.[0].text.replaceAll('"', "") ?? "";
 const params = (call: number) => client.query.mock.calls[call]?.[1];
@@ -36,9 +38,10 @@ beforeEach(() => {
 });
 
 describe("updateCardRecord", () => {
-  it("writes fact and ask on the given person only, never team or location", async () => {
+  it("writes team, fact and ask on the given person only, never location", async () => {
     client.query
       .mockResolvedValueOnce({ rows: [deelRow] })
+      .mockResolvedValueOnce({ rows: [teamRow] })
       .mockResolvedValueOnce({ rows: [[TEAM_ID, "Canada", "Bakes bread", "Sourdough"]] });
 
     await expect(updateCardRecord(input, "person_1", now)).resolves.toEqual({
@@ -47,10 +50,26 @@ describe("updateCardRecord", () => {
       fact: "Bakes bread",
       ask: "Sourdough",
     });
-    expect(sql(1)).toMatch(
-      /update people set fact = \$1, ask = \$2, updated_at = \$3 where people\.id = \$4 returning/,
+    expect(sql(2)).toMatch(
+      /update people set team_id = \$1, fact = \$2, ask = \$3, updated_at = \$4 where people\.id = \$5 returning/,
     );
-    expect(params(1)).toEqual(["Bakes bread", "Sourdough", expect.any(String), "person_1"]);
+    expect(params(2)).toEqual([
+      TEAM_ID,
+      "Bakes bread",
+      "Sourdough",
+      expect.any(String),
+      "person_1",
+    ]);
+  });
+
+  it("refuses a team that is not on the list, without writing", async () => {
+    client.query.mockResolvedValueOnce({ rows: [deelRow] }).mockResolvedValueOnce({ rows: [] });
+    await expect(
+      updateCardRecord({ ...input, teamId: OTHER_TEAM_ID }, "person_1", now),
+    ).rejects.toSatisfy(
+      (err) => isAppError(err, "validation") && err.safeMessage === "Pick your team.",
+    );
+    expect(client.query).toHaveBeenCalledTimes(2);
   });
 
   it("fails when the person row is gone", async () => {
@@ -60,18 +79,15 @@ describe("updateCardRecord", () => {
     expect(client.query).toHaveBeenCalledTimes(1);
   });
 
-  it("saves blank fields as nulls", async () => {
+  it("saves a draft with no team and blank fields as nulls", async () => {
     client.query
       .mockResolvedValueOnce({ rows: [deelRow] })
-      .mockResolvedValueOnce({ rows: [[TEAM_ID, "Canada", null, null]] });
+      .mockResolvedValueOnce({ rows: [[null, "Canada", null, null]] });
 
-    await expect(updateCardRecord({ fact: "", ask: "" }, "person_1", now)).resolves.toEqual({
-      teamId: TEAM_ID,
-      location: "Canada",
-      fact: "",
-      ask: "",
-    });
-    expect(params(1)?.slice(0, 2)).toEqual([null, null]);
+    await expect(
+      updateCardRecord({ teamId: null, fact: "", ask: "" }, "person_1", now),
+    ).resolves.toEqual({ teamId: null, location: "Canada", fact: "", ask: "" });
+    expect(params(1)?.slice(0, 3)).toEqual([null, null, null]);
   });
 
   it("refuses an incomplete card while they welcome a started mission, without writing", async () => {
@@ -85,11 +101,11 @@ describe("updateCardRecord", () => {
     expect(client.query).toHaveBeenCalledTimes(1);
   });
 
-  it("refuses while welcoming when Deel left the team empty, since the card cannot be complete", async () => {
+  it("refuses clearing the team while they welcome a started mission", async () => {
     welcoming.findActiveWelcomerGame.mockResolvedValue({ id: "game_1" });
-    client.query.mockResolvedValueOnce({ rows: [[null, "Canada"]] });
-    await expect(updateCardRecord(input, "person_1", now)).rejects.toSatisfy((err) =>
-      isAppError(err, "forbidden"),
+    client.query.mockResolvedValueOnce({ rows: [deelRow] });
+    await expect(updateCardRecord({ ...input, teamId: null }, "person_1", now)).rejects.toSatisfy(
+      (err) => isAppError(err, "forbidden"),
     );
     expect(client.query).toHaveBeenCalledTimes(1);
   });
@@ -98,6 +114,7 @@ describe("updateCardRecord", () => {
     welcoming.findActiveWelcomerGame.mockResolvedValue({ id: "game_1" });
     client.query
       .mockResolvedValueOnce({ rows: [deelRow] })
+      .mockResolvedValueOnce({ rows: [teamRow] })
       .mockResolvedValueOnce({ rows: [[TEAM_ID, "Canada", "Bakes bread", "Sourdough"]] });
     await expect(updateCardRecord(input, "person_1", now)).resolves.toMatchObject({
       ask: "Sourdough",

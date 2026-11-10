@@ -1,8 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-const log = vi.hoisted(() => ({ warn: vi.fn() }));
-vi.mock("@/shared/lib/logger", () => ({ logger: log }));
-
+import { describe, expect, it } from "vitest";
 import { type DeelPerson, deelPersonSchema } from "./deel-person";
 import { toRosterChange } from "./to-roster-change";
 
@@ -28,30 +24,13 @@ const NOW = new Date("2026-11-03T15:00:00Z");
 const classify = (deelId: string, candidate: DeelPerson | null) =>
   toRosterChange(deelId, candidate, NOW);
 
-beforeEach(() => log.warn.mockClear());
-
 describe("toRosterChange", () => {
-  it("warns with ids only when the department maps to no team", () => {
-    classify("deel-1", person({ department: { id: "d9", name: "Secret Dept" } }));
-    expect(log.warn).toHaveBeenCalledWith("deel department maps to no team", {
-      deelId: "deel-1",
-      departmentId: "d9",
-    });
-  });
-
-  it("does not warn for a mapped department or none", () => {
-    classify("deel-1", person());
-    classify("deel-1", person({ department: null }));
-    expect(log.warn).not.toHaveBeenCalled();
-  });
-
   it("upserts an active person of a legal entity with the Deel-owned fields", () => {
     expect(classify("deel-1", person())).toEqual({
       kind: "upsert",
       person: {
         deelId: "deel-1",
         name: "Sam Seed",
-        team: "Creative",
         location: "Canada",
         email: "sam@work.example",
         personalEmail: "sam@gmail.example",
@@ -133,6 +112,13 @@ describe("toRosterChange", () => {
     expect(classify("deel-9", null)).toEqual({ kind: "remove", deelId: "deel-9" });
   });
 
+  it.each([
+    ["a craft department", { department: { id: "f", name: "Freelancers Pod (IB)" } }],
+    ["Management", { department: { id: "m", name: "Management (IB)" } }],
+  ])("keeps someone in %s as a player", (_label, overrides) => {
+    expect(classify("deel-1", person(overrides)).kind).toBe("upsert");
+  });
+
   it.each(["onboarding", "offboarding", "pending_invite", "something_new"])(
     "keeps a person who is %s",
     (hiring_status) => {
@@ -142,11 +128,6 @@ describe("toRosterChange", () => {
       });
     },
   );
-
-  it("maps an unmapped department to no team", () => {
-    const change = classify("deel-1", person({ department: { id: "d", name: "Unknown" } }));
-    expect(change).toMatchObject({ kind: "upsert", person: { team: null } });
-  });
 
   it("stores the personal email as the email when there is no work email", () => {
     const change = classify(
