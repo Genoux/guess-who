@@ -1,5 +1,5 @@
 import { AppError, isAppError } from "@inbeat/core/errors";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const auth = vi.hoisted(() => ({ authorizeMember: vi.fn() }));
 vi.mock("@/shared/lib/auth", () => auth);
@@ -12,12 +12,16 @@ import { authorizeCollector } from "./authorize-collector";
 
 const running = { status: "active", welcomerPersonId: "ana", startDate: "2026-10-26" };
 
+// Day 3 of `running`: with the real clock the mission would expire and the test with it.
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-10-28T15:00:00Z") });
   vi.clearAllMocks();
   auth.authorizeMember.mockResolvedValue({ userId: "user_1", sessionId: "sess_1", role: "member" });
   viewerPerson.syncViewerPerson.mockResolvedValue({ id: "person_1", newHire: false });
   records.findLatestPlayerGame.mockResolvedValue(undefined);
 });
+
+afterEach(() => vi.useRealTimers());
 
 describe("authorizeCollector", () => {
   it("returns the signed-in teammate with their own people id", async () => {
