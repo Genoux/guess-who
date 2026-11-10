@@ -1,15 +1,12 @@
 import "server-only";
 import { normalizeEmail } from "@inbeat/core/email";
 import { todayInGameZone } from "@/entities/game-schedule";
-import { type TeamName, teamForDeelDepartment } from "@/entities/teams";
-import { logger } from "@/shared/lib/logger";
 import { type DeelPerson, personalEmail, workEmail } from "./deel-person";
 
-/** The Deel-owned fields of a person; the upsert writes exactly these. */
+/** The Deel-owned fields of a person; the upsert writes exactly these. The team is the person's own pick. */
 export type RosterPerson = {
   deelId: string;
   name: string;
-  team: TeamName | null;
   location: string | null;
   /** The work email, else the personal one. Normalized. */
   email: string;
@@ -104,21 +101,12 @@ export function toRosterChange(deelId: string, person: DeelPerson | null, now: D
   const name = personName(person);
   if (!name) return { kind: "ignore", reason: "no name" };
 
-  const team = person.department ? teamForDeelDepartment(person.department.name) : null;
-  if (person.department && !team) {
-    logger.warn("deel department maps to no team", {
-      deelId,
-      departmentId: person.department.id,
-    });
-  }
-
   const personalNormalized = personal ? normalizeEmail(personal) : null;
   return {
     kind: "upsert",
     person: {
       deelId,
       name,
-      team,
       location: countryName(person.country),
       email,
       personalEmail: personalNormalized && personalNormalized !== email ? personalNormalized : null,

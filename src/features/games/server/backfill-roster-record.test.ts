@@ -102,6 +102,14 @@ describe("backfillRosterRecord", () => {
     );
   });
 
+  it("drops the teams no longer defined", async () => {
+    await run(roster, true);
+    const prune = sentStatements(client).find(({ sql }) => sql.startsWith("delete from teams"));
+    expect(prune?.sql).toMatch(/where teams.name not in/);
+    expect(prune?.params).toContain("Creative");
+    expect(prune?.params).not.toContain("Freelancers");
+  });
+
   it("rolls everything back on a dry run", async () => {
     await run(roster, false);
     expect(statements()).toContain("rollback");

@@ -248,8 +248,6 @@ Never commit, push or open a PR unless explicitly asked.
   their mission. `beginMissionRecord` sets the marker for every start, so End mission never
   restarts it. No free welcomer: the person stays flagged and unmarked until a later event or an
   admin starts them. A person who is not a recent hire is never flagged.
-- A Deel department that maps to no team keeps the existing team and logs a warning with the Deel and
-  department ids only.
 - "Joined recently" (`joinedRecently`, `entities/game-schedule.ts`): `people.start_date` is at most
   30 days back in Montréal, or still ahead. No Mission rows show it as their small line.
 - There is no Remove person: Deel decides who exists. `removeLeaverRecord` runs when a webhook's
@@ -273,11 +271,10 @@ Never commit, push or open a PR unless explicitly asked.
 - One top bar, `AppTopNav`, for every signed-in screen: tabs Album, Mission (only with a game in any state), My card, My clues, Welcomer (while welcoming a started mission), at most 5 in PillTabs; People (admins) is an icon button beside the avatar. Only pages everyone shown them can open become tabs.
 - A card is complete only when team, location, fact and ask are all filled in (`isCardComplete` in
   `src/entities/card.ts`; `completeCardCondition` in `src/shared/lib` is the SQL twin: keep them in
-  step). Album, welcomer pool and turn-on all use it. Name, team and location come from Deel and
-  show read-only on /card; `updateMyCardSchema` and `updateCardRecord` write only fact and ask, so
-  a payload with the others is stripped. An unmapped Deel department leaves the team null, so the
-  card stays incomplete and the editor says "Your team isn't set yet. Ask People Strategy." The
-  card saves while incomplete, after a confirm dialog: it leaves collectors' albums until
+  step). Album, welcomer pool and turn-on all use it. Name and location come from Deel and show
+  read-only on /card; `updateMyCardSchema` and `updateCardRecord` write only team, fact and ask, so
+  a payload with the others is stripped. A Deel location left empty keeps the card incomplete and
+  the editor says "Your location isn't set yet. Ask People Strategy." The card saves while incomplete, after a confirm dialog: it leaves collectors' albums until
   completed (their `collections` rows stay). While someone welcomes a started mission
   (`findActiveWelcomerGame`) the server refuses a save that leaves the card incomplete, and clues
   are read-only.
@@ -297,9 +294,16 @@ Never commit, push or open a PR unless explicitly asked.
 - Tooltips, player screens included, use `Tooltip` from `@inbeat/ui/components/tooltip` (text goes in
   `content`; `TooltipProvider` is mounted in the root layout). The trigger component must forward its
   props and ref, or the tooltip never opens.
-- Teams are groups of Deel departments (all entities: IB, CM, CA, AAG), defined once in
-  `src/entities/teams.ts`; the seeds and `teamForDeelDepartment` read that list. Renames go through
-  `formerName` so `seedTeams` renames the row in place.
+- Each teammate picks their own team on /card from `TEAM_DEFINITIONS` (`src/entities/teams.ts`);
+  Deel never sets or overwrites it (decided 2026-11-10 with the product owner). Deel departments
+  could not say what people do: leaders sit in Management, some departments hold one person (clue 1
+  would name the welcomer), and freelancers sit in their own departments. A new person starts with
+  no team, so their card is incomplete until they pick one. Clue 1 reads `games.welcomer_team_name`,
+  copied at start from a welcomer who must have a complete card. Renames go through `formerName` so
+  `seedTeams` renames the row in place; a team removed from the list is deleted by the next
+  `seedTeams` (backfill or seed), its people left with no team.
+- Freelancers play like everyone else (product owner, 2026-11-10: "everyone"); they pick the team
+  of their craft.
 - Player-facing copy stays short and plain: one line telling the player what to do, no cute or
   wordy phrasing.
 

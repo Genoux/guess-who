@@ -8,10 +8,11 @@ const cardText = (max: number) =>
     .max(max, { error: `Keep it to ${max} characters.` });
 
 /**
- * The only fields a teammate writes. Name, team and location come from Deel, so a payload that
- * carries them is stripped here. Drafts save: `isCardComplete` decides what a blank field costs.
+ * The only fields a teammate writes. Name and location come from Deel, so a payload that carries
+ * them is stripped here. Drafts save: `isCardComplete` decides what a blank field costs.
  */
 export const updateMyCardSchema = z.object({
+  teamId: z.uuid({ error: "Pick your team." }).nullable(),
   fact: cardText(CARD_LIMITS.fact),
   ask: cardText(CARD_LIMITS.ask),
 });

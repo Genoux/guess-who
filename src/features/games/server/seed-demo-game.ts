@@ -101,13 +101,7 @@ const TEAMMATES = [
     "Owns a board game with a 90-page rulebook.",
     "Board games with too many rules",
   ],
-  [
-    "Ben Carter",
-    "Freelancers",
-    "Austin",
-    "Smokes brisket for 14 hours at a time.",
-    "Smoking brisket",
-  ],
+  ["Ben Carter", "People", "Austin", "Smokes brisket for 14 hours at a time.", "Smoking brisket"],
 ] as const;
 
 export const DEMO_TEAMMATE_COUNT = TEAMMATES.length;

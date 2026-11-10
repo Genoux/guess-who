@@ -22,12 +22,15 @@ describe("isCardComplete", () => {
 });
 
 describe("hasOwnCardFields", () => {
-  it("is true when fact and ask are filled, whatever Deel has set", () => {
-    expect(hasOwnCardFields({ fact: "Bakes bread", ask: "Sourdough" })).toBe(true);
+  const own = { teamId: "team_1", fact: "Bakes bread", ask: "Sourdough" };
+
+  it("is true when team, fact and ask are filled, whatever Deel has set", () => {
+    expect(hasOwnCardFields(own)).toBe(true);
   });
 
-  it("is false when the fact or the ask is blank", () => {
-    expect(hasOwnCardFields({ fact: "  ", ask: "Sourdough" })).toBe(false);
-    expect(hasOwnCardFields({ fact: "Bakes bread", ask: null })).toBe(false);
+  it("is false when the team is unpicked or the fact or the ask is blank", () => {
+    expect(hasOwnCardFields({ ...own, teamId: null })).toBe(false);
+    expect(hasOwnCardFields({ ...own, fact: "  " })).toBe(false);
+    expect(hasOwnCardFields({ ...own, ask: null })).toBe(false);
   });
 });
