@@ -192,12 +192,12 @@ export function CluesFlow({ desk, nav, preview = false }: CluesFlowProps) {
       );
     },
     done: () => (
-      <GameStage className="gap-9">
+      <GameStage width="wide" className="gap-9">
         <div className="flex flex-col items-center gap-3">
           <h1
             ref={focusHeading}
             tabIndex={-1}
-            className="font-game-serif text-3xl sm:text-hero outline-none"
+            className="font-game-serif text-4xl sm:text-hero outline-none"
           >
             {cluesComplete ? "Your clues are set." : "Your clues aren't finished."}
           </h1>
@@ -217,6 +217,7 @@ export function CluesFlow({ desk, nav, preview = false }: CluesFlowProps) {
                 label={`Clue ${written.number}`}
                 text={drafts[i] || "…"}
                 rot={DONE_ROTATIONS[i]}
+                className="xl:[zoom:1.25]"
               />
             </Reveal>
           ))}
