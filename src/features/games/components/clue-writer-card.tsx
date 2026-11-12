@@ -82,8 +82,7 @@ export function ClueWriterCard({
             value={value}
             placeholder={placeholder}
             maxLength={CLUE_MAX}
-            // A clue is one line of thought: the cards collapse line breaks, and blank lines would scroll.
-            onChange={(event) => onChange(event.target.value.replace(/\s*\n+\s*/g, " "))}
+            onChange={(event) => onChange(event.target.value)}
           />
         )
       }
