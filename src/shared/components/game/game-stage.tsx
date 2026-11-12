@@ -5,7 +5,7 @@ type GameStageProps = {
   children: ReactNode;
   /** Use main for the page's primary column (one per page). */
   as?: "main" | "div";
-  /** How wide the column may grow: the game screens' 1040px, or 1200px for the admin lists. */
+  /** How wide the column may grow: the game screens' 1040px, or 1200px for the admin lists and rows of cards. */
   width?: "game" | "wide";
   className?: string;
 };

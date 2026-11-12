@@ -42,6 +42,25 @@ const clueFaceVariants = cva("absolute inset-0 flex flex-col", {
   },
 });
 
+export type ClueTextStep = "large" | "medium" | "small";
+
+// The small card's text box is fixed at 160 by 186px, so a longer clue steps down a size.
+// Measured 2026-11-12 in Chrome with Diplomat ST on realistic sentences: 22px holds 73
+// characters, 17px holds 98, 13px holds the 160 character limit.
+const CLUE_STEP_MAX_LENGTH = { large: 70, medium: 95 };
+
+const SMALL_CLUE_TEXT: Record<ClueTextStep, string> = {
+  large: "text-clue",
+  medium: "text-quote",
+  small: "text-small",
+};
+
+export function getClueTextStep(clue: string): ClueTextStep {
+  const { length } = clue.trim();
+  if (length <= CLUE_STEP_MAX_LENGTH.large) return "large";
+  return length <= CLUE_STEP_MAX_LENGTH.medium ? "medium" : "small";
+}
+
 /** A clue is a card like a sticker: same edge, corner and hover shadow. */
 export function ClueCard({
   state,
@@ -97,8 +116,10 @@ export function ClueCard({
           <span className="font-game-mono text-caption uppercase">{label}</span>
           <span
             className={gameCn(
-              "min-h-0 flex-1 font-game-serif",
-              size === "lg" ? "text-clue-lg" : "text-clue",
+              "wrap-anywhere min-h-0 flex-1 font-game-serif",
+              size === "lg"
+                ? "text-clue-lg"
+                : SMALL_CLUE_TEXT[typeof text === "string" ? getClueTextStep(text) : "large"],
             )}
           >
             {text}
