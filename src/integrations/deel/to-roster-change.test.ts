@@ -61,6 +61,15 @@ describe("toRosterChange", () => {
     });
   });
 
+  it("skips a freelancer, so the album never adds them", () => {
+    const freelancer = person({ department: { id: "f", name: "Freelancers Pod (IB)" } });
+    expect(classify("deel-1", freelancer)).toEqual({ kind: "ignore", reason: "freelancer" });
+  });
+
+  it("keeps an active person with no department", () => {
+    expect(classify("deel-1", person({ department: null })).kind).toBe("upsert");
+  });
+
   it("removes an inactive person", () => {
     expect(classify("deel-1", person({ hiring_status: "inactive" }))).toEqual({
       kind: "remove",
@@ -113,7 +122,7 @@ describe("toRosterChange", () => {
   });
 
   it.each([
-    ["a craft department", { department: { id: "f", name: "Freelancers Pod (IB)" } }],
+    ["a craft department", { department: { id: "v", name: "Video (IB)" } }],
     ["Management", { department: { id: "m", name: "Management (IB)" } }],
   ])("keeps someone in %s as a player", (_label, overrides) => {
     expect(classify("deel-1", person(overrides)).kind).toBe("upsert");

@@ -302,8 +302,16 @@ Never commit, push or open a PR unless explicitly asked.
   copied at start from a welcomer who must have a complete card. Renames go through `formerName` so
   `seedTeams` renames the row in place; a team removed from the list is deleted by the next
   `seedTeams` (backfill or seed), its people left with no team.
-- Freelancers play like everyone else (product owner, 2026-11-10: "everyone"); they pick the team
-  of their craft.
+- Freelancers do not play (product owner, 2026-11-18, reversing "everyone" of 2026-11-10): the
+  sync skips anyone in the Deel department `Freelancers Pod (IB)` (`toRosterChange`); it never
+  deletes them, rows already there were cleaned up by hand. Deel's
+  `hiring_type` cannot be used: 268 of 293 people, core team included, are `contractor`
+  (measured 2026-11-18). When applied, the 32 freelancers in production had never signed in, had
+  no card and no game.
+- Signing in needs the Slack account's email to be the Deel work or personal email
+  (`findPeopleByAnyEmail`). On 2026-11-18, 21 people had a Slack work email that Deel lacked; 16
+  were written to Deel as `work_email`, and Deel's `worker.v2.updated` webhook re-synced each row
+  within seconds.
 - Player-facing copy stays short and plain: one line telling the player what to do, no cute or
   wordy phrasing.
 
