@@ -39,6 +39,13 @@ const comparableName = (name: string) =>
 
 const SCOPE_KEYS = new Set(SCOPE_ENTITIES.map(comparableName));
 
+// Freelancers do not play (product owner, 2026-11-18). Deel's hiring_type cannot tell them apart:
+// nearly everyone, core team included, is a "contractor". HR files them in this department instead.
+const FREELANCER_DEPARTMENT_KEY = comparableName("Freelancers Pod (IB)");
+
+const isFreelancer = (person: DeelPerson) =>
+  person.department ? comparableName(person.department.name) === FREELANCER_DEPARTMENT_KEY : false;
+
 const countryNames = new Intl.DisplayNames(["en"], { type: "region", fallback: "none" });
 
 function countryName(code: string | null | undefined): string | null {
@@ -92,6 +99,7 @@ export function toRosterChange(deelId: string, person: DeelPerson | null, now: D
   if (!entity || !SCOPE_KEYS.has(comparableName(entity))) {
     return { kind: "ignore", reason: "out of scope" };
   }
+  if (isFreelancer(person)) return { kind: "ignore", reason: "freelancer" };
 
   const work = workEmail(person);
   const personal = personalEmail(person);
