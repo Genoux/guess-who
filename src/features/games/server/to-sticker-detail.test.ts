@@ -24,7 +24,6 @@ const person: Person = {
   personalEmail: null,
   deelId: null,
   startDate: null,
-  autoMissionDoneAt: null,
   welcomerLeftAt: null,
   createdAt: new Date(),
   updatedAt: new Date(),

@@ -1,0 +1,1 @@
+ALTER TABLE "people" DROP COLUMN "auto_mission_done_at";
