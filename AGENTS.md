@@ -253,10 +253,13 @@ Never commit, push or open a PR unless explicitly asked.
   Responses: 401 bad or missing signature, 429 rate limited, 200 for ignored, unhandled and
   permanent outcomes (logged), 5xx only for transient failures so Deel retries. A replay only
   re-syncs current state.
-- No mission starts automatically: a Deel sync only adds, updates or removes people, and an admin
-  starts every mission. Product owner's call (2026-11-24), so the first test with the team has one
-  flow and no surprise Slack messages; the automatic start (`startAutoMissionRecord`) is in git
-  history. `people.auto_mission_done_at` is no longer read or written; drop it in a later deploy.
+- A new hire's mission starts when the Deel webhook creates them (`syncDeelPersonRecord`, through
+  the same path as Start mission with no admin as creator), and `mission.started` DMs them in
+  Slack. The sync ignores anyone not `active`, and Deel flips a worker to active in a nightly
+  batch around 00:00 UTC, so creation lands the evening before or the evening of their start
+  date (Montréal), never when the contract is signed. Creation happens once, so a mission an
+  admin ended or reset never restarts. With no free welcomer, or a start that fails, the new hire
+  stays in No mission for an admin. Team members are always started by hand.
 - There is no Remove person: Deel decides who exists. `removeLeaverRecord` runs when a webhook's
   re-fetched Deel person is a leaver (`toRosterChange`): a 404, `inactive`, or `no_active_contracts` with an
   end date before today in Montréal. Any other answer, a 400 included, or no end date keeps them. In one transaction behind the mission-start lock it

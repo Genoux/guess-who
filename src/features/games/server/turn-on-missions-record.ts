@@ -7,7 +7,12 @@ import { CLUE_NUMBERS_TO_WRITE } from "../lib/welcomer-readiness";
 import { beginMissionRecord } from "./begin-mission-record";
 import { hasNoFreeWelcomer } from "./choose-welcomer";
 
-type TurnOnMissionsInput = { personIds: readonly string[]; adminPersonId: string; now: Date };
+/** No admin means the start was automatic. */
+type TurnOnMissionsInput = {
+  personIds: readonly string[];
+  adminPersonId: string | null;
+  now: Date;
+};
 
 // A teammate has to be able to welcome before they play: a complete card and all three clues.
 // A new hire skips this.

@@ -4,12 +4,16 @@ import type { DeelPerson } from "@/integrations/deel/deel-person";
 
 const upsert = vi.hoisted(() => ({ upsertRosterPersonRecord: vi.fn() }));
 vi.mock("./upsert-roster-person-record", () => upsert);
-const mission = vi.hoisted(() => ({ beginMissionRecord: vi.fn() }));
-vi.mock("./begin-mission-record", () => mission);
+const turnOn = vi.hoisted(() => ({ turnOnMissionsRecord: vi.fn() }));
+vi.mock("./turn-on-missions-record", () => turnOn);
 const leaver = vi.hoisted(() => ({ removeLeaverRecord: vi.fn() }));
 vi.mock("./remove-leaver-record", () => leaver);
+const createdRows = vi.hoisted(() => ({ rows: [{ id: "person_1" }] }));
 vi.mock("@/shared/lib/db", () => ({
-  db: { transaction: (run: (tx: string) => unknown) => run("tx") },
+  db: {
+    transaction: (run: (tx: string) => unknown) => run("tx"),
+    select: () => ({ from: () => ({ where: async () => createdRows.rows }) }),
+  },
 }));
 
 import { syncDeelPersonRecord } from "./sync-deel-person-record";
@@ -34,12 +38,13 @@ const sync = (subject: Parameters<typeof syncDeelPersonRecord>[0]["subject"]) =>
 beforeEach(() => {
   vi.resetAllMocks();
   upsert.upsertRosterPersonRecord.mockResolvedValue("created");
+  turnOn.turnOnMissionsRecord.mockResolvedValue({ started: 1, skippedNoWelcomer: 0 });
 });
 
 describe("syncDeelPersonRecord", () => {
   it("fetches a person subject by id and upserts an active in-scope person", async () => {
     deel.getPerson.mockResolvedValue(activePerson);
-    expect(await sync({ kind: "person", id: "p1" })).toBe("created");
+    expect(await sync({ kind: "person", id: "p1" })).toBe("created; mission started");
     expect(deel.getPerson).toHaveBeenCalledWith("p1");
     expect(upsert.upsertRosterPersonRecord).toHaveBeenCalledWith(
       "tx",
@@ -50,7 +55,7 @@ describe("syncDeelPersonRecord", () => {
 
   it("resolves a contract subject through the contract lookup", async () => {
     deel.findPersonByContractId.mockResolvedValue(activePerson);
-    expect(await sync({ kind: "contract", id: "c1" })).toBe("created");
+    expect(await sync({ kind: "contract", id: "c1" })).toBe("created; mission started");
     expect(deel.findPersonByContractId).toHaveBeenCalledWith("c1");
     expect(deel.getPerson).not.toHaveBeenCalled();
   });
@@ -89,12 +94,30 @@ describe("syncDeelPersonRecord", () => {
     deel.getPerson.mockResolvedValue(activePerson);
     upsert.upsertRosterPersonRecord.mockResolvedValue("conflict");
     expect(await sync({ kind: "person", id: "p1" })).toBe("conflict");
+    expect(turnOn.turnOnMissionsRecord).not.toHaveBeenCalled();
   });
 
-  it("adds a new hire without starting their mission: the People team starts it", async () => {
-    deel.getPerson.mockResolvedValue({ ...activePerson, start_date: "2026-11-02" });
-    expect(await sync({ kind: "person", id: "p1" })).toBe("created");
-    expect(mission.beginMissionRecord).not.toHaveBeenCalled();
+  it("starts the mission of a new hire it creates, with no admin as creator", async () => {
+    deel.getPerson.mockResolvedValue(activePerson);
+    expect(await sync({ kind: "person", id: "p1" })).toBe("created; mission started");
+    expect(turnOn.turnOnMissionsRecord).toHaveBeenCalledWith({
+      personIds: ["person_1"],
+      adminPersonId: null,
+      now,
+    });
+  });
+
+  it("leaves a new hire in No mission when no welcomer is free", async () => {
+    deel.getPerson.mockResolvedValue(activePerson);
+    turnOn.turnOnMissionsRecord.mockResolvedValue({ started: 0, skippedNoWelcomer: 1 });
+    expect(await sync({ kind: "person", id: "p1" })).toBe("created; no welcomer free");
+  });
+
+  it("never starts a mission for someone it only updates, so End and Reset stay final", async () => {
+    deel.getPerson.mockResolvedValue(activePerson);
+    upsert.upsertRosterPersonRecord.mockResolvedValue("updated");
+    expect(await sync({ kind: "person", id: "p1" })).toBe("updated");
+    expect(turnOn.turnOnMissionsRecord).not.toHaveBeenCalled();
   });
 
   it("turns a unique violation from a racing delivery into a retryable error", async () => {
