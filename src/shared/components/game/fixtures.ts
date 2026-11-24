@@ -12,7 +12,7 @@ const colorsOf = (name: TeamName) => {
 export const TEAMS = {
   Creative: colorsOf("Creative"),
   "Client Services": colorsOf("Client Services"),
-  Strategy: colorsOf("Strategy"),
+  UGC: colorsOf("UGC"),
   Talent: colorsOf("Talent"),
 };
 
@@ -34,8 +34,8 @@ export const noor: StickerPerson = {
 export const jonah: StickerPerson = {
   name: "Jonah Park",
   number: 7,
-  team: "Strategy",
-  ...TEAMS.Strategy,
+  team: "UGC",
+  ...TEAMS.UGC,
   city: "Montréal",
   fact: "Keeps a spreadsheet for his fantasy football league.",
   ask: "Fantasy football spreadsheets",

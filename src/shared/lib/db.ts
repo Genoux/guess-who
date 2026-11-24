@@ -4,3 +4,5 @@ import * as schema from "@/db/schema";
 import { env } from "@/shared/config/env";
 
 export const { db } = createDb({ url: env.DATABASE_URL, schema, globalKey: "albumDbPool" });
+
+export type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];

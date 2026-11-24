@@ -17,7 +17,7 @@ export const TUTORIAL_ALBUM: StickerPerson[] = [
   {
     name: "Malik Osei",
     number: 4,
-    team: "Strategy",
+    team: "UGC",
     color: "#157428",
     tint: "#A1C8A9",
     ask: "Sourdough",

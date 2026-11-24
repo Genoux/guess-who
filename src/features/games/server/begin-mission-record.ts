@@ -3,8 +3,9 @@ import { AppError, isUniqueViolation, PG_CODES } from "@inbeat/core/errors";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { clues, games, people, teams, welcomerClues } from "@/db/schema";
 import { todayInGameZone } from "@/entities/game-schedule";
-import { db } from "@/shared/lib/db";
+import { type DbTransaction, db } from "@/shared/lib/db";
 import { findActiveWelcomerGame } from "@/shared/lib/find-active-welcomer-game";
+import { publishAppEvent } from "@/shared/lib/publish-app-event";
 import { chooseWelcomer, NO_WELCOMER_FREE } from "./choose-welcomer";
 import { listActiveWelcomerIds, revealExpiredGames } from "./game-records";
 import { listWelcomerCandidates } from "./people-records";
@@ -47,7 +48,7 @@ export const ALREADY_HAS_MISSION = "They already have a mission.";
 class MutualWelcoming extends Error {}
 
 /** Mission starts and person removals queue behind one lock, held until the transaction ends. */
-export async function lockMissionStarts(tx: Transaction) {
+export async function lockMissionStarts(tx: DbTransaction) {
   await tx.execute(sql`select pg_advisory_xact_lock(${START_LOCK_KEY})`);
 }
 
@@ -57,7 +58,7 @@ export async function lockMissionStarts(tx: Transaction) {
  * before either write, so it is checked again behind the lock.
  */
 export async function welcomesEachOther(
-  tx: Transaction,
+  tx: DbTransaction,
   { playerPersonId, welcomerPersonId }: { playerPersonId: string; welcomerPersonId: string },
 ): Promise<boolean> {
   const [mutual] = await tx
@@ -187,6 +188,17 @@ async function insertStartedGame({
       .update(people)
       .set({ autoMissionDoneAt: now })
       .where(and(eq(people.id, playerPersonId), isNull(people.autoMissionDoneAt)));
+
+    const [player] = await tx
+      .select({ name: people.name, email: people.email, slackUserId: people.slackUserId })
+      .from(people)
+      .where(eq(people.id, playerPersonId));
+    if (!player) throw new AppError("not_found", "player missing");
+    await publishAppEvent(tx, "mission.started", {
+      gameId: game.id,
+      startDate,
+      player: { personId: playerPersonId, ...player },
+    });
     return { gameId: game.id };
   });
 }

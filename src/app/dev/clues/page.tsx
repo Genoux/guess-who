@@ -21,7 +21,7 @@ const SAVED = [
 // The team clue, then how many of the three own clues are saved, and whether a game is playing.
 function clues(saved: number, playing: boolean): DeskClue[] {
   return [
-    { number: 1, text: "Works in Strategy.", editable: false, locked: false },
+    { number: 1, text: "Works in UGC.", editable: false, locked: false },
     ...([2, 3, 4] as const).map((number, index) => {
       const text = index < saved ? (SAVED[index] ?? null) : null;
       const locked = playing && text !== null;

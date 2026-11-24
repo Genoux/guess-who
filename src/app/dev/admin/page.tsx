@@ -115,10 +115,10 @@ const notSignedInNoMission = (id: string, name: string): PersonRecord => ({
 
 const NAMED: PersonRecord[] = [
   person("Maya Chen", "Creative", { game: playing("maya", "Omar Aziz", "2026-10-26") }),
-  person("Priya Shah", "Strategy", { game: playing("priya", "Lou Martin", "2026-10-23") }),
+  person("Priya Shah", "UGC", { game: playing("priya", "Lou Martin", "2026-10-23") }),
   person("Léa Dubois", "Talent", { game: playing("lea", "Ana Ferreira", "2026-10-19") }),
   person("Ethan Kim", "Talent", { game: playing("ethan", "Ines Costa", "2026-10-17") }),
-  person("Bartholomew Featherstonehaugh-Montgomery the Third", "Strategy", {
+  person("Bartholomew Featherstonehaugh-Montgomery the Third", "UGC", {
     clues: 2,
     game: playing("bart", "Jonah Park", "2026-10-25"),
   }),
@@ -142,7 +142,7 @@ const NAMED: PersonRecord[] = [
   person("Hannah Wright", "Talent", {
     game: finished("hannah", "Sam Rivera", "2026-09-20", "revealed", null),
   }),
-  person("Kofi Mensah", "Strategy", {
+  person("Kofi Mensah", "UGC", {
     game: finished("kofi", "Grace Liu", "2026-09-05", "found", new Date("2026-09-09T15:00:00Z")),
   }),
   // A new hire flagged from No mission with "Not yet": still waiting for a mission, no card yet.
@@ -150,10 +150,10 @@ const NAMED: PersonRecord[] = [
   person("Omar Aziz", "Creative"),
   person("Ana Ferreira", "Talent"),
   person("Ines Costa", "Talent", { clues: 2 }),
-  person("Jonah Park", "Strategy"),
-  person("Lou Martin", "Strategy", { card: false, clues: 0 }),
+  person("Jonah Park", "UGC"),
+  person("Lou Martin", "UGC", { card: false, clues: 0 }),
   person("Noor Haddad", "Creative"),
-  person("Theo Lindqvist", "Strategy", { clues: 1 }),
+  person("Theo Lindqvist", "UGC", { clues: 1 }),
   person("Sam Rivera", "Creative"),
   person("Grace Liu", "Talent"),
 ];

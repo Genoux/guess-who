@@ -158,7 +158,14 @@ Never commit, push or open a PR unless explicitly asked.
   person, on `email` or `personal_email`; there is no domain allowlist.
 - Drizzle + Neon (phase 1). Cloudflare R2 for photos (phase 3).
 - Notifications leave the app as signed webhook events to n8n, which posts to Slack. No Slack API
-  in the app.
+  in the app. Events are things people do in the app; reminders on a schedule are not events and
+  live in n8n. The catalog is `APP_EVENT_SCHEMAS` in `src/entities/app-events.ts` (name → zod
+  data); adding one is an entry there and a `publishAppEvent(tx, type, data)` in the transaction
+  of the change it reports. The row lands in the `notifications` outbox and `after()` posts every
+  pending row to `N8N_EVENTS_WEBHOOK_URL` as `{ id, type, occurredAt, data }`, with the type in
+  `x-album-event` and `N8N_EVENTS_SECRET` in `x-album-secret`. The n8n Webhook node checks that
+  header with a Header Auth credential, switches on `type`, and may see an `id` twice.
+  Without the URL (local, previews) rows stay pending.
 - Playwright e2e against previews (phase 8).
 - Storybook (`@storybook/nextjs-vite`) for the game UI kit: stories sit beside each component as
   `src/shared/components/game/*.stories.tsx`; run `bun run storybook` (port 6006) or
@@ -196,7 +203,10 @@ Never commit, push or open a PR unless explicitly asked.
   claim and `{"role": "admin"}` in the user's public metadata; without them a user is `member`.
 - No cron yet (phase 6): clue visibility and the day-14 reveal are computed on read, and an
   expired active game is ended as `revealed` by the first player or welcomer request after it
-  (`// shortcut:` in `finalize-expired-game-record.ts`). No notifications are sent.
+  (`// shortcut:` in `finalize-expired-game-record.ts`).
+- A failed event delivery is retried only by the next event's dispatch, up to 5 attempts, then
+  marked `failed`. With no new events, a pending row waits. Find them with
+  `select * from notifications where status <> 'sent'`.
 - Upstash is not set up: without `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` the rate
   limiter keeps per-instance memory counters and logs a warning.
 - Sticker photos show initials until phase 3's signed R2 URL lands (`// shortcut:` in
