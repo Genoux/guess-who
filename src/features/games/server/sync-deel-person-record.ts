@@ -1,10 +1,13 @@
 import "server-only";
 import { AppError, isUniqueViolation } from "@inbeat/core/errors";
+import { eq } from "drizzle-orm";
+import { people } from "@/db/schema";
 import type { DeelClient } from "@/integrations/deel/deel-client";
 import type { DeelSubject } from "@/integrations/deel/deel-webhook-event";
 import { toRosterChange } from "@/integrations/deel/to-roster-change";
 import { db } from "@/shared/lib/db";
 import { removeLeaverRecord } from "./remove-leaver-record";
+import { turnOnMissionsRecord } from "./turn-on-missions-record";
 import { upsertRosterPersonRecord } from "./upsert-roster-person-record";
 
 type SyncInput = {
@@ -15,7 +18,9 @@ type SyncInput = {
 
 /**
  * Re-reads the person a webhook is about and applies it: leavers are removed, everyone else is
- * upserted. No mission starts here: the People team starts every mission by hand.
+ * upserted. A person this creates is a new hire whose mission starts now: Deel only reports
+ * someone active around their start date, so this is close to their first day. Creation happens
+ * once, so a mission an admin ended or reset never starts again from here.
  */
 export async function syncDeelPersonRecord({ deel, subject, now }: SyncInput): Promise<string> {
   const person =
@@ -43,5 +48,16 @@ export async function syncDeelPersonRecord({ deel, subject, now }: SyncInput): P
     }
     throw error;
   }
-  return outcome;
+  if (outcome !== "created") return outcome;
+  return `${outcome}; ${await startNewHireMission(change.person.deelId, now)}`;
+}
+
+async function startNewHireMission(deelId: string, now: Date) {
+  const created = await db.select({ id: people.id }).from(people).where(eq(people.deelId, deelId));
+  const { started } = await turnOnMissionsRecord({
+    personIds: created.map(({ id }) => id),
+    adminPersonId: null,
+    now,
+  });
+  return started > 0 ? "mission started" : "no welcomer free";
 }
