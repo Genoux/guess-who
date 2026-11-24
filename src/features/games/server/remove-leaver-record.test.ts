@@ -65,13 +65,13 @@ describe("removeLeaverRecord", () => {
     expect(own?.params).toEqual(["kim", "kim@gmail.com"]);
   });
 
-  it("resets the player of the welcomed game: marker cleared, welcomer_left_at set", async () => {
+  it("resets the player of the welcomed game: welcomer_left_at set, role kept", async () => {
     behave({ players: ["sam"] });
     await removeLeaverRecord(input);
     const update = statement("update people");
-    expect(update?.sql).toMatch(/auto_mission_done_at = \$\d+, .*welcomer_left_at = \$\d+/);
+    expect(update?.sql).toMatch(/^update people set welcomer_left_at = \$\d+/);
     expect(update?.sql).not.toMatch(/new_hire/);
-    expect(update?.params).toEqual([null, now.toISOString(), expect.any(String), "sam"]);
+    expect(update?.params).toEqual([now.toISOString(), expect.any(String), "sam"]);
   });
 
   it("never marks a player when the welcomed game was not running", async () => {

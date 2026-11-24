@@ -66,7 +66,6 @@ export async function listPeople(): Promise<PersonRecord[]> {
       newHire: people.newHire,
       cluesWritten: WRITTEN_CLUES,
       welcomerLeft: sql<boolean>`${people.welcomerLeftAt} is not null`,
-      joinedOn: people.startDate,
       ...gameColumns,
     })
     .from(people)
@@ -89,7 +88,6 @@ export async function listPeople(): Promise<PersonRecord[]> {
       newHire,
       cluesWritten,
       welcomerLeft,
-      joinedOn,
       ...game
     }) => ({
       personId,
@@ -105,7 +103,6 @@ export async function listPeople(): Promise<PersonRecord[]> {
       newHire,
       cluesWritten,
       welcomerLeft,
-      joinedOn,
       game: toGame(game),
     }),
   );

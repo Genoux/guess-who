@@ -7,18 +7,25 @@ import { gameToast } from "@/shared/components/game/game-toaster";
 import { PillTabs } from "@/shared/components/game/pill-tabs";
 import { Reveal } from "@/shared/components/game/reveal";
 import { endMission } from "../actions/end-mission";
-import { startAsNewHire } from "../actions/start-as-new-hire";
+import { resetMission } from "../actions/reset-mission";
 import { turnOnMissions } from "../actions/turn-on-missions";
 import { firstName } from "../lib/first-name";
-import { ALL_TEAMS, matchesTeam, teamFilterOptions } from "../lib/people-filter";
+import {
+  ALL_TEAMS,
+  matchesRole,
+  matchesTeam,
+  ROLE_FILTERS,
+  type RoleFilter,
+  teamFilterOptions,
+} from "../lib/people-filter";
 import { BOOK_DELAY_S } from "../lib/people-motion";
 import { applyPeopleMove, type PeopleMove } from "../lib/people-moves";
-import type { NoMissionRowView, PeopleBoard, PlayingRowView } from "../lib/people-view";
+import type { DoneRowView, PeopleBoard, PlayingRowView } from "../lib/people-view";
 import { EndMissionDialog } from "./end-mission-dialog";
 import { PeopleDone } from "./people-done";
 import { PeopleNoMission } from "./people-no-mission";
 import { PeoplePlaying } from "./people-playing";
-import { StartNewHireDialog } from "./start-new-hire-dialog";
+import { ResetMissionDialog } from "./reset-mission-dialog";
 
 type PeopleView = "playing" | "noMission" | "done";
 
@@ -61,16 +68,19 @@ export function PeopleScreen({
 }: PeopleScreenProps) {
   const [view, setView] = useState<PeopleView>("playing");
   const [team, setTeam] = useState(ALL_TEAMS);
+  const [role, setRole] = useState<RoleFilter>("all");
   const [ending, setEnding] = useState<PlayingRowView | null>(null);
-  const [starting, setStarting] = useState<NoMissionRowView | null>(null);
+  const [resetting, setResetting] = useState<DoneRowView | null>(null);
   // Nothing is saved in the preview, so its settled board is kept here.
   const [previewBoard, setPreviewBoard] = useState(serverBoard);
   const [board, applyMove] = useOptimistic(preview ? previewBoard : serverBoard, applyPeopleMove);
   const [, startTransition] = useTransition();
 
-  const inTeam = <Row extends { team: { name: string; color: string } | null }>(
+  const inFilters = <
+    Row extends { team: { name: string; color: string } | null; newHire: boolean },
+  >(
     rows: readonly Row[],
-  ) => rows.filter((row) => matchesTeam(row, team));
+  ) => rows.filter((row) => matchesTeam(row, team) && matchesRole(row, role));
 
   const tab = (value: PeopleView, label: string, count: number) => ({
     label,
@@ -115,19 +125,6 @@ export function PeopleScreen({
     });
   }
 
-  function startNewHire(row: NoMissionRowView) {
-    setStarting(null);
-    perform({
-      move: { type: "startAsNewHire", key: row.key },
-      run: () => startAsNewHire({ personId: row.key }),
-      previewData: { started: true },
-      message: ({ started }) =>
-        started
-          ? `${shortName(row)}'s mission started.`
-          : `${shortName(row)} is a new hire, but no mission could start: no free welcomer.`,
-    });
-  }
-
   function end(row: PlayingRowView) {
     setEnding(null);
     perform({
@@ -138,14 +135,33 @@ export function PeopleScreen({
     });
   }
 
-  const teamFilter = (
-    <GameFilterMenu
-      label="Team"
-      value={team}
-      options={teamFilterOptions([...board.playing, ...board.noMission, ...board.done])}
-      onValueChange={setTeam}
-      align="start"
-    />
+  function reset(row: DoneRowView) {
+    setResetting(null);
+    perform({
+      move: { type: "reset", gameId: row.gameId },
+      run: () => resetMission({ gameId: row.gameId }),
+      previewData: undefined,
+      message: () => `${shortName(row)} is back in No mission.`,
+    });
+  }
+
+  const filters = (
+    <>
+      <GameFilterMenu
+        label="Team"
+        value={team}
+        options={teamFilterOptions([...board.playing, ...board.noMission, ...board.done])}
+        onValueChange={setTeam}
+        align="start"
+      />
+      <GameFilterMenu
+        label="Role"
+        value={role}
+        options={ROLE_FILTERS}
+        onValueChange={setRole}
+        align="start"
+      />
+    </>
   );
 
   return (
@@ -165,25 +181,18 @@ export function PeopleScreen({
           ]}
         />
         {view === "playing" ? (
-          <PeoplePlaying rows={inTeam(board.playing)} filters={teamFilter} onEnd={setEnding} />
+          <PeoplePlaying rows={inFilters(board.playing)} filters={filters} onEnd={setEnding} />
         ) : null}
         {view === "noMission" ? (
-          <PeopleNoMission
-            rows={inTeam(board.noMission)}
-            filters={teamFilter}
-            onTurnOn={turnOn}
-            onStartAsNewHire={setStarting}
-          />
+          <PeopleNoMission rows={inFilters(board.noMission)} filters={filters} onTurnOn={turnOn} />
         ) : null}
-        {view === "done" ? <PeopleDone rows={inTeam(board.done)} filters={teamFilter} /> : null}
+        {view === "done" ? (
+          <PeopleDone rows={inFilters(board.done)} filters={filters} onReset={setResetting} />
+        ) : null}
       </Reveal>
 
-      <StartNewHireDialog
-        row={starting}
-        onConfirm={startNewHire}
-        onClose={() => setStarting(null)}
-      />
       <EndMissionDialog row={ending} onEnd={end} onClose={() => setEnding(null)} />
+      <ResetMissionDialog row={resetting} onReset={reset} onClose={() => setResetting(null)} />
     </>
   );
 }

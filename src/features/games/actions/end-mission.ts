@@ -4,16 +4,16 @@ import { ok } from "@inbeat/core/result";
 import { action } from "@inbeat/next/action";
 import { ROUTES } from "@/shared/config/routes";
 import { logger } from "@/shared/lib/logger";
-import { endMissionSchema } from "../schemas";
+import { missionIdSchema } from "../schemas";
 import { authorizeAdminPerson } from "../server/authorize-admin-person";
-import { endMissionRecord } from "../server/end-mission-record";
+import { removeMissionRecord } from "../server/remove-mission-record";
 
 export const endMission = action({
   name: "games.endMission",
-  schema: endMissionSchema,
+  schema: missionIdSchema,
   authorize: authorizeAdminPerson,
   run: async ({ gameId }) => {
-    await endMissionRecord({ gameId, now: new Date() });
+    await removeMissionRecord({ gameId, stage: "playing", now: new Date() });
     logger.info("mission ended", { gameId });
     return ok();
   },

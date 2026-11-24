@@ -116,32 +116,17 @@ describe("backfillRosterRecord", () => {
     expect(statements()).not.toContain("commit");
   });
 
-  it("commits on apply and marks the written people so they never auto-start", async () => {
+  it("commits on apply and creates everyone as a team member", async () => {
     await run(roster, true);
     expect(statements()).toContain("commit");
-    const marker = sentStatements(client).find(({ sql }) =>
-      sql.startsWith("update people set auto_mission_done_at"),
+    const inserts = sentStatements(client).filter(({ sql }) =>
+      sql.startsWith("insert into people"),
     );
-    expect(marker?.sql).toMatch(/auto_mission_done_at is null/);
-    expect(marker?.params).toEqual(expect.arrayContaining(["a", "b"]));
-    expect(marker?.params).not.toContain("gone");
-  });
-
-  it("marks nobody when nobody is written", async () => {
-    await run([deelPerson("gone", { hiring_status: "inactive" })], true);
-    expect(statements().some((s) => s.startsWith("update people set auto_mission_done_at"))).toBe(
-      false,
-    );
-  });
-
-  it("counts an email held by another person as a conflict and does not mark it", async () => {
-    client.query.mockImplementation(async (config: { text: string }) => ({
-      rows: config.text.includes('from "people"') ? [["person_2", "deel-2"]] : [],
-    }));
-    const counts = await run([deelPerson("a")], true);
-    expect(counts).toMatchObject({ created: 0, conflict: 1 });
-    expect(statements().some((s) => s.startsWith("update people set auto_mission_done_at"))).toBe(
-      false,
-    );
+    expect(inserts).toHaveLength(2);
+    for (const { sql, params } of inserts) {
+      expect(sql).toMatch(/new_hire/);
+      expect(params).toContain(false);
+      expect(params).not.toContain(true);
+    }
   });
 });

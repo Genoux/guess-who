@@ -34,10 +34,7 @@ export async function removeLeaverRecord({ deelId, now }: RemoveLeaverInput): Pr
       playerPersonId ? [playerPersonId] : [],
     );
     if (playerIds.length > 0) {
-      await tx
-        .update(people)
-        .set({ autoMissionDoneAt: null, welcomerLeftAt: now })
-        .where(inArray(people.id, playerIds));
+      await tx.update(people).set({ welcomerLeftAt: now }).where(inArray(people.id, playerIds));
     }
 
     await tx
