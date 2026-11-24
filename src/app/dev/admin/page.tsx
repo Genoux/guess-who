@@ -86,7 +86,6 @@ const person = (
   newHire: game !== null && game.status === "active",
   cluesWritten: clues,
   welcomerLeft: false,
-  joinedOn: null,
   game,
 });
 
@@ -104,7 +103,6 @@ const notSignedIn = (id: string, name: string, welcomerName: string): PersonReco
   newHire: true,
   cluesWritten: 0,
   welcomerLeft: false,
-  joinedOn: null,
   game: playing(id, welcomerName, "2026-10-28"),
 });
 
@@ -145,7 +143,7 @@ const NAMED: PersonRecord[] = [
   person("Kofi Mensah", "UGC", {
     game: finished("kofi", "Grace Liu", "2026-09-05", "found", new Date("2026-09-09T15:00:00Z")),
   }),
-  // A new hire flagged from No mission with "Not yet": still waiting for a mission, no card yet.
+  // A new hire from a Deel contract, still waiting for a mission: no card yet.
   { ...person("Noel Fresh", null, { card: false, clues: 0 }), newHire: true },
   person("Omar Aziz", "Creative"),
   person("Ana Ferreira", "Talent"),

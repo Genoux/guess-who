@@ -31,6 +31,18 @@ export function matchesPeopleSearch(
   return needle === "" || `${name ?? ""} ${email}`.toLowerCase().includes(needle);
 }
 
+/** The role filter: a new hire came with a new Deel contract and has not finished their mission. */
+export const ROLE_FILTERS = [
+  { value: "all", label: "All roles" },
+  { value: "newHire", label: "New hire" },
+  { value: "teamMember", label: "Team member" },
+] as const;
+
+export type RoleFilter = (typeof ROLE_FILTERS)[number]["value"];
+
+export const matchesRole = ({ newHire }: { newHire: boolean }, role: RoleFilter) =>
+  role === "all" || newHire === (role === "newHire");
+
 export const ALL_TEAMS = "all";
 export const NO_TEAM = "none";
 

@@ -37,7 +37,7 @@ export function PeoplePlaying({ rows, filters, onEnd }: PeoplePlayingProps) {
       {rows.length === 0 ? (
         <PeopleEmpty
           title="No one is playing"
-          text="Missions show up here as soon as you turn them on."
+          text="Missions show up here as soon as you start them."
         />
       ) : (
         <PeopleTable

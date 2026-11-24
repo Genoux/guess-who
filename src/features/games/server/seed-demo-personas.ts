@@ -106,8 +106,7 @@ export async function seedDemoPersonas(db: SchemaDb, now: Date) {
   } as const;
   for (const { key, name, email, newHire } of DEMO_PERSONAS) {
     const card = personaCard[key as keyof typeof personaCard];
-    // Deel-shaped: lockedhire is the one still unsettled, as a hire the auto-start has not reached.
-    const deel = { deelId: deelIdOf(name), autoMissionDoneAt: key === "lockedhire" ? null : now };
+    const deel = { deelId: deelIdOf(name) };
     await db
       .insert(schema.people)
       .values({

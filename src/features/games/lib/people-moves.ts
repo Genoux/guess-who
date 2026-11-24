@@ -1,10 +1,10 @@
-import type { NoMissionRowView, PeopleBoard, PlayingRowView } from "./people-view";
+import type { DoneRowView, NoMissionRowView, PeopleBoard, PlayingRowView } from "./people-view";
 
 /** What an admin action does to the board, before the server has answered. */
 export type PeopleMove =
   | { type: "turnOn"; keys: readonly string[] }
-  | { type: "startAsNewHire"; key: string }
-  | { type: "end"; gameId: string };
+  | { type: "end"; gameId: string }
+  | { type: "reset"; gameId: string };
 
 /** The welcomer is picked on the server; until it answers the row has no name for it. */
 const PICKING_WELCOMER = "";
@@ -26,6 +26,16 @@ const toNoMission = ({
   ...row
 }: PlayingRowView): NoMissionRowView => ({ ...row, welcomerLeft: false });
 
+// A finished mission already made a new hire a team member, so the row keeps its role.
+const doneToNoMission = ({
+  gameId: _gameId,
+  welcomer: _welcomer,
+  welcomerPhotoUrl: _welcomerPhotoUrl,
+  outcome: _outcome,
+  endedOn: _endedOn,
+  ...row
+}: DoneRowView): NoMissionRowView => ({ ...row, welcomerLeft: false });
+
 /**
  * The board after one move. Every move takes a person out of one view and puts them in another
  * (or drops them), so each person is in exactly one view at every moment. The same
@@ -41,22 +51,20 @@ export function applyPeopleMove(board: PeopleBoard, move: PeopleMove): PeopleBoa
         playing: [...chosen.map(toPlaying), ...board.playing],
       };
     }
-    case "startAsNewHire": {
-      const chosen = board.noMission.find(({ key }) => key === move.key);
-      return chosen
-        ? {
-            ...board,
-            noMission: board.noMission.filter((row) => row !== chosen),
-            playing: [toPlaying({ ...chosen, newHire: true }), ...board.playing],
-          }
-        : board;
-    }
     case "end": {
       const row = board.playing.find(({ gameId }) => gameId === move.gameId);
       return {
         ...board,
         playing: board.playing.filter(({ gameId }) => gameId !== move.gameId),
         noMission: row ? [...board.noMission, toNoMission(row)] : board.noMission,
+      };
+    }
+    case "reset": {
+      const row = board.done.find(({ gameId }) => gameId === move.gameId);
+      return {
+        ...board,
+        done: board.done.filter(({ gameId }) => gameId !== move.gameId),
+        noMission: row ? [...board.noMission, doneToNoMission(row)] : board.noMission,
       };
     }
   }

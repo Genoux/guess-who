@@ -138,14 +138,16 @@ Never commit, push or open a PR unless explicitly asked.
   and all three clues written can be picked as a welcomer. The admin People page has three views, each person in
   exactly one by mission state: Playing, No mission (no game, signed in or not, with an icon
   until they sign in; search, filter, and select people to turn missions on; people who find no
-  free welcomer stay here and the toast says so) and Done. A mission starts automatically when Deel reports a new hire active (see Auto-mission) or when an admin starts it: "Start as
-  new hire" (No mission rows, confirmed first) flags the person and starts the mission at once (no
-  free welcomer: the person stays flagged in No mission, and the toast says so), and Turn on starts
-  the others, signed in or not. A running mission is ended with End mission only: it resets the game
-  (guesses and clues cleared), keeps the album, notes and new hire flag, and starting again picks a
-  new welcomer. One pipeline, the rite of passage: a new hire (`people.new_hire`,
-  set by "Start as new hire", and cleared when their mission ends, found or revealed)
-  earns their card and clues by playing. While the flag is set My card and My clues are hidden,
+  free welcomer stay here and the toast says so) and Done, filtered by team and by role. Two
+  roles, set by how a person arrives and never by an admin: a new Deel contract (the webhook) is a
+  new hire, the roster loaded at launch (the backfill) is the team. An admin has only two
+  actions. Start mission (a row, or several selected) works for a new hire at once and for a team
+  member once their card and three clues are done. End mission (Playing) and Reset mission (Done)
+  delete the mission (`removeMissionRecord`, guarded on the stage the admin saw): guesses, clues
+  and the welcomer go, the album and notes stay, and the person is back in No mission with their
+  role. Each person plays once: a mission row, running or finished, blocks another start, so Reset
+  is the only way to play again. A new hire (`people.new_hire`, cleared when their mission ends,
+  found or revealed, so they become a team member) earns their card and clues by playing. While the flag is set My card and My clues are hidden,
   /card and /clues redirect, and the card and clue actions refuse ("Finish your mission first.";
   one rule, `isLockedNewHire`). With no mission they have nothing to open, only the locked home.
   A teammate who is not a new hire keeps My card and My clues, mission or not, and is turned on
@@ -221,7 +223,7 @@ Never commit, push or open a PR unless explicitly asked.
   deleting a game never touches it. Anyone signed in can open it; nobody collects their own sticker.
 - A game exists only once its mission has started: `start_date` and the welcomer are set with the
   row (`welcomer_person_id` turns null only if the welcomer is later deleted; see the leavers fact).
-  `beginMissionRecord` (used by turn-on and Start as new hire) takes one
+  `beginMissionRecord` (used by Start mission) takes one
   advisory lock, picks the welcomer, inserts the game with `start_date` today and copies the
   welcomer's three `welcomer_clues` into the per-game `clues` table; the board and the reveal read
   that copy. A partial unique index allows one active game per welcomer; a lost race is retried
@@ -241,8 +243,7 @@ Never commit, push or open a PR unless explicitly asked.
   (both required when `VERCEL_ENV` is `production`, optional elsewhere; without the secret the
   webhook answers 401) and the optional `DEEL_ORGANIZATION_ID`.
   `bun run deel:backfill` (dry run by default; `--apply`, plus `--confirm-production` against the
-  production API) creates people and marks those already `active` with `auto_mission_done_at`, so
-  they never auto-start; it runs `seedTeams` first. `people.deel_id` is the key; the work email
+  production API) creates the launch roster as team members; it runs `seedTeams` first. `people.deel_id` is the key; the work email
   fills `email`, a personal email `personal_email`; the Deel country is written to `location` and
   the hire date to `start_date`. `POST /api/webhooks/deel` verifies `x-deel-signature` (hex
   HMAC-SHA256 of `"POST"` plus the raw body), takes the person from the event, re-fetches them from
@@ -252,19 +253,15 @@ Never commit, push or open a PR unless explicitly asked.
   Responses: 401 bad or missing signature, 429 rate limited, 200 for ignored, unhandled and
   permanent outcomes (logged), 5xx only for transient failures so Deel retries. A replay only
   re-syncs current state.
-- Auto-mission: after any upsert, a person whose Deel `hiring_status` is `active`, with
-  `auto_mission_done_at` null, no game and a `start_date` within the last 30 days (`joinedRecently`),
-  is flagged `new_hire` and `startAutoMissionRecord` starts
-  their mission. `beginMissionRecord` sets the marker for every start, so End mission never
-  restarts it. No free welcomer: the person stays flagged and unmarked until a later event or an
-  admin starts them. A person who is not a recent hire is never flagged.
-- "Joined recently" (`joinedRecently`, `entities/game-schedule.ts`): `people.start_date` is at most
-  30 days back in Montréal, or still ahead. No Mission rows show it as their small line.
+- No mission starts automatically: a Deel sync only adds, updates or removes people, and an admin
+  starts every mission. Product owner's call (2026-11-24), so the first test with the team has one
+  flow and no surprise Slack messages; the automatic start (`startAutoMissionRecord`) is in git
+  history. `people.auto_mission_done_at` is no longer read or written; drop it in a later deploy.
 - There is no Remove person: Deel decides who exists. `removeLeaverRecord` runs when a webhook's
   re-fetched Deel person is a leaver (`toRosterChange`): a 404, `inactive`, or `no_active_contracts` with an
   end date before today in Montréal. Any other answer, a 400 included, or no end date keeps them. In one transaction behind the mission-start lock it
-  deletes the running game they welcome (its player stays flagged, `auto_mission_done_at` is cleared
-  and `people.welcomer_left_at` is set, so People shows "Their welcomer left. Start them again." until
+  deletes the running game they welcome (its player keeps their role and `people.welcomer_left_at`
+  is set, so People shows "Their welcomer left. Start them again." until
   `beginMissionRecord` clears it), deletes the game they play (also a legacy one found by `player_email`), then the `people` row (albums, their
   sticker in others' albums, notes and `welcomer_clues` cascade). Finished games they welcomed stay:
   `games.welcomer_person_id` is `set null` and the reveal reads the welcomer snapshot

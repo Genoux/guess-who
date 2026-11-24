@@ -1,10 +1,8 @@
 import "server-only";
-import { and, inArray, isNull } from "drizzle-orm";
 import { TransactionRollbackError } from "drizzle-orm/errors";
 import type { NeonDatabase } from "drizzle-orm/neon-serverless";
 import { PRODUCTION_ENDPOINT } from "@/db/assert-not-production";
 import type * as schema from "@/db/schema";
-import { people } from "@/db/schema";
 import { seedTeams } from "@/db/seed-teams";
 import type { DeelPerson } from "@/integrations/deel/deel-person";
 import { toRosterChange } from "@/integrations/deel/to-roster-change";
@@ -59,8 +57,8 @@ type BackfillInput = {
 
 /**
  * Creates or updates a person for every active worker in scope, in one transaction that a dry
- * run rolls back, so both paths run the same statements. Everyone written is marked as already
- * past the auto-mission, so only people who become active afterwards can auto-start.
+ * run rolls back, so both paths run the same statements. Everyone it creates is a team member: the
+ * roster at launch is the team, and only a later Deel contract brings a new hire.
  */
 export async function backfillRosterRecord({
   database,
@@ -76,22 +74,14 @@ export async function backfillRosterRecord({
   try {
     await database.transaction(async (tx) => {
       await seedTeams(tx as unknown as NeonDatabase<typeof schema>);
-      const written: string[] = [];
       for (const deelPerson of roster) {
         const change = toRosterChange(deelPerson.id, deelPerson, now);
         if (change.kind !== "upsert") {
           skip(change.kind === "ignore" ? change.reason : "not active or leaver");
           continue;
         }
-        const outcome = await upsertRosterPersonRecord(tx, change.person);
+        const outcome = await upsertRosterPersonRecord(tx, change.person, "launchRoster");
         counts[outcome] += 1;
-        if (outcome !== "conflict") written.push(change.person.deelId);
-      }
-      if (written.length > 0) {
-        await tx
-          .update(people)
-          .set({ autoMissionDoneAt: now })
-          .where(and(inArray(people.deelId, written), isNull(people.autoMissionDoneAt)));
       }
       if (!apply) tx.rollback();
     });

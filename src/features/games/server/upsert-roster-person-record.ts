@@ -9,15 +9,20 @@ type Executor = Pick<NeonDatabase<typeof schema>, "select" | "insert" | "update"
 
 export type UpsertOutcome = "created" | "updated" | "conflict";
 
+/** How a person created by this write joins: a new Deel contract is a new hire, the launch roster is the team. */
+export type Arrival = "newContract" | "launchRoster";
+
 /**
  * Writes the Deel-owned fields of one person and nothing else: team, fact, ask, clues, flags and
  * games are never touched. The person is the row with that deel id, else the row whose `email` is
  * the same and that has no deel id yet (someone who signed in before the roster came from Deel). Any other
  * row holding either email, in either column, makes the write a `conflict` and changes nothing.
+ * `arrival` only decides the role of a person this write creates; an update never changes it.
  */
 export async function upsertRosterPersonRecord(
   executor: Executor,
   roster: RosterPerson,
+  arrival: Arrival,
 ): Promise<UpsertOutcome> {
   const emails = [roster.email, roster.personalEmail].filter((email) => email !== null);
   const holders = await executor
@@ -44,7 +49,9 @@ export async function upsertRosterPersonRecord(
     startDate: roster.startDate,
   };
   if (!target) {
-    await executor.insert(people).values({ ...values, location: roster.location });
+    await executor
+      .insert(people)
+      .values({ ...values, location: roster.location, newHire: arrival === "newContract" });
     return "created";
   }
   // Deel having no country keeps what the row already has.

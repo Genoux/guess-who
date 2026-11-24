@@ -13,6 +13,7 @@
 .people-table {
   --person: minmax(14rem, max-content);
   --menu: 2.75rem;
+  --row-end: 1.25rem;
   display: grid;
   grid-template-columns: var(--cols);
   column-gap: 2rem;
@@ -44,7 +45,7 @@
 
 .people-heads,
 .people-row {
-  padding-inline: 0.75rem;
+  padding-inline: 0.75rem var(--row-end);
 }
 
 .people-heads {
@@ -107,7 +108,7 @@
   .people-menu {
     position: absolute;
     inset-block: 0;
-    inset-inline-end: 0.75rem;
+    inset-inline-end: var(--row-end);
     margin-block: auto;
     opacity: 0;
   }

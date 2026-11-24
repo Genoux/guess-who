@@ -33,9 +33,7 @@ export const writeClueSchema = z.object({
 
 export const devStateSchema = z.object({ scenario: z.enum(DEV_SCENARIO_IDS) });
 
-export const startAsNewHireSchema = z.object({ personId: z.uuid() });
-
-export const endMissionSchema = z.object({ gameId: z.uuid() });
+export const missionIdSchema = z.object({ gameId: z.uuid() });
 
 /** More than the team has people today; a guard against an absurd request, not a product limit. */
 export const TURN_ON_MISSIONS_MAX = 500;

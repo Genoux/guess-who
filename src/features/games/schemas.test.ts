@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  endMissionSchema,
-  startAsNewHireSchema,
+  missionIdSchema,
   TURN_ON_MISSIONS_MAX,
   turnOnMissionsSchema,
   writeClueSchema,
@@ -10,7 +9,7 @@ import {
 const ID = "6f0c1d2e-3b4a-4c5d-8e9f-0a1b2c3d4e5f";
 const ID_2 = "7a1d2e3f-4c5b-4d6e-9fa0-1b2c3d4e5f60";
 
-describe.each([["endMissionSchema", endMissionSchema]])("%s", (_name, schema) => {
+describe.each([["missionIdSchema", missionIdSchema]])("%s", (_name, schema) => {
   it("needs the game id", () => {
     expect(schema.safeParse({ gameId: ID }).success).toBe(true);
     expect(schema.safeParse({}).success).toBe(false);
@@ -32,13 +31,6 @@ describe("turnOnMissionsSchema", () => {
       (_, i) => `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`,
     );
     expect(turnOnMissionsSchema.safeParse({ personIds: tooMany }).success).toBe(false);
-  });
-});
-
-describe("startAsNewHireSchema", () => {
-  it("needs a person id", () => {
-    expect(startAsNewHireSchema.safeParse({ personId: ID }).success).toBe(true);
-    expect(startAsNewHireSchema.safeParse({ personId: "x" }).success).toBe(false);
   });
 });
 

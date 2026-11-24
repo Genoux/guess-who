@@ -54,12 +54,12 @@ export function GameModal({
                 exit={{ opacity: 0, x: "-50%", y: "-48%" }}
                 transition={TRANSITION.enter}
               >
-                <div className="flex flex-col items-center gap-1.5">
+                <div className="flex flex-col items-center gap-3">
                   <Dialog.Title className="text-balance font-game-serif text-modal-title">
                     {title}
                   </Dialog.Title>
                   {description ? (
-                    <Dialog.Description className="max-w-130 text-pretty text-base text-game-muted">
+                    <Dialog.Description className="max-w-130 text-pretty font-normal text-base text-game-muted">
                       {description}
                     </Dialog.Description>
                   ) : null}
