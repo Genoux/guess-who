@@ -14,11 +14,6 @@ export const TEAM_DEFINITIONS = [
     tint: "#E3D2BE",
   },
   {
-    name: "Strategy",
-    color: "#157428",
-    tint: "#A1C8A9",
-  },
-  {
     name: "Client Services",
     color: "#9B8CE8",
     tint: "#DAD3F7",

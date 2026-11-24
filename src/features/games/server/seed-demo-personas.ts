@@ -96,7 +96,7 @@ export async function seedDemoPersonas(db: SchemaDb, now: Date) {
   // adding a new hire does. The new hires, the player among them, carry the flag and an empty card; the done persona's
   // flag is cleared, as ending a mission does, and its card is deliberately empty too.
   const personaCard = {
-    welcomer: FILLED_CARD(teamId("Strategy"), "Toronto"),
+    welcomer: FILLED_CARD(teamId("UGC"), "Toronto"),
     teammate: FILLED_CARD(teamId("Creative"), "Lisbon"),
     admin: FILLED_CARD(teamId("Ops"), "Montreal"),
     player: EMPTY_CARD,

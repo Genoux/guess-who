@@ -59,7 +59,7 @@ export const Select: Story = {
     defaultValue: "",
     options: [
       { value: "creative", label: "Creative", color: TEAMS.Creative.color },
-      { value: "strategy", label: "Strategy", color: TEAMS.Strategy.color },
+      { value: "ugc", label: "UGC", color: TEAMS.UGC.color },
       { value: "talent", label: "Talent", color: TEAMS.Talent.color },
     ],
   },

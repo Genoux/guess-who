@@ -68,7 +68,7 @@ export const DEMO_CAST: readonly CastMember[] = [
   },
   {
     name: "Jonah Park",
-    team: "Strategy",
+    team: "UGC",
     location: "Seoul",
     fact: "Tracks every meal since 2019.",
     ask: "Fantasy football spreadsheets",
@@ -80,7 +80,7 @@ export const DEMO_CAST: readonly CastMember[] = [
   },
   {
     name: "Ines Moreau",
-    team: "Strategy",
+    team: "UGC",
     location: "Paris",
     fact: "Grew up above a cheese shop.",
     ask: "Natural wine, politely",
@@ -316,7 +316,7 @@ export const DEMO_CAST: readonly CastMember[] = [
   },
   {
     name: "Lea Dubois",
-    team: "Strategy",
+    team: "UGC",
     location: "Lyon",
     fact: "Keeps bees on a rooftop.",
     ask: "Rooftop bees",

@@ -339,7 +339,7 @@ export default function GameComponentsPage() {
               label="Team"
               options={[
                 { value: "creative", label: "Creative" },
-                { value: "strategy", label: "Strategy" },
+                { value: "ugc", label: "UGC" },
               ]}
               placeholder="Pick one"
               defaultValue=""
