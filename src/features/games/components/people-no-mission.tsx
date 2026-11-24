@@ -36,10 +36,9 @@ const PAGE_SIZE = 14;
 const SEARCH_LABEL = "Search people";
 const NEEDS_CARD_AND_CLUES = "Needs card and clues";
 const WELCOMER_LEFT_NOTE = "Their welcomer left. Start them again.";
-const JOINED_RECENTLY_NOTE = "Joined recently";
 
-const noteFor = ({ welcomerLeft, joinedRecently }: NoMissionRowView) =>
-  welcomerLeft ? WELCOMER_LEFT_NOTE : joinedRecently ? JOINED_RECENTLY_NOTE : undefined;
+const noteFor = ({ welcomerLeft }: NoMissionRowView) =>
+  welcomerLeft ? WELCOMER_LEFT_NOTE : undefined;
 
 const READINESS_DOT: Record<AsWelcomer["kind"], string> = {
   canWelcome: "bg-game-ready",
@@ -51,21 +50,14 @@ const peopleCount = (count: number) => `${count} ${count === 1 ? "person" : "peo
 
 type PeopleNoMissionProps = {
   rows: readonly NoMissionRowView[];
-  /** The team filter, first in the toolbar. */
+  /** The team and role filters, first in the toolbar. */
   filters: ReactNode;
-  /** Turns missions on for these people; they move to Playing at once. */
+  /** Starts missions for these people; they move to Playing at once. */
   onTurnOn: (keys: readonly string[]) => void;
-  /** Asks to start them as a new hire (confirmed first); they move to Playing at once. */
-  onStartAsNewHire: (row: NoMissionRowView) => void;
 };
 
-/** Everyone with no mission: search, filter, and a select mode that turns missions on. */
-export function PeopleNoMission({
-  rows,
-  filters,
-  onTurnOn,
-  onStartAsNewHire,
-}: PeopleNoMissionProps) {
+/** Everyone with no mission: search, filter, and a select mode that starts missions. */
+export function PeopleNoMission({ rows, filters, onTurnOn }: PeopleNoMissionProps) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<PeopleFilter>("all");
   const [limit, setLimit] = useState(PAGE_SIZE);
@@ -254,16 +246,11 @@ export function PeopleNoMission({
                       />
                       {asWelcomerLabel(row.asWelcomer)}
                     </div>
-                    {selecting ? null : (
+                    {selecting || !canTurnOn(row) ? null : (
                       <GameRowMenu
                         className={PEOPLE_MENU_CLASS}
                         label={`Actions for ${row.name ?? row.email}`}
-                        items={[
-                          ...(canTurnOn(row)
-                            ? [{ label: "Turn on mission", onSelect: () => onTurnOn([row.key]) }]
-                            : []),
-                          { label: "Start as new hire", onSelect: () => onStartAsNewHire(row) },
-                        ]}
+                        items={[{ label: "Start mission", onSelect: () => onTurnOn([row.key]) }]}
                       />
                     )}
                   </li>
@@ -314,7 +301,7 @@ export function PeopleNoMission({
               disabled={selected.size === 0}
               onClick={() => setConfirming(true)}
             >
-              Turn on missions
+              Start missions
             </GameButton>
           </section>
         </div>
@@ -323,12 +310,12 @@ export function PeopleNoMission({
       <GameModal
         open={confirming}
         onOpenChange={setConfirming}
-        title={`Turn on missions for ${peopleCount(selected.size)}?`}
+        title={`Start missions for ${peopleCount(selected.size)}?`}
         description="They'll see a Mission tab and can start when they're ready."
       >
         <GameModalActions
           secondary={{ label: "Cancel", onClick: () => setConfirming(false) }}
-          primary={{ label: "Turn on missions", onClick: turnOnSelected }}
+          primary={{ label: "Start missions", onClick: turnOnSelected }}
         />
       </GameModal>
     </>

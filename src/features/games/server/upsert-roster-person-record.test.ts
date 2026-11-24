@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RosterPerson } from "@/integrations/deel/to-roster-change";
 import { fakeDbModule, sentStatements } from "@/test/fake-db";
-import { upsertRosterPersonRecord } from "./upsert-roster-person-record";
+import { type Arrival, upsertRosterPersonRecord } from "./upsert-roster-person-record";
 
 const client = { query: vi.fn() };
 let holders: unknown[][] = [];
@@ -15,9 +15,9 @@ const person: RosterPerson = {
   startDate: "2026-01-05",
 };
 
-const upsert = async (input: RosterPerson = person) => {
+const upsert = async (input: RosterPerson = person, arrival: Arrival = "launchRoster") => {
   const { db } = await fakeDbModule(client);
-  return upsertRosterPersonRecord(db, input);
+  return upsertRosterPersonRecord(db, input, arrival);
 };
 
 const writes = () => sentStatements(client).filter(({ sql }) => /^(insert|update) /.test(sql));
@@ -47,6 +47,22 @@ describe("upsertRosterPersonRecord", () => {
         "2026-01-05",
       ]),
     );
+  });
+
+  it.each([
+    ["newContract", true],
+    ["launchRoster", false],
+  ] as const)("creates a %s arrival with new_hire %s", async (arrival, newHire) => {
+    await upsert(person, arrival);
+    const [insert] = writes();
+    expect(insert?.sql).toMatch(/new_hire/);
+    expect(insert?.params).toContain(newHire);
+  });
+
+  it("never changes the role of a person who already exists", async () => {
+    holders = [["person_1", "deel-1", "sam@work.example"]];
+    await upsert(person, "newContract");
+    expect(writes()[0]?.sql).not.toMatch(/new_hire/);
   });
 
   it("updates the person with that deel id and writes only Deel-owned columns", async () => {

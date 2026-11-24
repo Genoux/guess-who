@@ -11,8 +11,6 @@ export type PersonIdentity = {
   imageUrl: string | null;
   /** A new hire: their mission is their rite of passage. */
   newHire: boolean;
-  /** Their Deel start date is within the last 30 days. */
-  joinedRecently: boolean;
   /** False for an email an admin added that nobody has signed in with. */
   signedIn: boolean;
 };
@@ -35,6 +33,8 @@ export type NoMissionRowView = PersonIdentity & {
 };
 
 export type DoneRowView = PersonIdentity & {
+  /** How they stand as a welcomer, for when a reset puts them back in No mission. */
+  asWelcomer: AsWelcomer;
   gameId: string;
   /** Null on the viewing admin's own mission until they have seen the reveal. */
   welcomer: string | null;

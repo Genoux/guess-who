@@ -3,6 +3,7 @@ import {
   ALL_TEAMS,
   matchesPeopleFilter,
   matchesPeopleSearch,
+  matchesRole,
   matchesTeam,
   NO_TEAM,
   teamFilterOptions,
@@ -23,6 +24,19 @@ describe("matchesPeopleFilter", () => {
     ["card", { kind: "canWelcome" }, false],
   ] as const)("filters %s on how they stand as a welcomer", (filter, asWelcomer, shown) => {
     expect(matchesPeopleFilter({ asWelcomer }, filter)).toBe(shown);
+  });
+});
+
+describe("matchesRole", () => {
+  it.each([
+    ["all", true, true],
+    ["all", false, true],
+    ["newHire", true, true],
+    ["newHire", false, false],
+    ["teamMember", false, true],
+    ["teamMember", true, false],
+  ] as const)("filters %s (new hire: %s)", (role, newHire, shown) => {
+    expect(matchesRole({ newHire }, role)).toBe(shown);
   });
 });
 

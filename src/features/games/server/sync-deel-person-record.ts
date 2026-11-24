@@ -5,7 +5,6 @@ import type { DeelSubject } from "@/integrations/deel/deel-webhook-event";
 import { toRosterChange } from "@/integrations/deel/to-roster-change";
 import { db } from "@/shared/lib/db";
 import { removeLeaverRecord } from "./remove-leaver-record";
-import { startAutoMissionRecord } from "./start-auto-mission-record";
 import { upsertRosterPersonRecord } from "./upsert-roster-person-record";
 
 type SyncInput = {
@@ -16,7 +15,7 @@ type SyncInput = {
 
 /**
  * Re-reads the person a webhook is about and applies it: leavers are removed, everyone else is
- * upserted and, for someone who just became active, their mission starts.
+ * upserted. No mission starts here: the People team starts every mission by hand.
  */
 export async function syncDeelPersonRecord({ deel, subject, now }: SyncInput): Promise<string> {
   const person =
@@ -30,7 +29,9 @@ export async function syncDeelPersonRecord({ deel, subject, now }: SyncInput): P
   if (change.kind === "remove") return removeLeaverRecord({ deelId: change.deelId, now });
   let outcome: string;
   try {
-    outcome = await db.transaction((tx) => upsertRosterPersonRecord(tx, change.person));
+    outcome = await db.transaction((tx) =>
+      upsertRosterPersonRecord(tx, change.person, "newContract"),
+    );
   } catch (error) {
     // Deel sends several events per person at once; the loser of the race retries and the
     // pre-check then finds the committed row.
@@ -42,6 +43,5 @@ export async function syncDeelPersonRecord({ deel, subject, now }: SyncInput): P
     }
     throw error;
   }
-  if (outcome === "conflict") return outcome;
-  return `${outcome}; ${await startAutoMissionRecord({ deelId: change.person.deelId, now })}`;
+  return outcome;
 }

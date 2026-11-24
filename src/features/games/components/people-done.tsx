@@ -3,11 +3,13 @@ import { CountChip } from "@/shared/components/game/count-chip";
 import { GameBook } from "@/shared/components/game/game-book";
 import { gameCn } from "@/shared/components/game/game-cn";
 import { GAME_FILTER_GROUP_CLASS } from "@/shared/components/game/game-filter-menu";
+import { GameRowMenu } from "@/shared/components/game/game-row-menu";
 import type { DoneRowView } from "../lib/people-view";
 import { PeopleEmpty } from "./people-empty";
 import {
   PEOPLE_HOVER_GROUP,
   PEOPLE_LAST_CLASS,
+  PEOPLE_MENU_CLASS,
   PEOPLE_ROW_CLASS,
   PEOPLE_TOOLBAR_CLASS,
   PeopleTable,
@@ -17,10 +19,11 @@ import { NumberCell, PersonCell, RoleTag, TeamTag, WelcomerCell } from "./person
 type PeopleDoneProps = {
   rows: readonly DoneRowView[];
   filters: ReactNode;
+  onReset: (row: DoneRowView) => void;
 };
 
 /** Finished missions, most recently ended first. */
-export function PeopleDone({ rows, filters }: PeopleDoneProps) {
+export function PeopleDone({ rows, filters, onReset }: PeopleDoneProps) {
   return (
     <GameBook
       as="section"
@@ -39,6 +42,7 @@ export function PeopleDone({ rows, filters }: PeopleDoneProps) {
         />
       ) : (
         <PeopleTable
+          menu
           heads={[
             { label: "Player" },
             { label: "Role" },
@@ -67,6 +71,11 @@ export function PeopleDone({ rows, filters }: PeopleDoneProps) {
               <NumberCell muted className={PEOPLE_LAST_CLASS}>
                 {row.endedOn}
               </NumberCell>
+              <GameRowMenu
+                className={PEOPLE_MENU_CLASS}
+                label={`Actions for ${row.name ?? row.email}`}
+                items={[{ label: "Reset mission", onSelect: () => onReset(row) }]}
+              />
             </li>
           ))}
         </PeopleTable>

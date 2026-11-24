@@ -1,6 +1,6 @@
 import "server-only";
 import { AppError, isUniqueViolation, PG_CODES } from "@inbeat/core/errors";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { clues, games, people, teams, welcomerClues } from "@/db/schema";
 import { todayInGameZone } from "@/entities/game-schedule";
 import { type DbTransaction, db } from "@/shared/lib/db";
@@ -111,7 +111,6 @@ export async function beginMissionRecord({
         createdBy,
         welcomerPersonId: welcomer.id,
         startDate: todayInGameZone(now),
-        now,
       });
     } catch (err) {
       const lostWelcomer = isUniqueViolation(err) || welcomerRowDeleted(err);
@@ -121,10 +120,7 @@ export async function beginMissionRecord({
   throw new AppError("conflict", "welcomer taken twice", { safeMessage: NO_WELCOMER_FREE });
 }
 
-type InsertInput = Pick<
-  BeginMissionInput,
-  "playerEmail" | "playerPersonId" | "createdBy" | "now"
-> & {
+type InsertInput = Pick<BeginMissionInput, "playerEmail" | "playerPersonId" | "createdBy"> & {
   welcomerPersonId: string;
   startDate: string;
 };
@@ -135,7 +131,6 @@ async function insertStartedGame({
   createdBy,
   welcomerPersonId,
   startDate,
-  now,
 }: InsertInput) {
   return db.transaction(async (tx) => {
     await lockMissionStarts(tx);
@@ -183,11 +178,6 @@ async function insertStartedGame({
       .map(({ number, text }) => ({ gameId: game.id, number, text }));
     if (snapshot.length > 0) await tx.insert(clues).values(snapshot);
     await tx.update(people).set({ welcomerLeftAt: null }).where(eq(people.id, playerPersonId));
-    // The marker outlives End mission, so no start, manual or automatic, is ever repeated.
-    await tx
-      .update(people)
-      .set({ autoMissionDoneAt: now })
-      .where(and(eq(people.id, playerPersonId), isNull(people.autoMissionDoneAt)));
 
     const [player] = await tx
       .select({ name: people.name, email: people.email, slackUserId: people.slackUserId })
