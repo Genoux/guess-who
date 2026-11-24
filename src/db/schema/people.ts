@@ -41,8 +41,6 @@ export const people = pgTable(
     newHire: boolean("new_hire").notNull().default(false),
     // The Deel start date.
     startDate: date("start_date"),
-    // Set once the auto-start has run for this person, so ending a mission never restarts one.
-    autoMissionDoneAt: timestamp("auto_mission_done_at", { withTimezone: true }),
     // Set when the person's welcomer left Deel mid-mission and the mission was reset; cleared at the next start.
     welcomerLeftAt: timestamp("welcomer_left_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
