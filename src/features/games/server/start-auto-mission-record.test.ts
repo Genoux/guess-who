@@ -6,6 +6,7 @@ vi.mock("./start-as-new-hire-record", () => started);
 
 const client = vi.hoisted(() => ({ query: vi.fn(async () => ({ rows: [] as unknown[][] })) }));
 vi.mock("@/shared/lib/db", async () => (await import("@/test/fake-db")).fakeDbModule(client));
+vi.mock("@/shared/lib/publish-app-event", () => ({ publishAppEvent: vi.fn() }));
 
 import { sentStatements } from "@/test/fake-db";
 import { ALREADY_HAS_MISSION } from "./begin-mission-record";

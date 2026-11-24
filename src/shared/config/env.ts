@@ -9,6 +9,7 @@ import {
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 import { deelSecretsEnv } from "./deel-secrets-env";
+import { n8nEventsEnv } from "./n8n-events-env";
 
 export const env = createEnv({
   server: {
@@ -19,6 +20,7 @@ export const env = createEnv({
     DEEL_API_URL: z.url().default("https://api.letsdeel.com/rest/v2"),
     ...deelSecretsEnv(process.env.VERCEL_ENV),
     DEEL_ORGANIZATION_ID: z.string().min(1).optional(),
+    ...n8nEventsEnv(process.env.VERCEL_ENV),
   },
   shared: {
     NODE_ENV: z.enum(["development", "test", "production"]).optional(),
