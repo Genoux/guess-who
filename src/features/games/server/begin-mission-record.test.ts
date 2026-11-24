@@ -20,6 +20,8 @@ vi.mock("./people-records", () => ({ listWelcomerCandidates: records.listWelcome
 vi.mock("@/shared/lib/find-active-welcomer-game", () => ({
   findActiveWelcomerGame: records.findActiveWelcomerGame,
 }));
+const publishAppEvent = vi.hoisted(() => vi.fn());
+vi.mock("@/shared/lib/publish-app-event", () => ({ publishAppEvent }));
 
 import { ALREADY_HAS_MISSION, beginMissionRecord } from "./begin-mission-record";
 import { NO_WELCOMER_FREE } from "./choose-welcomer";
@@ -78,6 +80,7 @@ type Behaviour = {
 };
 
 const WELCOMER_TEAM = [["Creative", "Ana Welcomer", "https://img.test/ana.png"]];
+const PLAYER_ROW = [["Pat Player", "player@inbeat.agency", "U_PLAYER"]];
 
 const behave = ({
   lostInserts = 0,
@@ -95,6 +98,7 @@ const behave = ({
       return { rows: [["game_1"]] };
     }
     if (text.includes("from welcomer_clues")) return { rows: WELCOMER_CLUES };
+    if (text.includes("slack_user_id from people")) return { rows: PLAYER_ROW };
     if (text.includes("join teams") || text.includes("from teams")) return { rows: WELCOMER_TEAM };
     if (text.includes("games.welcomer_person_id =")) {
       return { rows: clash-- > 0 ? [["game_9"]] : [] };
@@ -233,6 +237,27 @@ describe("beginMissionRecord", () => {
     expect(sql.indexOf("commit")).toBeGreaterThan(
       sql.findIndex((text) => text.startsWith("update people set auto_mission_done_at")),
     );
+  });
+
+  it("publishes mission.started for the player inside the transaction", async () => {
+    await start();
+    expect(publishAppEvent).toHaveBeenCalledTimes(1);
+    expect(publishAppEvent).toHaveBeenCalledWith(expect.anything(), "mission.started", {
+      gameId: "game_1",
+      startDate: "2026-11-02",
+      player: {
+        personId: "player",
+        name: "Pat Player",
+        email: "player@inbeat.agency",
+        slackUserId: "U_PLAYER",
+      },
+    });
+  });
+
+  it("publishes nothing when the start is refused", async () => {
+    behave({ hasMission: true });
+    await expect(start()).rejects.toMatchObject({ kind: "conflict" });
+    expect(publishAppEvent).not.toHaveBeenCalled();
   });
 
   it("keeps an existing marker", async () => {

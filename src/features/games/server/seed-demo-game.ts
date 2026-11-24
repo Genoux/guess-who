@@ -53,14 +53,14 @@ const TEAMMATES = [
   ["Leo Martin", "Creative", "Toronto", "Speaks four languages, all badly.", "Film cameras"],
   [
     "Jonah Park",
-    "Strategy",
+    "UGC",
     "Seoul",
     "Keeps a spreadsheet of every meal since 2019.",
     "Fantasy football spreadsheets",
   ],
-  ["Inès Moreau", "Strategy", "Paris", "Grew up above a cheese shop.", "Natural wine, politely"],
-  ["Sofia Rossi", "Strategy", "Lisbon", "Once met a president by accident.", "Board games"],
-  ["Noah Dubois", "Strategy", "Montréal", "Grew up on a sailboat.", "Knots"],
+  ["Inès Moreau", "UGC", "Paris", "Grew up above a cheese shop.", "Natural wine, politely"],
+  ["Sofia Rossi", "UGC", "Lisbon", "Once met a president by accident.", "Board games"],
+  ["Noah Dubois", "UGC", "Montréal", "Grew up on a sailboat.", "Knots"],
   ["Ava Patel", "Talent", "London", "Has a pet tortoise named Speedy.", "Reptiles"],
   ["Ethan Kim", "Talent", "New York", "Played drums in a ska band.", "Vinyl"],
   [
@@ -475,7 +475,7 @@ export async function clearPersonGames(db: SchemaDb, email: string): Promise<voi
 }
 
 const FILLED_CARD = {
-  team: "Strategy",
+  team: "UGC",
   location: "Montréal",
   fact: "Has a drawer of mismatched socks, on purpose.",
   ask: "The best poutine in town",

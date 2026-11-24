@@ -116,7 +116,7 @@ function CluesArt() {
   return (
     <Row>
       <Dealt order={0}>
-        <ClueReveal number={1} text="I sit with the Strategy team." open className="w-50" />
+        <ClueReveal number={1} text="I sit with the UGC team." open className="w-50" />
       </Dealt>
       <Dealt order={1}>
         <ClueReveal number={2} text="Ask me about my sourdough." open className="w-50" />

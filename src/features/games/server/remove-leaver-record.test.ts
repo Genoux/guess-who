@@ -5,6 +5,7 @@ const client = vi.hoisted(() => ({
   query: vi.fn(async (_config: { text: string }) => ({ rows: [] as unknown[][] })),
 }));
 vi.mock("@/shared/lib/db", async () => (await import("@/test/fake-db")).fakeDbModule(client));
+vi.mock("@/shared/lib/publish-app-event", () => ({ publishAppEvent: vi.fn() }));
 
 const records = vi.hoisted(() => ({ revealExpiredGames: vi.fn(async () => 0) }));
 vi.mock("./game-records", () => records);
