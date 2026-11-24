@@ -1,5 +1,6 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { fontVariables } from "@inbeat/next/fonts";
+import { PlatformDisclaimer } from "@inbeat/ui/components/platform-disclaimer";
 import { Toaster } from "@inbeat/ui/components/sonner";
 import { Spinner } from "@inbeat/ui/components/spinner";
 import { TooltipProvider } from "@inbeat/ui/components/tooltip";
@@ -41,6 +42,11 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
                 load only. A navigation is a transition, so React keeps the current screen up until
                 the next one is ready, and GameShell's ViewTransition dissolves one into the other. */}
             <Suspense fallback={<PageSpinner />}>{children}</Suspense>
+            <PlatformDisclaimer
+              title="The Album is in beta"
+              description="Expect changes and a few bugs while we improve it."
+              cookieName="album_platform_disclaimer_dismissed"
+            />
             {isCatalogueEnabled({
               nodeEnv: env.NODE_ENV,
               vercelEnv: env.NEXT_PUBLIC_VERCEL_ENV,
